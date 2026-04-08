@@ -1,22 +1,45 @@
 export const txns = [
+  // Income — totals $5,200
   { name: 'Salary deposit', cat: 'Income', amt: 2600, date: 'Apr 1' },
+  { name: 'Salary deposit', cat: 'Income', amt: 2000, date: 'Mar 15' },
   { name: 'Freelance payment', cat: 'Income', amt: 600, date: 'Mar 25' },
+  // Housing
   { name: 'Rent', cat: 'Housing', amt: -1450, date: 'Mar 30' },
+  // Groceries
   { name: "Trader Joe's", cat: 'Groceries', amt: -87.32, date: 'Apr 5' },
   { name: 'Whole Foods', cat: 'Groceries', amt: -124.5, date: 'Mar 24' },
+  // Dining
   { name: 'Chipotle', cat: 'Dining', amt: -18.45, date: 'Mar 31' },
   { name: "Lou Malnati's", cat: 'Dining', amt: -38.2, date: 'Mar 15' },
   { name: 'Honey Butter Chicken', cat: 'Dining', amt: -42.1, date: 'Mar 28' },
+  { name: 'DoorDash', cat: 'Dining', amt: -38.60, date: 'Mar 18' },
+  { name: 'Starbucks', cat: 'Dining', amt: -55, date: 'Mar 23' },
+  // Subscriptions
   { name: 'Spotify', cat: 'Subscriptions', amt: -10.99, date: 'Apr 1' },
   { name: 'Netflix', cat: 'Subscriptions', amt: -15.49, date: 'Mar 30' },
+  { name: 'T-Mobile', cat: 'Subscriptions', amt: -65, date: 'Mar 5' },
+  { name: 'Hulu', cat: 'Subscriptions', amt: -17.99, date: 'Mar 30' },
+  // Travel
   { name: 'United Airlines', cat: 'Travel', amt: -342, date: 'Mar 28' },
+  // Transport
   { name: 'CTA Ventra', cat: 'Transport', amt: -20, date: 'Mar 22' },
   { name: 'Lyft', cat: 'Transport', amt: -24.3, date: 'Mar 20' },
   { name: 'Divvy Bikes', cat: 'Transport', amt: -15, date: 'Mar 12' },
+  { name: 'Shell Gas', cat: 'Transport', amt: -67.52, date: 'Mar 14' },
+  // Health
   { name: 'Walgreens', cat: 'Health', amt: -23.15, date: 'Mar 27' },
   { name: 'Gym membership', cat: 'Health', amt: -45, date: 'Mar 20' },
+  { name: 'Dental copay', cat: 'Health', amt: -125, date: 'Mar 10' },
+  // Shopping
   { name: 'Amazon', cat: 'Shopping', amt: -67.99, date: 'Mar 21' },
+  { name: 'Target', cat: 'Shopping', amt: -134.50, date: 'Mar 16' },
+  { name: 'Home Depot', cat: 'Shopping', amt: -98.40, date: 'Mar 8' },
+  { name: 'Nordstrom', cat: 'Shopping', amt: -199.50, date: 'Mar 12' },
+  { name: 'Best Buy', cat: 'Shopping', amt: -200, date: 'Mar 3' },
+  { name: 'Dry cleaning', cat: 'Shopping', amt: -45, date: 'Mar 11' },
+  // Utilities
   { name: 'ComEd', cat: 'Utilities', amt: -89, date: 'Mar 23' },
+  // Insurance
   { name: 'Car insurance', cat: 'Insurance', amt: -180, date: 'Mar 15' },
 ];
 

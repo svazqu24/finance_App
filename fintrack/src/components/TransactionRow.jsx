@@ -19,8 +19,8 @@ export default function TransactionRow({ txn }) {
         <p className="m-0 text-xs text-gray-400">{txn.cat} · {txn.date}</p>
       </div>
       <span
-        className={`text-sm font-medium tabular-nums flex-shrink-0 ${pos ? '' : 'text-gray-900 dark:text-gray-300'}`}
-        style={pos ? { color: '#3B6D11' } : undefined}
+        className="text-sm font-medium tabular-nums flex-shrink-0"
+        style={{ color: pos ? '#3B6D11' : '#E24B4A' }}
       >
         {pos ? '+' : '-'}${Math.abs(txn.amt).toFixed(2)}
       </span>

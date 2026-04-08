@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
 
-const CATS = [
-  'Income', 'Housing', 'Groceries', 'Dining', 'Subscriptions',
+const EXPENSE_CATS = [
+  'Housing', 'Groceries', 'Dining', 'Subscriptions',
   'Travel', 'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance',
 ];
 
@@ -23,26 +23,40 @@ const inputCls =
 
 const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1';
 
+const BLANK = { name: '', amt: '', cat: 'Housing', date: todayISO(), type: 'expense' };
+
 export default function AddTransactionModal({ open, onClose }) {
   const { addTransaction } = useApp();
-  const [form, setForm] = useState({ name: '', amt: '', cat: 'Income', date: todayISO() });
+  const [form, setForm] = useState(BLANK);
 
-  function set(key, val) {
+  function setField(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
+  }
+
+  function setType(t) {
+    setForm((f) => ({
+      ...f,
+      type: t,
+      cat: t === 'income' ? 'Income' : (f.cat === 'Income' ? 'Housing' : f.cat),
+    }));
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name.trim() || form.amt === '') return;
+    const raw = parseFloat(form.amt);
+    if (!form.name.trim() || isNaN(raw) || raw <= 0) return;
     addTransaction({
       name: form.name.trim(),
       cat: form.cat,
-      amt: parseFloat(form.amt),
+      amt: form.type === 'expense' ? -raw : raw,
       date: fmtDate(form.date),
     });
-    setForm({ name: '', amt: '', cat: 'Income', date: todayISO() });
+    setForm({ ...BLANK, date: todayISO() });
     onClose();
   }
+
+  const isExpense = form.type === 'expense';
+  const previewAmt = parseFloat(form.amt) || 0;
 
   return (
     <>
@@ -60,18 +74,56 @@ export default function AddTransactionModal({ open, onClose }) {
           {/* Handle */}
           <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-4" />
 
-          <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white mb-4">
-            Add Transaction
-          </h2>
+          {/* Header row: title + amount preview */}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white">
+              Add Transaction
+            </h2>
+            {previewAmt > 0 && (
+              <span
+                className="text-[15px] font-semibold tabular-nums"
+                style={{ color: isExpense ? '#E24B4A' : '#3B6D11' }}
+              >
+                {isExpense ? '-' : '+'}${previewAmt.toFixed(2)}
+              </span>
+            )}
+          </div>
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+
+            {/* Expense / Income toggle */}
+            <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+              <button
+                type="button"
+                onClick={() => setType('expense')}
+                className="flex-1 py-2 text-sm font-medium transition-colors"
+                style={isExpense
+                  ? { background: '#E24B4A', color: '#fff' }
+                  : { background: 'transparent', color: '#888' }
+                }
+              >
+                Expense
+              </button>
+              <button
+                type="button"
+                onClick={() => setType('income')}
+                className="flex-1 py-2 text-sm font-medium transition-colors border-l border-gray-200 dark:border-gray-600"
+                style={!isExpense
+                  ? { background: '#3B6D11', color: '#fff' }
+                  : { background: 'transparent', color: '#888' }
+                }
+              >
+                Income
+              </button>
+            </div>
+
             <div>
               <label className={labelCls}>Description</label>
               <input
                 type="text"
                 placeholder="e.g. Coffee shop"
                 value={form.name}
-                onChange={(e) => set('name', e.target.value)}
+                onChange={(e) => setField('name', e.target.value)}
                 className={inputCls}
                 required
               />
@@ -82,9 +134,10 @@ export default function AddTransactionModal({ open, onClose }) {
               <input
                 type="number"
                 step="0.01"
-                placeholder="positive = income, negative = expense"
+                min="0.01"
+                placeholder="0.00"
                 value={form.amt}
-                onChange={(e) => set('amt', e.target.value)}
+                onChange={(e) => setField('amt', e.target.value)}
                 className={inputCls}
                 required
               />
@@ -94,10 +147,10 @@ export default function AddTransactionModal({ open, onClose }) {
               <label className={labelCls}>Category</label>
               <select
                 value={form.cat}
-                onChange={(e) => set('cat', e.target.value)}
+                onChange={(e) => setField('cat', e.target.value)}
                 className={inputCls}
               >
-                {CATS.map((c) => (
+                {(isExpense ? EXPENSE_CATS : ['Income']).map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
@@ -108,7 +161,7 @@ export default function AddTransactionModal({ open, onClose }) {
               <input
                 type="date"
                 value={form.date}
-                onChange={(e) => set('date', e.target.value)}
+                onChange={(e) => setField('date', e.target.value)}
                 className={inputCls}
               />
             </div>
@@ -116,9 +169,10 @@ export default function AddTransactionModal({ open, onClose }) {
             <div className="flex gap-2.5 mt-1">
               <button
                 type="submit"
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium py-2.5 rounded-lg transition-colors"
+                className="flex-1 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+                style={{ background: isExpense ? '#E24B4A' : '#3B6D11' }}
               >
-                Add Transaction
+                Add {isExpense ? 'Expense' : 'Income'}
               </button>
               <button
                 type="button"
