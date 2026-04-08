@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import TransactionRow from '../components/TransactionRow';
-import { txns } from '../data';
-
-const allCats = ['all', ...new Set(txns.map((t) => t.cat))];
+import { useApp } from '../AppContext';
 
 export default function Transactions() {
+  const { transactions } = useApp();
   const [activeFilter, setActiveFilter] = useState('all');
-  const filtered = activeFilter === 'all' ? txns : txns.filter((t) => t.cat === activeFilter);
+
+  const allCats = ['all', ...new Set(transactions.map((t) => t.cat))];
+  const filtered = activeFilter === 'all' ? transactions : transactions.filter((t) => t.cat === activeFilter);
 
   return (
     <>
@@ -15,12 +16,11 @@ export default function Transactions() {
           <button
             key={cat}
             onClick={() => setActiveFilter(cat)}
-            className="text-xs px-3 py-1 rounded-full cursor-pointer whitespace-nowrap"
-            style={{
-              background: activeFilter === cat ? '#111' : 'transparent',
-              color: activeFilter === cat ? '#fff' : '#888',
-              border: activeFilter === cat ? '1px solid #111' : '1px solid #ccc',
-            }}
+            className={`text-xs px-3 py-1 rounded-full cursor-pointer whitespace-nowrap border transition-colors ${
+              activeFilter === cat
+                ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white'
+                : 'bg-transparent text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
+            }`}
           >
             {cat === 'all' ? 'All' : cat}
           </button>

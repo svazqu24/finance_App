@@ -5,7 +5,7 @@ export default function BillRow({ b }) {
   const urgent = b.due.includes('Apr') && parseInt(b.due.split(' ')[1]) <= 15;
 
   return (
-    <div className="flex items-center gap-2.5 py-[9px] border-b border-gray-200">
+    <div className="flex items-center gap-2.5 py-[9px] border-b border-gray-200 dark:border-gray-700 transition-colors">
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
         style={{ background: s.bg }}
@@ -15,12 +15,12 @@ export default function BillRow({ b }) {
         </span>
       </div>
       <div className="flex-1">
-        <p className="m-0 text-sm font-medium">{b.name}</p>
+        <p className="m-0 text-sm font-medium text-gray-900 dark:text-white">{b.name}</p>
         <p className="m-0 text-xs" style={{ color: urgent ? '#BA7517' : '#888' }}>
           Due {b.due}{urgent ? ' · soon' : ''}
         </p>
       </div>
-      <span className="text-sm font-medium tabular-nums">${b.amt.toFixed(2)}</span>
+      <span className="text-sm font-medium tabular-nums text-gray-900 dark:text-white">${b.amt.toFixed(2)}</span>
     </div>
   );
 }

@@ -20,13 +20,13 @@ export default function BudgetBar({ b }) {
               {b.cat.slice(0, 2).toUpperCase()}
             </span>
           </div>
-          <span className="text-sm font-medium">{b.cat}</span>
+          <span className="text-sm font-medium text-gray-900 dark:text-white">{b.cat}</span>
         </div>
-        <span className="text-[13px] tabular-nums">
-          ${b.spent} <span style={{ color: '#aaa' }}>/ ${b.budget}</span>
+        <span className="text-[13px] tabular-nums text-gray-900 dark:text-white">
+          ${b.spent} <span className="text-gray-400">/ ${b.budget}</span>
         </span>
       </div>
-      <div className="h-[7px] bg-gray-200 rounded overflow-hidden mb-1">
+      <div className="h-[7px] bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mb-1 transition-colors">
         <div
           className="h-full rounded"
           style={{ width: `${Math.min(pct, 100)}%`, background: barClr }}
@@ -36,7 +36,7 @@ export default function BudgetBar({ b }) {
         <span className="text-[11px]" style={{ color: over ? '#E24B4A' : '#888' }}>
           {over ? `$${diff} over budget` : `$${diff} remaining`}
         </span>
-        <span className="text-[11px]" style={{ color: '#aaa' }}>{pct.toFixed(0)}%</span>
+        <span className="text-[11px] text-gray-400">{pct.toFixed(0)}%</span>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ export default function Budget() {
         <BudgetBar key={b.cat} b={b} />
       ))}
 
-      <p className="text-[13px] font-medium mt-6 mb-2.5">Upcoming bills</p>
+      <p className="text-[13px] font-medium mt-6 mb-2.5 text-gray-900 dark:text-white">Upcoming bills</p>
       {bills.map((b) => (
         <BillRow key={b.name} b={b} />
       ))}

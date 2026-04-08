@@ -5,7 +5,7 @@ export default function TransactionRow({ txn }) {
   const pos = txn.amt > 0;
 
   return (
-    <div className="flex items-center gap-2.5 py-2.5 border-b border-gray-200">
+    <div className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-gray-700 transition-colors">
       <div
         className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
         style={{ background: s.bg }}
@@ -15,12 +15,12 @@ export default function TransactionRow({ txn }) {
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="m-0 text-sm font-medium truncate">{txn.name}</p>
+        <p className="m-0 text-sm font-medium truncate text-gray-900 dark:text-white">{txn.name}</p>
         <p className="m-0 text-xs text-gray-400">{txn.cat} · {txn.date}</p>
       </div>
       <span
-        className="text-sm font-medium tabular-nums flex-shrink-0"
-        style={{ color: pos ? '#3B6D11' : '#111' }}
+        className={`text-sm font-medium tabular-nums flex-shrink-0 ${pos ? '' : 'text-gray-900 dark:text-gray-300'}`}
+        style={pos ? { color: '#3B6D11' } : undefined}
       >
         {pos ? '+' : '-'}${Math.abs(txn.amt).toFixed(2)}
       </span>

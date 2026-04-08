@@ -40,7 +40,7 @@ const barOptions = {
       ticks: { color: '#888', font: { size: 11 } },
     },
     y: {
-      grid: { color: 'rgba(0,0,0,.05)' },
+      grid: { color: 'rgba(128,128,128,.15)' },
       ticks: {
         color: '#888',
         font: { size: 11 },
@@ -64,9 +64,9 @@ export default function Spending() {
           {spendCats.map((s) => (
             <div
               key={s.label}
-              className="flex justify-between items-center py-[5px] border-b border-gray-200"
+              className="flex justify-between items-center py-[5px] border-b border-gray-200 dark:border-gray-700 transition-colors"
             >
-              <span className="flex items-center gap-1.5 text-xs">
+              <span className="flex items-center gap-1.5 text-xs text-gray-900 dark:text-white">
                 <span
                   className="w-2 h-2 rounded-[2px] inline-block"
                   style={{ background: s.clr }}
@@ -84,11 +84,11 @@ export default function Spending() {
         <Bar data={barData} options={barOptions} />
       </div>
 
-      <div className="bg-[#f5f5f3] rounded-lg p-3.5">
+      <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-lg p-3.5 transition-colors">
         <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1.5">
           April insight
         </p>
-        <p className="text-sm m-0 leading-relaxed">
+        <p className="text-sm m-0 leading-relaxed text-gray-900 dark:text-white">
           Dining spend dropped 18% vs. March. Housing is your largest category at 40% of monthly
           expenses.
         </p>
