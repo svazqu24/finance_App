@@ -4,6 +4,18 @@ import { txns as sampleTxns } from './data';
 
 const AppContext = createContext(null);
 
+// Map a Supabase row → the shape the rest of the app expects.
+// Column names in the table: id, name, cat, amt, date, created_at
+function dbRowToTxn(row) {
+  return {
+    id:   row.id,
+    name: row.name,
+    cat:  row.cat,   // was row.category — wrong column name
+    amt:  row.amt,   // was row.amount  — wrong column name
+    date: row.date,
+  };
+}
+
 export function AppProvider({ children }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,40 +25,46 @@ export function AppProvider({ children }) {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  // On mount: fetch from Supabase, seed with sample data if empty
+  // On mount: fetch from Supabase, seed with sample data if the table is empty
   useEffect(() => {
     async function loadTransactions() {
+      console.log('[fintrack] Fetching transactions from Supabase…');
+
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to fetch transactions:', error.message);
-        // Fall back to sample data so the UI is never blank
+        console.error('[fintrack] Fetch failed:', error);
         setTransactions(sampleTxns);
         setLoading(false);
         return;
       }
 
+      console.log(`[fintrack] Fetched ${data.length} row(s) from Supabase.`);
+
       if (data.length === 0) {
-        // Table is empty — seed with sample transactions
+        console.log('[fintrack] Table empty — seeding sample transactions…');
+
+        // Column names must match the table schema exactly: name, cat, amt, date
         const rows = sampleTxns.map((t) => ({
           name: t.name,
-          category: t.cat,
-          amount: t.amt,
+          cat:  t.cat,
+          amt:  t.amt,
           date: t.date,
         }));
 
-        const { data: inserted, error: insertError } = await supabase
+        const { data: inserted, error: seedError } = await supabase
           .from('transactions')
           .insert(rows)
           .select();
 
-        if (insertError) {
-          console.error('Failed to seed transactions:', insertError.message);
+        if (seedError) {
+          console.error('[fintrack] Seed insert failed:', seedError);
           setTransactions(sampleTxns);
         } else {
+          console.log(`[fintrack] Seeded ${inserted.length} transaction(s).`);
           setTransactions(inserted.map(dbRowToTxn));
         }
       } else {
@@ -60,24 +78,23 @@ export function AppProvider({ children }) {
   }, []);
 
   async function addTransaction(txn) {
+    console.log('[fintrack] Inserting transaction:', txn);
+
+    // Column names must match the table schema exactly: name, cat, amt, date
     const { data, error } = await supabase
       .from('transactions')
-      .insert({
-        name: txn.name,
-        category: txn.cat,
-        amount: txn.amt,
-        date: txn.date,
-      })
+      .insert({ name: txn.name, cat: txn.cat, amt: txn.amt, date: txn.date })
       .select()
       .single();
 
     if (error) {
-      console.error('Failed to save transaction:', error.message);
-      // Optimistically update state anyway so the UI doesn't feel broken
+      console.error('[fintrack] Insert failed:', error);
+      // Optimistic local update so the UI stays responsive
       setTransactions((prev) => [txn, ...prev]);
       return;
     }
 
+    console.log('[fintrack] Insert succeeded:', data);
     setTransactions((prev) => [dbRowToTxn(data), ...prev]);
   }
 
@@ -98,15 +115,4 @@ export function AppProvider({ children }) {
 
 export function useApp() {
   return useContext(AppContext);
-}
-
-// Map a Supabase row → the shape the rest of the app expects
-function dbRowToTxn(row) {
-  return {
-    id: row.id,
-    name: row.name,
-    cat: row.category,
-    amt: row.amount,
-    date: row.date,
-  };
 }
