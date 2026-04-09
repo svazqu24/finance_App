@@ -26,11 +26,20 @@ export function AppProvider({ children }) {
   const [loading, setLoading]           = useState(false);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
-  const [darkMode, setDarkMode] = useState(false);
+  // Lazy initializer reads localStorage so the preference survives refreshes
+  const [darkMode, setDarkMode] = useState(() => {
+    try { return localStorage.getItem('fintrack-dark') === 'true'; } catch { return false; }
+  });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
+    try { localStorage.setItem('fintrack-dark', String(darkMode)); } catch {}
   }, [darkMode]);
+
+  // ── Password-recovery gate ────────────────────────────────────────────────────
+  // True when the user lands via a password-reset email link.
+  // App.jsx shows the Auth page (reset form) instead of the dashboard while this is set.
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   // ── Bootstrap auth session on mount ──────────────────────────────────────────
   useEffect(() => {
@@ -41,9 +50,11 @@ export function AppProvider({ children }) {
       setAuthLoading(false);
     });
 
-    // Listen for login / logout / token refresh
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Listen for login / logout / token refresh / password recovery
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
+      if (event === 'PASSWORD_RECOVERY') setPasswordRecovery(true);
+      if (event === 'USER_UPDATED')      setPasswordRecovery(false);
     });
 
     return () => subscription.unsubscribe();
@@ -126,6 +137,21 @@ export function AppProvider({ children }) {
     setTransactions([]);
   }
 
+  async function resetPassword(email) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    if (error) throw error;
+  }
+
+  async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    // USER_UPDATED event in onAuthStateChange will clear passwordRecovery,
+    // but set it here too so the UI transitions immediately on success
+    setPasswordRecovery(false);
+  }
+
   // ── Transaction actions ───────────────────────────────────────────────────────
   async function addTransaction(txn) {
     if (!user) return;
@@ -160,9 +186,12 @@ export function AppProvider({ children }) {
         // auth
         user,
         authLoading,
+        passwordRecovery,
         signIn,
         signUp,
         signOut,
+        resetPassword,
+        updatePassword,
         // transactions
         transactions,
         addTransaction,

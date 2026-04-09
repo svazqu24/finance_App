@@ -11,7 +11,7 @@ import Portfolio from './pages/Portfolio';
 
 // Rendered inside AppProvider so it can read auth state from context
 function AppRoutes() {
-  const { user, authLoading } = useApp();
+  const { user, authLoading, passwordRecovery } = useApp();
 
   // Hold render until the initial Supabase session check resolves —
   // prevents a flash of the Auth page on refresh when already logged in
@@ -23,7 +23,10 @@ function AppRoutes() {
     );
   }
 
-  if (!user) return <Auth />;
+  // Show Auth when logged out, OR when arriving via a password-reset link
+  // (passwordRecovery=true means the user has a recovery session but needs
+  // to set a new password before accessing the dashboard)
+  if (!user || passwordRecovery) return <Auth />;
 
   return (
     <BrowserRouter>
