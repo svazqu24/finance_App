@@ -1,0 +1,10 @@
+# Dependencies
+fintrack/node_modules/
+
+# Build output
+fintrack/dist/
+
+# Environment variables — never commit real keys
+fintrack/.env
+fintrack/.env.local
+fintrack/.env.*.local

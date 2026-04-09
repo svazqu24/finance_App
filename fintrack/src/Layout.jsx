@@ -44,7 +44,7 @@ function fmt(n) {
 }
 
 export default function Layout() {
-  const { transactions, darkMode, toggleDark } = useApp();
+  const { transactions, loading, darkMode, toggleDark } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
 
   const income = transactions.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
@@ -95,9 +95,9 @@ export default function Layout() {
 
         {/* Summary stats — computed from live transactions */}
         <div className="grid grid-cols-3 gap-2 mb-6">
-          <StatCard label="income" value={fmt(income)} sub="this month" />
-          <StatCard label="spent" value={fmt(spent)} sub="this month" />
-          <StatCard label="saved" value={`${savedPct}%`} sub="of income" valueStyle={{ color: '#3B6D11' }} />
+          <StatCard label="income" value={loading ? '—' : fmt(income)} sub="this month" />
+          <StatCard label="spent" value={loading ? '—' : fmt(spent)} sub="this month" />
+          <StatCard label="saved" value={loading ? '—' : `${savedPct}%`} sub="of income" valueStyle={{ color: '#3B6D11' }} />
         </div>
 
         {/* Tab nav */}
