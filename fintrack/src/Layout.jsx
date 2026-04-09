@@ -44,7 +44,7 @@ function fmt(n) {
 }
 
 export default function Layout() {
-  const { transactions, loading, darkMode, toggleDark } = useApp();
+  const { transactions, loading, darkMode, toggleDark, user, signOut } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
 
   const income = transactions.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
@@ -72,24 +72,39 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* Right side: dark toggle + date + add button */}
+          {/* Right side: controls + user */}
           <div className="flex flex-col items-end gap-2 pt-1">
+            {/* Row 1: dark toggle · date · sign out */}
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleDark}
-                className="text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 aria-label="Toggle dark mode"
               >
                 {darkMode ? <SunIcon /> : <MoonIcon />}
               </button>
               <p className="text-xs text-gray-400 m-0">{monthLabel}</p>
+              <button
+                onClick={signOut}
+                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              >
+                Sign out
+              </button>
             </div>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors whitespace-nowrap"
-            >
-              + Add Transaction
-            </button>
+            {/* Row 2: user email · add button */}
+            <div className="flex items-center gap-2">
+              {user?.email && (
+                <span className="text-[11px] text-gray-400 truncate max-w-[160px]">
+                  {user.email}
+                </span>
+              )}
+              <button
+                onClick={() => setModalOpen(true)}
+                className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors whitespace-nowrap"
+              >
+                + Add Transaction
+              </button>
+            </div>
           </div>
         </div>
 

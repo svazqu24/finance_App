@@ -5,85 +5,141 @@ import { txns as sampleTxns } from './data';
 const AppContext = createContext(null);
 
 // Map a Supabase row → the shape the rest of the app expects.
-// Column names in the table: id, name, cat, amt, date, created_at
+// Table columns: id, name, cat, amt, date, user_id, created_at
 function dbRowToTxn(row) {
   return {
     id:   row.id,
     name: row.name,
-    cat:  row.cat,   // was row.category — wrong column name
-    amt:  row.amt,   // was row.amount  — wrong column name
+    cat:  row.cat,
+    amt:  row.amt,
     date: row.date,
   };
 }
 
 export function AppProvider({ children }) {
+  // ── Auth state ──────────────────────────────────────────────────────────────
+  const [user, setUser]             = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // ── Transaction state ────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]           = useState(false);
+
+  // ── UI state ─────────────────────────────────────────────────────────────────
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
   }, [darkMode]);
 
-  // On mount: fetch from Supabase, seed with sample data if the table is empty
+  // ── Bootstrap auth session on mount ──────────────────────────────────────────
   useEffect(() => {
-    async function loadTransactions() {
-      console.log('[fintrack] Fetching transactions from Supabase…');
+    // Restore any existing session (e.g. page refresh)
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('[auth] getSession error:', error);
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false });
+    // Listen for login / logout / token refresh
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
-      if (error) {
-        console.error('[fintrack] Fetch failed:', error);
-        setTransactions(sampleTxns);
-        setLoading(false);
-        return;
-      }
-
-      console.log(`[fintrack] Fetched ${data.length} row(s) from Supabase.`);
-
-      if (data.length === 0) {
-        console.log('[fintrack] Table empty — seeding sample transactions…');
-
-        // Column names must match the table schema exactly: name, cat, amt, date
-        const rows = sampleTxns.map((t) => ({
-          name: t.name,
-          cat:  t.cat,
-          amt:  t.amt,
-          date: t.date,
-        }));
-
-        const { data: inserted, error: seedError } = await supabase
-          .from('transactions')
-          .insert(rows)
-          .select();
-
-        if (seedError) {
-          console.error('[fintrack] Seed insert failed:', seedError);
-          setTransactions(sampleTxns);
-        } else {
-          console.log(`[fintrack] Seeded ${inserted.length} transaction(s).`);
-          setTransactions(inserted.map(dbRowToTxn));
-        }
-      } else {
-        setTransactions(data.map(dbRowToTxn));
-      }
-
-      setLoading(false);
-    }
-
-    loadTransactions();
+    return () => subscription.unsubscribe();
   }, []);
 
-  async function addTransaction(txn) {
-    console.log('[fintrack] Inserting transaction:', txn);
+  // ── Load transactions whenever the logged-in user changes ────────────────────
+  useEffect(() => {
+    if (!user) {
+      setTransactions([]);
+      return;
+    }
+    loadTransactions(user);
+  }, [user]);
 
-    // Column names must match the table schema exactly: name, cat, amt, date
+  async function loadTransactions(currentUser) {
+    setLoading(true);
+    console.log('[fintrack] Fetching transactions for user:', currentUser.id);
+
     const { data, error } = await supabase
       .from('transactions')
-      .insert({ name: txn.name, cat: txn.cat, amt: txn.amt, date: txn.date })
+      .select('*')
+      .eq('user_id', currentUser.id)         // belt-and-suspenders alongside RLS
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('[fintrack] Fetch failed:', error);
+      setTransactions(sampleTxns);
+      setLoading(false);
+      return;
+    }
+
+    console.log(`[fintrack] Fetched ${data.length} row(s).`);
+
+    if (data.length === 0) {
+      // New user — seed their account with sample transactions
+      console.log('[fintrack] Seeding sample transactions for new user…');
+
+      const rows = sampleTxns.map((t) => ({
+        name:    t.name,
+        cat:     t.cat,
+        amt:     t.amt,
+        date:    t.date,
+        user_id: currentUser.id,
+      }));
+
+      const { data: inserted, error: seedError } = await supabase
+        .from('transactions')
+        .insert(rows)
+        .select();
+
+      if (seedError) {
+        console.error('[fintrack] Seed insert failed:', seedError);
+        setTransactions(sampleTxns);
+      } else {
+        console.log(`[fintrack] Seeded ${inserted.length} transaction(s).`);
+        setTransactions(inserted.map(dbRowToTxn));
+      }
+    } else {
+      setTransactions(data.map(dbRowToTxn));
+    }
+
+    setLoading(false);
+  }
+
+  // ── Auth actions ─────────────────────────────────────────────────────────────
+  async function signIn(email, password) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+  }
+
+  async function signUp(email, password) {
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+    return data; // caller inspects data.session to detect "confirm email" flow
+  }
+
+  async function signOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error('[auth] signOut error:', error);
+    setTransactions([]);
+  }
+
+  // ── Transaction actions ───────────────────────────────────────────────────────
+  async function addTransaction(txn) {
+    if (!user) return;
+    console.log('[fintrack] Inserting transaction:', txn);
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert({
+        name:    txn.name,
+        cat:     txn.cat,
+        amt:     txn.amt,
+        date:    txn.date,
+        user_id: user.id,
+      })
       .select()
       .single();
 
@@ -101,9 +157,17 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider
       value={{
+        // auth
+        user,
+        authLoading,
+        signIn,
+        signUp,
+        signOut,
+        // transactions
         transactions,
         addTransaction,
         loading,
+        // ui
         darkMode,
         toggleDark: () => setDarkMode((d) => !d),
       }}
