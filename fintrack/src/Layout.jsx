@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useApp } from './AppContext';
+import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
 
@@ -39,16 +40,14 @@ function MoonIcon() {
   );
 }
 
-function fmt(n) {
-  return '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-}
-
 export default function Layout() {
   const { transactions, loading, darkMode, toggleDark, user, signOut } = useApp();
   const [modalOpen, setModalOpen] = useState(false);
 
-  const income = transactions.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
-  const spent = transactions.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
+  // Stat cards show current-month figures only
+  const monthTxns = filterMonth(transactions, currentMonthAbbr());
+  const income   = monthTxns.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
+  const spent    = monthTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
   const savedPct = income > 0 ? Math.max(0, Math.round(((income - spent) / income) * 100)) : 0;
 
   return (
@@ -110,9 +109,9 @@ export default function Layout() {
 
         {/* Summary stats — computed from live transactions */}
         <div className="grid grid-cols-3 gap-2 mb-6">
-          <StatCard label="income" value={loading ? '—' : fmt(income)} sub="this month" />
-          <StatCard label="spent" value={loading ? '—' : fmt(spent)} sub="this month" />
-          <StatCard label="saved" value={loading ? '—' : `${savedPct}%`} sub="of income" valueStyle={{ color: '#3B6D11' }} />
+          <StatCard label="income" value={loading ? '—' : fmtDollars(income)} sub="this month" />
+          <StatCard label="spent"  value={loading ? '—' : fmtDollars(spent)}  sub="this month" />
+          <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#3B6D11' }} />
         </div>
 
         {/* Tab nav */}

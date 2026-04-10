@@ -1,33 +1,17 @@
 import { Doughnut, Bar } from 'react-chartjs-2';
-import { spendCats } from '../data';
+import { useApp } from '../AppContext';
+import { catClr } from '../data';
+import {
+  currentMonthAbbr, prevMonthAbbr,
+  filterMonth, groupExpensesByCategory, getLastNMonthLabels,
+} from '../utils';
 
-const donutData = {
-  labels: spendCats.map((s) => s.label),
-  datasets: [
-    {
-      data: spendCats.map((s) => s.amt),
-      backgroundColor: spendCats.map((s) => s.clr),
-      borderWidth: 0,
-    },
-  ],
-};
-
+// ── Chart options (static) ────────────────────────────────────────────────────
 const donutOptions = {
   responsive: true,
   maintainAspectRatio: false,
   cutout: '65%',
   plugins: { legend: { display: false } },
-};
-
-const barData = {
-  labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'],
-  datasets: [
-    {
-      data: [3920, 4280, 5100, 3650, 3480, 3640],
-      backgroundColor: 'rgba(24,95,165,.7)',
-      borderRadius: 3,
-    },
-  ],
 };
 
 const barOptions = {
@@ -50,47 +34,136 @@ const barOptions = {
   },
 };
 
+// ── Dynamic insight text ──────────────────────────────────────────────────────
+function buildInsight(currExpenses, prevExpenses, monthLabel) {
+  const currTotal = Object.values(currExpenses).reduce((a, b) => a + b, 0);
+  if (currTotal === 0) return `No expenses recorded in ${monthLabel} yet.`;
+
+  const sorted = Object.entries(currExpenses).sort((a, b) => b[1] - a[1]);
+  const [topCat, topAmt] = sorted[0];
+  const topPct = Math.round((topAmt / currTotal) * 100);
+
+  let text = `${topCat} is your largest expense at ${topPct}% of ${monthLabel} spending.`;
+
+  const prevAmt = prevExpenses[topCat] || 0;
+  if (prevAmt > 0) {
+    const change = Math.round(((topAmt - prevAmt) / prevAmt) * 100);
+    if (Math.abs(change) >= 5) {
+      text += ` ${topCat} is ${change > 0 ? 'up' : 'down'} ${Math.abs(change)}% vs last month.`;
+    }
+  }
+
+  if (sorted.length > 1) {
+    const secondCat = sorted[1][0];
+    const secondPct = Math.round((sorted[1][1] / currTotal) * 100);
+    text += ` ${secondCat} follows at ${secondPct}%.`;
+  }
+
+  return text;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function Spending() {
+  const { transactions } = useApp();
+
+  const currAbbr  = currentMonthAbbr();
+  const prevAbbr  = prevMonthAbbr();
+  const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long' });
+
+  // Current-month category breakdown (expenses only, sorted largest first)
+  const currExpenses = groupExpensesByCategory(filterMonth(transactions, currAbbr));
+  const prevExpenses = groupExpensesByCategory(filterMonth(transactions, prevAbbr));
+
+  const spendCats = Object.entries(currExpenses)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, amt]) => ({ label, amt, clr: catClr[label] || '#888780' }));
+
+  // Last 6 months of total expenses for the bar chart
+  const last6       = getLastNMonthLabels(6);
+  const barAmounts  = last6.map((mon) =>
+    Math.round(
+      filterMonth(transactions, mon)
+        .filter((t) => t.amt < 0)
+        .reduce((s, t) => s + Math.abs(t.amt), 0)
+    )
+  );
+
+  const donutData = {
+    labels: spendCats.map((s) => s.label),
+    datasets: [{
+      data:            spendCats.map((s) => s.amt),
+      backgroundColor: spendCats.map((s) => s.clr),
+      borderWidth: 0,
+    }],
+  };
+
+  const barData = {
+    labels: last6,
+    datasets: [{
+      data:            barAmounts,
+      backgroundColor: 'rgba(24,95,165,.7)',
+      borderRadius:    3,
+    }],
+  };
+
+  const insight = buildInsight(currExpenses, prevExpenses, monthLabel);
+
   return (
     <>
+      {/* Donut + legend */}
       <div className="grid gap-5 mb-6" style={{ gridTemplateColumns: '160px 1fr' }}>
         <div>
           <p className="text-xs text-gray-400 mb-1.5">By category</p>
-          <div className="relative h-40">
-            <Doughnut data={donutData} options={donutOptions} />
-          </div>
-        </div>
-        <div className="mt-5">
-          {spendCats.map((s) => (
-            <div
-              key={s.label}
-              className="flex justify-between items-center py-[5px] border-b border-gray-200 dark:border-gray-700 transition-colors"
-            >
-              <span className="flex items-center gap-1.5 text-xs text-gray-900 dark:text-white">
-                <span
-                  className="w-2 h-2 rounded-[2px] inline-block"
-                  style={{ background: s.clr }}
-                />
-                {s.label}
-              </span>
-              <span className="text-xs tabular-nums text-gray-400">${s.amt}</span>
+          {spendCats.length > 0 ? (
+            <div className="relative h-40">
+              <Doughnut data={donutData} options={donutOptions} />
             </div>
-          ))}
+          ) : (
+            <div className="h-40 flex items-center justify-center">
+              <p className="text-xs text-gray-400 text-center leading-relaxed">
+                No spending<br />this month yet
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-5">
+          {spendCats.length > 0 ? (
+            spendCats.map((s) => (
+              <div
+                key={s.label}
+                className="flex justify-between items-center py-[5px] border-b border-gray-200 dark:border-gray-700 transition-colors"
+              >
+                <span className="flex items-center gap-1.5 text-xs text-gray-900 dark:text-white">
+                  <span className="w-2 h-2 rounded-[2px] inline-block" style={{ background: s.clr }} />
+                  {s.label}
+                </span>
+                <span className="text-xs tabular-nums text-gray-400">
+                  ${s.amt.toFixed(2)}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+              Expenses you record will appear here.
+            </p>
+          )}
         </div>
       </div>
 
+      {/* Monthly bar chart */}
       <p className="text-xs text-gray-400 mb-2">Monthly spending</p>
       <div className="relative h-[140px] mb-4">
         <Bar data={barData} options={barOptions} />
       </div>
 
+      {/* Dynamic insight */}
       <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-lg p-3.5 transition-colors">
         <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1.5">
-          April insight
+          {monthLabel} insight
         </p>
         <p className="text-sm m-0 leading-relaxed text-gray-900 dark:text-white">
-          Dining spend dropped 18% vs. March. Housing is your largest category at 40% of monthly
-          expenses.
+          {insight}
         </p>
       </div>
     </>

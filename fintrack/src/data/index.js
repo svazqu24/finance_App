@@ -57,6 +57,20 @@ export const catSty = {
   Insurance: { bg: '#BAD6F2', fg: '#0C447C' },
 };
 
+/** Chart color for each spending category */
+export const catClr = {
+  Housing:       '#185FA5',
+  Travel:        '#1D9E75',
+  Insurance:     '#378ADD',
+  Groceries:     '#639922',
+  Dining:        '#D85A30',
+  Shopping:      '#888780',
+  Utilities:     '#5F5E5A',
+  Health:        '#D4537E',
+  Transport:     '#BA7517',
+  Subscriptions: '#7F77DD',
+};
+
 export const spendCats = [
   { label: 'Housing', amt: 1450, clr: '#185FA5' },
   { label: 'Travel', amt: 342, clr: '#1D9E75' },
