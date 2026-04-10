@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 
 const EXPENSE_CATS = [
@@ -16,6 +16,19 @@ function fmtDate(iso) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Convert a stored date string like 'Apr 1' back to an ISO date input value */
+function txnDateToISO(dateStr) {
+  if (!dateStr) return todayISO();
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const parts = dateStr.trim().split(' ');
+  if (parts.length < 2) return todayISO();
+  const mIdx = MONTHS.indexOf(parts[0]);
+  if (mIdx === -1) return todayISO();
+  const day = parseInt(parts[1], 10);
+  const year = new Date().getFullYear();
+  return `${year}-${String(mIdx + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 const inputCls =
   'w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm ' +
   'bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 ' +
@@ -26,8 +39,27 @@ const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-
 const BLANK = { name: '', amt: '', cat: 'Housing', date: todayISO(), type: 'expense' };
 
 export default function AddTransactionModal({ open, onClose }) {
-  const { addTransaction } = useApp();
+  const { addTransaction, updateTransaction, editTxn } = useApp();
   const [form, setForm] = useState(BLANK);
+
+  const isEditing = !!editTxn;
+
+  // Re-initialize form whenever modal opens or editTxn changes
+  useEffect(() => {
+    if (!open) return;
+    if (editTxn) {
+      const isIncome = editTxn.amt > 0;
+      setForm({
+        name: editTxn.name,
+        amt:  String(Math.abs(editTxn.amt)),
+        cat:  editTxn.cat,
+        date: txnDateToISO(editTxn.date),
+        type: isIncome ? 'income' : 'expense',
+      });
+    } else {
+      setForm({ ...BLANK, date: todayISO() });
+    }
+  }, [open, editTxn]);
 
   function setField(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
@@ -45,13 +77,17 @@ export default function AddTransactionModal({ open, onClose }) {
     e.preventDefault();
     const raw = parseFloat(form.amt);
     if (!form.name.trim() || isNaN(raw) || raw <= 0) return;
-    addTransaction({
+    const payload = {
       name: form.name.trim(),
-      cat: form.cat,
-      amt: form.type === 'expense' ? -raw : raw,
+      cat:  form.cat,
+      amt:  form.type === 'expense' ? -raw : raw,
       date: fmtDate(form.date),
-    });
-    setForm({ ...BLANK, date: todayISO() });
+    };
+    if (isEditing) {
+      updateTransaction(editTxn.id, payload);
+    } else {
+      addTransaction(payload);
+    }
     onClose();
   }
 
@@ -77,7 +113,7 @@ export default function AddTransactionModal({ open, onClose }) {
           {/* Header row: title + amount preview */}
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white">
-              Add Transaction
+              {isEditing ? 'Edit Transaction' : 'Add Transaction'}
             </h2>
             {previewAmt > 0 && (
               <span
@@ -172,7 +208,7 @@ export default function AddTransactionModal({ open, onClose }) {
                 className="flex-1 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
                 style={{ background: isExpense ? '#E24B4A' : '#3B6D11' }}
               >
-                Add {isExpense ? 'Expense' : 'Income'}
+                {isEditing ? 'Save Changes' : `Add ${isExpense ? 'Expense' : 'Income'}`}
               </button>
               <button
                 type="button"

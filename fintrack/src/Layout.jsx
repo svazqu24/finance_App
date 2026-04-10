@@ -4,6 +4,7 @@ import { useApp } from './AppContext';
 import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
+import BottomNav from './components/BottomNav';
 
 const tabs = [
   { path: 'overview', label: 'Overview' },
@@ -41,8 +42,8 @@ function MoonIcon() {
 }
 
 export default function Layout() {
-  const { transactions, loading, darkMode, toggleDark, user, signOut } = useApp();
-  const [modalOpen, setModalOpen] = useState(false);
+  const { transactions, loading, darkMode, toggleDark, user, signOut, editTxn, setEditTxn } = useApp();
+  const [addModalOpen, setAddModalOpen] = useState(false);
 
   // Stat cards show current-month figures only
   const monthTxns = filterMonth(transactions, currentMonthAbbr());
@@ -98,7 +99,7 @@ export default function Layout() {
                 </span>
               )}
               <button
-                onClick={() => setModalOpen(true)}
+                onClick={() => setAddModalOpen(true)}
                 className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors whitespace-nowrap"
               >
                 + Add Transaction
@@ -114,8 +115,8 @@ export default function Layout() {
           <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#3B6D11' }} />
         </div>
 
-        {/* Tab nav */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto transition-colors">
+        {/* Tab nav — hidden on mobile (replaced by BottomNav) */}
+        <div className="hidden sm:flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto transition-colors">
           {tabs.map((tab) => (
             <NavLink
               key={tab.path}
@@ -133,11 +134,18 @@ export default function Layout() {
           ))}
         </div>
 
-        {/* Page content */}
-        <Outlet />
+        {/* Page content — bottom padding clears the mobile nav bar */}
+        <div className="pb-24 sm:pb-0">
+          <Outlet />
+        </div>
       </div>
 
-      <AddTransactionModal open={modalOpen} onClose={() => setModalOpen(false)} />
+      <BottomNav />
+
+      <AddTransactionModal
+        open={addModalOpen || !!editTxn}
+        onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
+      />
     </div>
   );
 }

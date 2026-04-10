@@ -25,6 +25,9 @@ export function AppProvider({ children }) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading]           = useState(false);
 
+  // ── Edit state ───────────────────────────────────────────────────────────────
+  const [editTxn, setEditTxn] = useState(null);
+
   // ── UI state ─────────────────────────────────────────────────────────────────
   // Lazy initializer reads localStorage so the preference survives refreshes
   const [darkMode, setDarkMode] = useState(() => {
@@ -153,6 +156,30 @@ export function AppProvider({ children }) {
   }
 
   // ── Transaction actions ───────────────────────────────────────────────────────
+  async function updateTransaction(id, updates) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('transactions')
+      .update({ name: updates.name, cat: updates.cat, amt: updates.amt, date: updates.date })
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+    if (error) { console.error('[fintrack] Update failed:', error); return; }
+    setTransactions((prev) => prev.map((t) => (t.id === id ? dbRowToTxn(data) : t)));
+  }
+
+  async function deleteTransaction(id) {
+    if (!user) return;
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) { console.error('[fintrack] Delete failed:', error); return; }
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  }
+
   async function addTransaction(txn) {
     if (!user) return;
     console.log('[fintrack] Inserting transaction:', txn);
@@ -195,7 +222,12 @@ export function AppProvider({ children }) {
         // transactions
         transactions,
         addTransaction,
+        updateTransaction,
+        deleteTransaction,
         loading,
+        // edit state
+        editTxn,
+        setEditTxn,
         // ui
         darkMode,
         toggleDark: () => setDarkMode((d) => !d),

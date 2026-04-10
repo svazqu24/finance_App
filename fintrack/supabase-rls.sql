@@ -21,8 +21,15 @@ CREATE POLICY "insert_own_transactions"
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- 5. Policy: users can DELETE only their own rows (optional but good to have)
+-- 5. Policy: users can DELETE only their own rows
 CREATE POLICY "delete_own_transactions"
   ON transactions
   FOR DELETE
   USING (auth.uid() = user_id);
+
+-- 6. Policy: users can UPDATE only their own rows
+CREATE POLICY "update_own_transactions"
+  ON transactions
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
