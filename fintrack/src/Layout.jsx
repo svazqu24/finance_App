@@ -62,18 +62,9 @@ export default function Layout() {
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <p className="text-[11px] tracking-[.1em] uppercase text-gray-400 mb-1.5 m-0">net worth</p>
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-[36px] font-medium tabular-nums leading-[1.15] text-gray-900 dark:text-white">
-                $47,840
-              </span>
-              <span
-                className="text-xs font-medium px-2.5 py-[3px] rounded-full"
-                style={{ color: '#27500A', background: '#C8EBB4' }}
-              >
-                +$1,240 this month
-              </span>
-            </div>
+            <p className="text-[28px] font-semibold leading-tight text-gray-900 dark:text-white tracking-tight">
+              FinTrack
+            </p>
           </div>
 
           {/* Right side: controls + user */}

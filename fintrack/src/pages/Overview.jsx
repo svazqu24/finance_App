@@ -1,43 +1,6 @@
 import { Link } from 'react-router-dom';
-import { Line } from 'react-chartjs-2';
 import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../AppContext';
-
-const netWorthData = {
-  labels: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr'],
-  datasets: [
-    {
-      data: [38200, 40100, 41500, 42800, 44900, 46600, 47840],
-      borderColor: '#185FA5',
-      backgroundColor: 'rgba(24,95,165,.07)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 3,
-      pointBackgroundColor: '#185FA5',
-      borderWidth: 2,
-    },
-  ],
-};
-
-const netWorthOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-    x: {
-      grid: { color: 'rgba(0,0,0,.05)' },
-      ticks: { color: '#888', font: { size: 11 } },
-    },
-    y: {
-      grid: { color: 'rgba(0,0,0,.05)' },
-      ticks: {
-        color: '#888',
-        font: { size: 11 },
-        callback: (v) => '$' + (v / 1000).toFixed(0) + 'k',
-      },
-    },
-  },
-};
 
 function UploadIcon() {
   return (
@@ -67,10 +30,11 @@ export default function Overview() {
 
   return (
     <>
-      {/* Net worth chart — shown for everyone */}
-      <p className="text-xs text-gray-400 mb-2">Net worth — last 7 months</p>
-      <div className="relative h-40 mb-6">
-        <Line data={netWorthData} options={netWorthOptions} />
+      {/* Net worth placeholder */}
+      <div className="h-32 mb-6 rounded-xl bg-[#f5f5f3] dark:bg-gray-800 flex items-center justify-center transition-colors">
+        <p className="text-xs text-gray-400 text-center leading-relaxed px-4">
+          Net worth history will appear here once you start tracking your accounts.
+        </p>
       </div>
 
       {isEmpty ? (
