@@ -4,6 +4,7 @@ import { useApp } from './AppContext';
 import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
+import CsvImportModal from './components/CsvImportModal';
 import BottomNav from './components/BottomNav';
 
 const tabs = [
@@ -44,6 +45,7 @@ function MoonIcon() {
 export default function Layout() {
   const { transactions, loading, darkMode, toggleDark, user, signOut, editTxn, setEditTxn } = useApp();
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
 
   // Stat cards show current-month figures only
   const monthTxns = filterMonth(transactions, currentMonthAbbr());
@@ -99,6 +101,12 @@ export default function Layout() {
                 </span>
               )}
               <button
+                onClick={() => setCsvModalOpen(true)}
+                className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+              >
+                Import CSV
+              </button>
+              <button
                 onClick={() => setAddModalOpen(true)}
                 className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors whitespace-nowrap"
               >
@@ -141,6 +149,8 @@ export default function Layout() {
       </div>
 
       <BottomNav />
+
+      <CsvImportModal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} />
 
       <AddTransactionModal
         open={addModalOpen || !!editTxn}

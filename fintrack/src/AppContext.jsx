@@ -264,6 +264,25 @@ export function AppProvider({ children }) {
     setTransactions((prev) => [dbRowToTxn(data), ...prev]);
   }
 
+  // ── Bulk insert ──────────────────────────────────────────────────────────
+  async function bulkInsertTransactions(txnArray) {
+    if (!user || txnArray.length === 0) return 0;
+    // Chunk into batches of 100 to stay within PostgREST request limits
+    let inserted = [];
+    for (let i = 0; i < txnArray.length; i += 100) {
+      const chunk = txnArray.slice(i, i + 100).map((t) => ({
+        name: t.name, cat: t.cat, amt: t.amt, date: t.date, user_id: user.id,
+      }));
+      const { data, error } = await supabase.from('transactions').insert(chunk).select();
+      if (error) { console.error('[fintrack] Bulk insert chunk failed:', error); continue; }
+      inserted = inserted.concat(data.map(dbRowToTxn));
+    }
+    if (inserted.length > 0) {
+      setTransactions((prev) => [...inserted, ...prev]);
+    }
+    return inserted.length;
+  }
+
   // ── Budget limit actions ──────────────────────────────────────────────────
   async function saveBudgetLimit(cat, budget) {
     if (!user) return;
@@ -321,6 +340,7 @@ export function AppProvider({ children }) {
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        bulkInsertTransactions,
         loading,
         // edit state
         editTxn,
