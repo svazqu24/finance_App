@@ -198,48 +198,84 @@ function toTitleCase(s) {
     .join(' ');
 }
 
+// Verbose bank transfer descriptions — matched at the start of the raw string.
+// When one matches, we short-circuit and return just the core label.
+const TRANSFER_PATTERNS = [
+  [/^online\s+transfer\b/i,               'Online Transfer'],
+  [/^wire\s+transfer\b/i,                 'Wire Transfer'],
+  [/^ach\s+(?:transfer|credit|debit)\b/i, 'ACH Transfer'],
+  [/^internal\s+transfer\b/i,             'Internal Transfer'],
+  [/^zelle\b/i,                           'Zelle Payment'],
+  [/^direct\s+deposit\b/i,               'Direct Deposit'],
+  [/^mobile\s+(?:check\s+)?deposit\b/i,   'Mobile Deposit'],
+];
+
 /**
  * Clean a raw bank description into a human-readable merchant name.
  *
- * Handles Chase-style suffixes:
- *   "PANERA BREAD #606393 K CHICAGO IL 04/09" → "Panera Bread"
- *   "SHELL GAS 1234567890 EVANSTON IL 04/08"  → "Shell Gas"
- *   "NETFLIX.COM 04/09"                        → "Netflix"
- *   "UNITED AIRLINES 1234567 CHICAGO IL 04/07" → "United Airlines"
- *
- * Safe for non-Chase descriptions: only strips patterns that are
- * unambiguously noise (trailing date fragments, known state abbreviations,
- * store reference numbers, long digit sequences, single-letter codes).
+ * Handles Chase-style suffixes and common bank noise:
+ *   "PANERA BREAD #606393 K CHICAGO IL 04/09"              → "Panera Bread"
+ *   "PANERA BREAD 773-342-2804"                             → "Panera Bread"
+ *   "MCDONALDS 6298"                                        → "Mcdonalds"
+ *   "PAYPAL *MICROSOFT"                                     → "Paypal Microsoft"
+ *   "Online Transfer From Chk ...8601 Transaction#: 123"   → "Online Transfer"
+ *   "NETFLIX.COM 04/09"                                     → "Netflix"
  */
 export function cleanDescription(raw) {
   if (!raw) return '';
   let s = raw.trim();
 
-  // 1. Strip trailing MM/DD date fragment Chase appends to every transaction
+  // 0. Short-circuit for verbose bank transfer descriptions
+  for (const [re, label] of TRANSFER_PATTERNS) {
+    if (re.test(s)) return label;
+  }
+
+  // 1. Strip transaction/confirmation reference tokens and account fragments
+  //    "Transaction#: 20488335973"  →  gone
+  //    "Chk ...8601", "Sav ...1234" →  gone
+  s = s.replace(/\b(?:transaction|confirmation|reference|ref|conf)#?\s*:?\s*[\w-]+/gi, '');
+  s = s.replace(/\b(?:chk|sav|acct|account)\s*\.{0,3}\s*\d+/gi, '');
+
+  // 2. Strip trailing MM/DD date fragment Chase appends to every transaction
   s = s.replace(/\s+\d{2}\/\d{2}$/, '');
 
-  // 2. Strip trailing city + state block (uses known state list as anchor)
+  // 3. Strip trailing city + state block (uses known state list as anchor)
   //    Removes up to 2 preceding all-caps words (city / noise code) + state.
   //    e.g. "K CHICAGO IL" → gone; "SAN FRANCISCO CA" → gone
   s = s.replace(TRAILING_LOCATION_RE, '');
 
-  // 3. Strip store / reference numbers that follow # or *
-  //    "#606393", "*12345" — digit-only sequences after the sigil
-  s = s.replace(/\s*[#*]\d+/g, '');
+  // 4. Strip phone numbers in NNN-NNN-NNNN, NNN.NNN.NNNN, or NNN NNN NNNN format
+  s = s.replace(/\b\d{3}[.\-\s]\d{3}[.\-\s]\d{4}\b/g, '');
 
-  // 4. Strip long all-digit sequences (≥6 digits: phone numbers, account refs)
+  // 5. Replace * with a space ("PAYPAL *MICROSOFT" → "PAYPAL MICROSOFT")
+  //    Handles AMEX-style "UBER* EATS" and PayPal vendor asterisks.
+  //    Note: step 6 still catches #DIGITS; this step handles * before text.
+  s = s.replace(/\s*\*\s*/g, ' ');
+
+  // 6. Strip store/reference numbers that follow # (e.g. "#606393")
+  s = s.replace(/\s*#\d+/g, '');
+
+  // 7. Strip long all-digit sequences (≥6 digits: account refs, confirmation numbers)
   s = s.replace(/\b\d{6,}\b/g, '');
 
-  // 5. Strip standalone single capital letters (Chase noise codes like "K")
+  // 8. Strip trailing standalone short numbers (3–5 digits) — store location codes
+  //    "MCDONALDS 6298" → "MCDONALDS"
+  //    Runs after phone removal so remnants of stripped phone numbers are gone.
+  s = s.replace(/\s+\d{3,5}(?=\s|$)/g, '');
+
+  // 9. Strip standalone single capital letters (Chase noise codes like "K")
   s = s.replace(/(?:^|\s)\b[A-Z]\b(?=\s|$)/g, ' ');
 
-  // 6. Strip domain/URL fragments (e.g. ".COM", "AMZN.COM/BI")
+  // 10. Strip domain/URL fragments (e.g. "AMZN.COM/BI", ".COM")
   s = s.replace(/\s*\S+\.(com|net|org|io|co)(\S*)?/gi, '');
 
-  // 7. Normalize whitespace
+  // 11. Strip trailing punctuation and separator characters left after cleanup
+  s = s.replace(/[\s:.,#\-]+$/, '');
+
+  // 12. Normalize whitespace
   s = s.replace(/\s+/g, ' ').trim();
 
-  // Safety fallback: if all content was stripped, title-case the raw input
+  // Safety fallback: if everything was stripped, title-case first 3 words of original
   if (!s) return toTitleCase(raw.trim().split(/\s+/).slice(0, 3).join(' '));
 
   return toTitleCase(s);
