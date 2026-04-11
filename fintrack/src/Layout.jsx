@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useApp } from './AppContext';
 import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
@@ -43,9 +42,12 @@ function MoonIcon() {
 }
 
 export default function Layout() {
-  const { transactions, loading, darkMode, toggleDark, user, signOut, editTxn, setEditTxn } = useApp();
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [csvModalOpen, setCsvModalOpen] = useState(false);
+  const {
+    transactions, loading, darkMode, toggleDark, user, signOut,
+    editTxn, setEditTxn,
+    addModalOpen, setAddModalOpen,
+    csvModalOpen, setCsvModalOpen,
+  } = useApp();
 
   // Stat cards show current-month figures only
   const monthTxns = filterMonth(transactions, currentMonthAbbr());

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { txns as sampleTxns, goals as defaultGoals, goalClrMap, GOAL_COLORS } from './data';
+import { goalClrMap, GOAL_COLORS } from './data';
 
 const AppContext = createContext(null);
 
@@ -32,6 +32,10 @@ export function AppProvider({ children }) {
   // ── Transaction state ────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading]           = useState(false);
+
+  // ── Modal open state (centralised so any page can trigger them) ─────────────
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
 
   // ── Edit state ───────────────────────────────────────────────────────────────
   const [editTxn, setEditTxn] = useState(null);
@@ -93,51 +97,17 @@ export function AppProvider({ children }) {
 
   async function loadTransactions(currentUser) {
     setLoading(true);
-    console.log('[fintrack] Fetching transactions for user:', currentUser.id);
-
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
-      .eq('user_id', currentUser.id)         // belt-and-suspenders alongside RLS
+      .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false });
-
     if (error) {
       console.error('[fintrack] Fetch failed:', error);
-      setTransactions(sampleTxns);
       setLoading(false);
       return;
     }
-
-    console.log(`[fintrack] Fetched ${data.length} row(s).`);
-
-    if (data.length === 0) {
-      // New user — seed their account with sample transactions
-      console.log('[fintrack] Seeding sample transactions for new user…');
-
-      const rows = sampleTxns.map((t) => ({
-        name:    t.name,
-        cat:     t.cat,
-        amt:     t.amt,
-        date:    t.date,
-        user_id: currentUser.id,
-      }));
-
-      const { data: inserted, error: seedError } = await supabase
-        .from('transactions')
-        .insert(rows)
-        .select();
-
-      if (seedError) {
-        console.error('[fintrack] Seed insert failed:', seedError);
-        setTransactions(sampleTxns);
-      } else {
-        console.log(`[fintrack] Seeded ${inserted.length} transaction(s).`);
-        setTransactions(inserted.map(dbRowToTxn));
-      }
-    } else {
-      setTransactions(data.map(dbRowToTxn));
-    }
-
+    setTransactions(data.map(dbRowToTxn));
     setLoading(false);
   }
 
@@ -159,24 +129,7 @@ export function AppProvider({ children }) {
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: true });
     if (error) { console.error('[fintrack] Goals fetch failed:', error); return; }
-
-    if (data.length === 0) {
-      // Seed default goals for new users
-      const rows = defaultGoals.map((g) => ({
-        user_id: currentUser.id,
-        name:    g.name,
-        target:  g.target,
-        saved:   g.saved,
-        monthly: g.monthly,
-        color:   g.clr,
-      }));
-      const { data: inserted, error: seedErr } = await supabase
-        .from('goals').insert(rows).select();
-      if (seedErr) { console.error('[fintrack] Goals seed failed:', seedErr); return; }
-      setGoalsData(inserted.map(dbRowToGoal));
-    } else {
-      setGoalsData(data.map(dbRowToGoal));
-    }
+    setGoalsData(data.map(dbRowToGoal));
   }
 
   // ── Auth actions ─────────────────────────────────────────────────────────────
@@ -342,6 +295,13 @@ export function AppProvider({ children }) {
         deleteTransaction,
         bulkInsertTransactions,
         loading,
+        // modal triggers (usable from any page)
+        addModalOpen,
+        setAddModalOpen,
+        csvModalOpen,
+        setCsvModalOpen,
+        openAddModal: () => setAddModalOpen(true),
+        openCsvModal: () => setCsvModalOpen(true),
         // edit state
         editTxn,
         setEditTxn,

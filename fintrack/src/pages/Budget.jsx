@@ -8,7 +8,7 @@ import {
 } from '../utils';
 
 export default function Budget() {
-  const { transactions, budgetOverrides } = useApp();
+  const { transactions, loading, budgetOverrides, openAddModal, openCsvModal } = useApp();
 
   // Compute this month's spending per category from real transactions
   const currExpenses = groupExpensesByCategory(
@@ -34,6 +34,7 @@ export default function Budget() {
     return pct >= 0.85 && pct < 1;
   }).length;
   const onTrack = liveBudgets.length - overBudget - approaching;
+  const hasTransactions = transactions.length > 0;
 
   return (
     <>
@@ -70,6 +71,25 @@ export default function Budget() {
           </span>
         )}
       </div>
+
+      {/* No-transactions hint */}
+      {!loading && !hasTransactions && (
+        <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-xl px-4 py-3.5 mb-5 flex items-center justify-between gap-3 transition-colors">
+          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed m-0">
+            No transactions yet. Add one or import a CSV to track spending against these limits.
+          </p>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={openAddModal}
+              className="text-xs font-medium px-2.5 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 whitespace-nowrap transition-colors">
+              + Add
+            </button>
+            <button onClick={openCsvModal}
+              className="text-xs font-medium px-2.5 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 whitespace-nowrap transition-colors">
+              Import
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Budget progress bars with live spent amounts */}
       {liveBudgets.map((b) => (

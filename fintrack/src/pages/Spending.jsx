@@ -64,7 +64,7 @@ function buildInsight(currExpenses, prevExpenses, monthLabel) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Spending() {
-  const { transactions } = useApp();
+  const { transactions, loading, openAddModal, openCsvModal } = useApp();
 
   const currAbbr  = currentMonthAbbr();
   const prevAbbr  = prevMonthAbbr();
@@ -107,6 +107,28 @@ export default function Spending() {
   };
 
   const insight = buildInsight(currExpenses, prevExpenses, monthLabel);
+  const hasAnyTransactions = transactions.length > 0;
+
+  if (!loading && !hasAnyTransactions) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1.5">No spending data yet</p>
+        <p className="text-xs text-gray-400 mb-6 leading-relaxed">
+          Add transactions or import a CSV to see your spending breakdown.
+        </p>
+        <div className="flex gap-2.5 justify-center flex-wrap">
+          <button onClick={openAddModal}
+            className="text-xs font-medium px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors">
+            + Add transaction
+          </button>
+          <button onClick={openCsvModal}
+            className="text-xs font-medium px-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
+            Import from CSV
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
