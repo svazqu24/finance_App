@@ -76,7 +76,7 @@ export default function Layout() {
 
           {/* Right side: controls + user */}
           <div className="flex flex-col items-end gap-2 pt-1">
-            {/* Row 1: dark toggle · date · sign out */}
+            {/* Row 1: dark toggle · date · sign out · email */}
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleDark}
@@ -93,13 +93,14 @@ export default function Layout() {
                 Sign out
               </button>
             </div>
-            {/* Row 2: user email · add button */}
+            {/* Row 2: email (sm+ only) */}
+            {user?.email && (
+              <span className="hidden sm:inline text-[11px] text-gray-400 truncate max-w-[200px]">
+                {user.email}
+              </span>
+            )}
+            {/* Row 3: action buttons — always visible on their own row */}
             <div className="flex items-center gap-2">
-              {user?.email && (
-                <span className="text-[11px] text-gray-400 truncate max-w-[160px]">
-                  {user.email}
-                </span>
-              )}
               <button
                 onClick={() => setCsvModalOpen(true)}
                 className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
