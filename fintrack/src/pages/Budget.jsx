@@ -8,17 +8,18 @@ import {
 } from '../utils';
 
 export default function Budget() {
-  const { transactions } = useApp();
+  const { transactions, budgetOverrides } = useApp();
 
   // Compute this month's spending per category from real transactions
   const currExpenses = groupExpensesByCategory(
     filterMonth(transactions, currentMonthAbbr())
   );
 
-  // Merge hardcoded budget limits with live spent amounts
+  // Merge hardcoded budget limits with user overrides + live spent amounts
   const liveBudgets = budgets.map((b) => ({
     ...b,
-    spent: Math.round((currExpenses[b.cat] || 0) * 100) / 100,
+    budget: budgetOverrides[b.cat] ?? b.budget,
+    spent:  Math.round((currExpenses[b.cat] || 0) * 100) / 100,
   }));
 
   // Summary totals

@@ -105,6 +105,19 @@ export const bills = [
   { name: 'Spotify', amt: 10.99, due: 'May 1', cat: 'Subscriptions' },
 ];
 
+/** Preset goal color palette — clr is the bar/accent, bg/fg are the avatar chip */
+export const GOAL_COLORS = [
+  { clr: '#185FA5', bg: '#BAD6F2', fg: '#0C447C' },
+  { clr: '#1D9E75', bg: '#B4E5D0', fg: '#085041' },
+  { clr: '#7F77DD', bg: '#D8D5F5', fg: '#3C3489' },
+  { clr: '#D85A30', bg: '#F5C9B8', fg: '#993C1D' },
+  { clr: '#D4537E', bg: '#F2C2D0', fg: '#72243E' },
+  { clr: '#BA7517', bg: '#F5DEB0', fg: '#633806' },
+  { clr: '#639922', bg: '#C8EBB4', fg: '#27500A' },
+  { clr: '#5F5E5A', bg: '#DDDBD3', fg: '#444441' },
+];
+export const goalClrMap = Object.fromEntries(GOAL_COLORS.map((c) => [c.clr, c]));
+
 export const goals = [
   { name: 'Emergency fund', target: 15000, saved: 9540, monthly: 400, clr: '#185FA5', bg: '#BAD6F2', fg: '#0C447C' },
   { name: 'Japan vacation', target: 4500, saved: 1800, monthly: 200, clr: '#1D9E75', bg: '#B4E5D0', fg: '#085041' },

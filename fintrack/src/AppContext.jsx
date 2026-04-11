@@ -1,18 +1,26 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { txns as sampleTxns } from './data';
+import { txns as sampleTxns, goals as defaultGoals, goalClrMap, GOAL_COLORS } from './data';
 
 const AppContext = createContext(null);
 
 // Map a Supabase row → the shape the rest of the app expects.
 // Table columns: id, name, cat, amt, date, user_id, created_at
 function dbRowToTxn(row) {
+  return { id: row.id, name: row.name, cat: row.cat, amt: row.amt, date: row.date };
+}
+
+function dbRowToGoal(row) {
+  const palette = goalClrMap[row.color] || GOAL_COLORS[0];
   return {
-    id:   row.id,
-    name: row.name,
-    cat:  row.cat,
-    amt:  row.amt,
-    date: row.date,
+    id:      row.id,
+    name:    row.name,
+    target:  Number(row.target),
+    saved:   Number(row.saved),
+    monthly: Number(row.monthly),
+    clr:     palette.clr,
+    bg:      palette.bg,
+    fg:      palette.fg,
   };
 }
 
@@ -27,6 +35,13 @@ export function AppProvider({ children }) {
 
   // ── Edit state ───────────────────────────────────────────────────────────────
   const [editTxn, setEditTxn] = useState(null);
+  const [editGoal, setEditGoal] = useState(null);
+
+  // ── Budget overrides: { cat: customLimit } ────────────────────────────────
+  const [budgetOverrides, setBudgetOverrides] = useState({});
+
+  // ── Goals ─────────────────────────────────────────────────────────────────
+  const [goalsData, setGoalsData] = useState([]);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   // Lazy initializer reads localStorage so the preference survives refreshes
@@ -63,13 +78,17 @@ export function AppProvider({ children }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ── Load transactions whenever the logged-in user changes ────────────────────
+  // ── Load data whenever the logged-in user changes ────────────────────────────
   useEffect(() => {
     if (!user) {
       setTransactions([]);
+      setBudgetOverrides({});
+      setGoalsData([]);
       return;
     }
     loadTransactions(user);
+    loadBudgetOverrides(user);
+    loadGoals(user);
   }, [user]);
 
   async function loadTransactions(currentUser) {
@@ -120,6 +139,44 @@ export function AppProvider({ children }) {
     }
 
     setLoading(false);
+  }
+
+  async function loadBudgetOverrides(currentUser) {
+    const { data, error } = await supabase
+      .from('budgets')
+      .select('cat, budget')
+      .eq('user_id', currentUser.id);
+    if (error) { console.error('[fintrack] Budget fetch failed:', error); return; }
+    const map = {};
+    for (const row of data) map[row.cat] = Number(row.budget);
+    setBudgetOverrides(map);
+  }
+
+  async function loadGoals(currentUser) {
+    const { data, error } = await supabase
+      .from('goals')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+    if (error) { console.error('[fintrack] Goals fetch failed:', error); return; }
+
+    if (data.length === 0) {
+      // Seed default goals for new users
+      const rows = defaultGoals.map((g) => ({
+        user_id: currentUser.id,
+        name:    g.name,
+        target:  g.target,
+        saved:   g.saved,
+        monthly: g.monthly,
+        color:   g.clr,
+      }));
+      const { data: inserted, error: seedErr } = await supabase
+        .from('goals').insert(rows).select();
+      if (seedErr) { console.error('[fintrack] Goals seed failed:', seedErr); return; }
+      setGoalsData(inserted.map(dbRowToGoal));
+    } else {
+      setGoalsData(data.map(dbRowToGoal));
+    }
   }
 
   // ── Auth actions ─────────────────────────────────────────────────────────────
@@ -207,6 +264,46 @@ export function AppProvider({ children }) {
     setTransactions((prev) => [dbRowToTxn(data), ...prev]);
   }
 
+  // ── Budget limit actions ──────────────────────────────────────────────────
+  async function saveBudgetLimit(cat, budget) {
+    if (!user) return;
+    const { error } = await supabase
+      .from('budgets')
+      .upsert({ user_id: user.id, cat, budget }, { onConflict: 'user_id,cat' });
+    if (error) { console.error('[fintrack] Budget upsert failed:', error); return; }
+    setBudgetOverrides((prev) => ({ ...prev, [cat]: budget }));
+  }
+
+  // ── Goal actions ──────────────────────────────────────────────────────────
+  async function addGoal(goal) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('goals')
+      .insert({ user_id: user.id, name: goal.name, target: goal.target, saved: goal.saved, monthly: goal.monthly, color: goal.color })
+      .select().single();
+    if (error) { console.error('[fintrack] Goal insert failed:', error); return; }
+    setGoalsData((prev) => [...prev, dbRowToGoal(data)]);
+  }
+
+  async function updateGoal(id, updates) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('goals')
+      .update({ name: updates.name, target: updates.target, saved: updates.saved, monthly: updates.monthly, color: updates.color })
+      .eq('id', id).eq('user_id', user.id)
+      .select().single();
+    if (error) { console.error('[fintrack] Goal update failed:', error); return; }
+    setGoalsData((prev) => prev.map((g) => (g.id === id ? dbRowToGoal(data) : g)));
+  }
+
+  async function deleteGoal(id) {
+    if (!user) return;
+    const { error } = await supabase
+      .from('goals').delete().eq('id', id).eq('user_id', user.id);
+    if (error) { console.error('[fintrack] Goal delete failed:', error); return; }
+    setGoalsData((prev) => prev.filter((g) => g.id !== id));
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -228,6 +325,16 @@ export function AppProvider({ children }) {
         // edit state
         editTxn,
         setEditTxn,
+        // budget overrides
+        budgetOverrides,
+        saveBudgetLimit,
+        // goals
+        goalsData,
+        addGoal,
+        updateGoal,
+        deleteGoal,
+        editGoal,
+        setEditGoal,
         // ui
         darkMode,
         toggleDark: () => setDarkMode((d) => !d),
