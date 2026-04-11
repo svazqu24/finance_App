@@ -60,6 +60,7 @@ const DESC_PATTERNS  = [
 const AMT_PATTERNS   = ['amount', 'transaction amount', 'amt', 'net amount'];
 const DEBIT_PATTERNS = ['debit', 'debit amount', 'withdrawal', 'withdrawal amount', 'debit/credit'];
 const CREDIT_PATTERNS= ['credit', 'credit amount', 'deposit', 'deposit amount'];
+const CAT_PATTERNS   = ['category', 'transaction category', 'spend category'];
 
 function matchIdx(headers, patterns) {
   const lc = headers.map((h) => h.toLowerCase().trim());
@@ -87,6 +88,7 @@ export function detectColumns(headers) {
   const amtCol   = matchIdx(headers, AMT_PATTERNS);
   const debitCol = matchIdx(headers, DEBIT_PATTERNS);
   const creditCol= matchIdx(headers, CREDIT_PATTERNS);
+  const catCol   = matchIdx(headers, CAT_PATTERNS);
 
   const hasDebitCredit = debitCol !== -1 && creditCol !== -1;
   const amtMode = hasDebitCredit && amtCol === -1 ? 'debitcredit' : 'single';
@@ -99,6 +101,7 @@ export function detectColumns(headers) {
     amtCol:  resolvedAmtCol,
     debitCol: hasDebitCredit ? debitCol : -1,
     creditCol: hasDebitCredit ? creditCol : -1,
+    catCol,
     signConvention: 'negative-expense',
   };
 }
@@ -281,6 +284,22 @@ export function cleanDescription(raw) {
   return toTitleCase(s);
 }
 
+// ── Chase credit card category mapping ───────────────────────────────────────
+
+/** Map Chase credit card category labels → FinTrack categories. */
+export const CHASE_CC_CATEGORY_MAP = {
+  'food & drink':      'Dining',
+  'shopping':          'Shopping',
+  'travel':            'Travel',
+  'bills & utilities': 'Utilities',
+  'entertainment':     'Subscriptions',
+  'health & wellness': 'Health',
+  'groceries':         'Groceries',
+  'gas':               'Transport',
+  'home':              'Housing',
+  'payment':           'Income',
+};
+
 // ── Category guessing ─────────────────────────────────────────────────────────
 
 const CATEGORY_RULES = [
@@ -312,9 +331,10 @@ export function guessCategory(desc) {
  * Convert raw CSV data rows (string[][]) into preview rows using the column mapping.
  * @param {string[][]} rows - data rows (no header)
  * @param {object} mapping
+ * @param {object|null} categoryMap - optional map of raw category string → app category
  * @returns {{ name, date, amt, cat, _key }[]}
  */
-export function buildRows(rows, mapping) {
+export function buildRows(rows, mapping, categoryMap = null) {
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const cells = rows[i];
@@ -325,7 +345,13 @@ export function buildRows(rows, mapping) {
     const amt     = computeAmount(cells, mapping);
     // Skip rows with no name or zero amount
     if (!name || amt === 0) continue;
-    const cat = amt > 0 ? 'Income' : guessCategory(name);
+    let cat;
+    if (categoryMap && mapping.catCol >= 0 && cells[mapping.catCol]) {
+      const rawCat = String(cells[mapping.catCol]).toLowerCase().trim();
+      cat = categoryMap[rawCat] || (amt > 0 ? 'Income' : guessCategory(name));
+    } else {
+      cat = amt > 0 ? 'Income' : guessCategory(name);
+    }
     result.push({ _key: i, name, date, amt, cat });
   }
   return result;

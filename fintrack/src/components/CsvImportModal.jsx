@@ -3,6 +3,7 @@ import { useApp } from '../AppContext';
 import {
   parseCSV, detectColumns, isAutoDetectComplete,
   buildRows, computeAmount, parseAmount,
+  CHASE_CC_CATEGORY_MAP,
 } from '../utils/csvParser';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -26,6 +27,7 @@ const DEFAULT_MAPPING = {
   amtCol: -1,
   debitCol: -1,
   creditCol: -1,
+  catCol: -1,
   signConvention: 'negative-expense',
 };
 
@@ -77,6 +79,18 @@ function isChaseFormat(hdrs) {
     lc.has('amount') &&
     lc.has('type') &&
     lc.has('balance')
+  );
+}
+
+function isChaseCCFormat(hdrs) {
+  const lc = new Set(hdrs.map((h) => h.toLowerCase().trim()));
+  return (
+    lc.has('transaction date') &&
+    lc.has('post date') &&
+    lc.has('description') &&
+    lc.has('category') &&
+    lc.has('type') &&
+    lc.has('amount')
   );
 }
 
@@ -134,9 +148,11 @@ export default function CsvImportModal({ open, onClose }) {
     setDataRows(data);
     setMapping(detected);
     setFileName(name || '');
-    setDetectedFormat(isChaseFormat(hdrs) ? 'chase' : null);
+    const fmt = isChaseFormat(hdrs) ? 'chase' : isChaseCCFormat(hdrs) ? 'chase-cc' : null;
+    setDetectedFormat(fmt);
     if (isAutoDetectComplete(detected)) {
-      const built = buildRows(data, detected);
+      const catMap = fmt === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
+      const built = buildRows(data, detected, catMap);
       if (built.length === 0) {
         setParseError('Columns were detected but no valid rows could be parsed. Check that dates and amounts are in expected formats.');
         return;
@@ -173,7 +189,8 @@ export default function CsvImportModal({ open, onClose }) {
   }
 
   function applyMapping() {
-    const built = buildRows(dataRows, mapping);
+    const catMap = detectedFormat === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
+    const built = buildRows(dataRows, mapping, catMap);
     if (built.length === 0) {
       setParseError('No valid rows found with these column settings. Check your column assignments.');
       return;
@@ -464,12 +481,12 @@ export default function CsvImportModal({ open, onClose }) {
                   <p className="text-[11px] text-gray-400">
                     {activeRows.length} of {rows.length} rows selected
                   </p>
-                  {detectedFormat === 'chase' && (
+                  {detectedFormat && (
                     <span
                       className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                       style={{ background: '#C8EBB4', color: '#27500A' }}
                     >
-                      Chase format detected
+                      {detectedFormat === 'chase-cc' ? 'Chase credit card detected' : 'Chase format detected'}
                     </span>
                   )}
                 </div>
@@ -487,13 +504,17 @@ export default function CsvImportModal({ open, onClose }) {
               {(() => {
                 // Columns already represented by the parsed fields
                 const usedCols = new Set(
-                  [mapping.dateCol, mapping.descCol, mapping.amtCol, mapping.debitCol, mapping.creditCol]
+                  [mapping.dateCol, mapping.descCol, mapping.amtCol,
+                   mapping.debitCol, mapping.creditCol, mapping.catCol]
                     .filter((i) => i >= 0)
                 );
-                // Extra raw columns to show (e.g. Type, Balance for Chase)
-                const extraCols = headers
-                  .map((h, i) => ({ h, i }))
-                  .filter(({ i }) => !usedCols.has(i));
+                // Chase CC: only show the 4 primary columns (Date, Description, Amount, Category)
+                // Chase checking: show all extra raw columns (Type, Balance, etc.)
+                const extraCols = detectedFormat === 'chase-cc'
+                  ? []
+                  : headers
+                      .map((h, i) => ({ h, i }))
+                      .filter(({ i }) => !usedCols.has(i));
 
                 return (
                   <table className="w-full text-xs border-collapse">
