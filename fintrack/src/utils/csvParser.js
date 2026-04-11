@@ -35,21 +35,40 @@ function parseLine(line) {
 
 // ── Column detection ──────────────────────────────────────────────────────────
 
-const DATE_PATTERNS  = ['date', 'transaction date', 'trans date', 'posted date', 'posting date', 'trans.date'];
-const DESC_PATTERNS  = ['description', 'memo', 'payee', 'merchant', 'name', 'narrative',
-                        'original description', 'transaction description', 'details'];
+// Most-specific patterns come first so exact + partial matching
+// always prefers the right column when a header like "Posting Date" exists
+// alongside a more generic column that also contains the word "date".
+const DATE_PATTERNS  = [
+  'posting date',      // Chase checking  (most specific — must beat generic "date")
+  'transaction date',  // Chase credit, Mint, many others
+  'trans date',
+  'posted date',
+  'trans.date',
+  'date',              // generic — kept last to avoid false positives
+];
+const DESC_PATTERNS  = [
+  'description',
+  'original description',
+  'transaction description',
+  'memo',
+  'payee',
+  'merchant',
+  'narrative',
+  'name',
+  'details',           // kept last — Chase "Details" col is type, not description
+];
 const AMT_PATTERNS   = ['amount', 'transaction amount', 'amt', 'net amount'];
 const DEBIT_PATTERNS = ['debit', 'debit amount', 'withdrawal', 'withdrawal amount', 'debit/credit'];
 const CREDIT_PATTERNS= ['credit', 'credit amount', 'deposit', 'deposit amount'];
 
 function matchIdx(headers, patterns) {
   const lc = headers.map((h) => h.toLowerCase().trim());
-  // Exact match first
+  // Exact match first (order of patterns matters)
   for (const p of patterns) {
     const i = lc.indexOf(p);
     if (i !== -1) return i;
   }
-  // Partial/contains match
+  // Partial/contains match (same priority order)
   for (const p of patterns) {
     const i = lc.findIndex((h) => h.includes(p));
     if (i !== -1) return i;
@@ -153,6 +172,79 @@ export function dateToAppFmt(d) {
   return `${ABBRS[d.getMonth()]} ${d.getDate()}`;
 }
 
+// ── Description cleaning ──────────────────────────────────────────────────────
+
+// US state abbreviations used as an anchor to strip trailing city+state blocks.
+// We match the state as a whole word at end-of-string so "SHELL OIL" (ends in
+// "IL" but not " IL") and "HOLIDAY INN" (ends in "INN" not " IN") are safe.
+const TRAILING_LOCATION_RE = new RegExp(
+  String.raw`\s+(?:[A-Z]+\s+){0,2}` +
+  String.raw`(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|` +
+  String.raw`MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|` +
+  String.raw`SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)$`
+);
+
+const SMALL_WORDS = new Set([
+  'a','an','the','and','but','or','for','nor','on','at','to','by','in','of','up','as','is','it',
+]);
+
+function toTitleCase(s) {
+  return s
+    .toLowerCase()
+    .split(' ')
+    .map((w, i) => (!w || (i > 0 && SMALL_WORDS.has(w)))
+      ? w
+      : w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/**
+ * Clean a raw bank description into a human-readable merchant name.
+ *
+ * Handles Chase-style suffixes:
+ *   "PANERA BREAD #606393 K CHICAGO IL 04/09" → "Panera Bread"
+ *   "SHELL GAS 1234567890 EVANSTON IL 04/08"  → "Shell Gas"
+ *   "NETFLIX.COM 04/09"                        → "Netflix"
+ *   "UNITED AIRLINES 1234567 CHICAGO IL 04/07" → "United Airlines"
+ *
+ * Safe for non-Chase descriptions: only strips patterns that are
+ * unambiguously noise (trailing date fragments, known state abbreviations,
+ * store reference numbers, long digit sequences, single-letter codes).
+ */
+export function cleanDescription(raw) {
+  if (!raw) return '';
+  let s = raw.trim();
+
+  // 1. Strip trailing MM/DD date fragment Chase appends to every transaction
+  s = s.replace(/\s+\d{2}\/\d{2}$/, '');
+
+  // 2. Strip trailing city + state block (uses known state list as anchor)
+  //    Removes up to 2 preceding all-caps words (city / noise code) + state.
+  //    e.g. "K CHICAGO IL" → gone; "SAN FRANCISCO CA" → gone
+  s = s.replace(TRAILING_LOCATION_RE, '');
+
+  // 3. Strip store / reference numbers that follow # or *
+  //    "#606393", "*12345" — digit-only sequences after the sigil
+  s = s.replace(/\s*[#*]\d+/g, '');
+
+  // 4. Strip long all-digit sequences (≥6 digits: phone numbers, account refs)
+  s = s.replace(/\b\d{6,}\b/g, '');
+
+  // 5. Strip standalone single capital letters (Chase noise codes like "K")
+  s = s.replace(/(?:^|\s)\b[A-Z]\b(?=\s|$)/g, ' ');
+
+  // 6. Strip domain/URL fragments (e.g. ".COM", "AMZN.COM/BI")
+  s = s.replace(/\s*\S+\.(com|net|org|io|co)(\S*)?/gi, '');
+
+  // 7. Normalize whitespace
+  s = s.replace(/\s+/g, ' ').trim();
+
+  // Safety fallback: if all content was stripped, title-case the raw input
+  if (!s) return toTitleCase(raw.trim().split(/\s+/).slice(0, 3).join(' '));
+
+  return toTitleCase(s);
+}
+
 // ── Category guessing ─────────────────────────────────────────────────────────
 
 const CATEGORY_RULES = [
@@ -190,7 +282,7 @@ export function buildRows(rows, mapping) {
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const cells = rows[i];
-    const name = String(cells[mapping.descCol] || '').trim();
+    const name = cleanDescription(String(cells[mapping.descCol] || ''));
     const rawDate = cells[mapping.dateCol] || '';
     const parsed  = parseDate(rawDate);
     const date    = parsed ? dateToAppFmt(parsed) : rawDate;
