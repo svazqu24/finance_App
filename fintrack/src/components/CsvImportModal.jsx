@@ -66,22 +66,37 @@ function CheckIcon() {
   );
 }
 
+// ── Chase format detection ────────────────────────────────────────────────────
+
+function isChaseFormat(hdrs) {
+  const lc = new Set(hdrs.map((h) => h.toLowerCase().trim()));
+  return (
+    lc.has('details') &&
+    lc.has('posting date') &&
+    lc.has('description') &&
+    lc.has('amount') &&
+    lc.has('type') &&
+    lc.has('balance')
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function CsvImportModal({ open, onClose }) {
   const { bulkInsertTransactions } = useApp();
 
-  const [step, setStep]           = useState('upload');
-  const [fileName, setFileName]   = useState('');
-  const [pasteText, setPasteText] = useState('');
-  const [showPaste, setShowPaste] = useState(false);
+  const [step, setStep]             = useState('upload');
+  const [fileName, setFileName]     = useState('');
+  const [pasteText, setPasteText]   = useState('');
+  const [showPaste, setShowPaste]   = useState(false);
   const [parseError, setParseError] = useState('');
-  const [headers, setHeaders]     = useState([]);
-  const [dataRows, setDataRows]   = useState([]);  // string[][]
-  const [mapping, setMapping]     = useState(DEFAULT_MAPPING);
-  const [rows, setRows]           = useState([]);  // { _key, name, date, amt, cat }[]
+  const [headers, setHeaders]       = useState([]);
+  const [dataRows, setDataRows]     = useState([]);  // string[][]
+  const [mapping, setMapping]       = useState(DEFAULT_MAPPING);
+  const [rows, setRows]             = useState([]);  // { _key, name, date, amt, cat }[]
   const [submitting, setSubmitting] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [detectedFormat, setDetectedFormat] = useState(null); // 'chase' | null
 
   const fileRef = useRef(null);
 
@@ -99,6 +114,7 @@ export default function CsvImportModal({ open, onClose }) {
       setRows([]);
       setImportedCount(0);
       setSubmitting(false);
+      setDetectedFormat(null);
     }
   }, [open]);
 
@@ -118,6 +134,7 @@ export default function CsvImportModal({ open, onClose }) {
     setDataRows(data);
     setMapping(detected);
     setFileName(name || '');
+    setDetectedFormat(isChaseFormat(hdrs) ? 'chase' : null);
     if (isAutoDetectComplete(detected)) {
       const built = buildRows(data, detected);
       if (built.length === 0) {
@@ -239,17 +256,22 @@ export default function CsvImportModal({ open, onClose }) {
           {/* Step breadcrumb */}
           {step !== 'success' && (
             <div className="flex items-center gap-1.5 mt-2.5">
-              {['upload','mapping','preview'].map((s, i) => {
-                const steps = ['upload', 'mapping', 'preview'];
-                const idx = steps.indexOf(step);
+              {(detectedFormat
+                ? ['upload', 'preview']
+                : ['upload', 'mapping', 'preview']
+              ).map((s, i, arr) => {
+                const idx = arr.indexOf(step);
                 const done = i < idx;
                 const active = s === step;
+                const labels = detectedFormat
+                  ? ['Upload', 'Preview']
+                  : ['Upload', 'Map columns', 'Preview'];
                 return (
                   <div key={s} className="flex items-center gap-1.5">
                     <span className={`text-[11px] font-medium ${active ? 'text-gray-900 dark:text-white' : done ? 'text-gray-400' : 'text-gray-300 dark:text-gray-600'}`}>
-                      {['Upload', 'Map columns', 'Preview'][i]}
+                      {labels[i]}
                     </span>
-                    {i < 2 && <span className="text-gray-200 dark:text-gray-700">›</span>}
+                    {i < arr.length - 1 && <span className="text-gray-200 dark:text-gray-700">›</span>}
                   </div>
                 );
               })}
@@ -437,67 +459,101 @@ export default function CsvImportModal({ open, onClose }) {
           {step === 'preview' && (
             <div>
               {/* Detected mapping banner */}
-              <div className="px-5 py-2.5 bg-gray-50 dark:bg-gray-700/40 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                <p className="text-[11px] text-gray-400">
-                  {activeRows.length} of {rows.length} rows selected
-                </p>
-                <button
-                  onClick={() => setStep('mapping')}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline transition-colors"
-                >
-                  Edit column mapping
-                </button>
+              <div className="px-5 py-2.5 bg-gray-50 dark:bg-gray-700/40 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-[11px] text-gray-400">
+                    {activeRows.length} of {rows.length} rows selected
+                  </p>
+                  {detectedFormat === 'chase' && (
+                    <span
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                      style={{ background: '#C8EBB4', color: '#27500A' }}
+                    >
+                      Chase format detected
+                    </span>
+                  )}
+                </div>
+                {!detectedFormat && (
+                  <button
+                    onClick={() => setStep('mapping')}
+                    className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline transition-colors flex-shrink-0"
+                  >
+                    Edit column mapping
+                  </button>
+                )}
               </div>
 
               {/* Preview table */}
-              <table className="w-full text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-700">
-                    <th className="px-3 py-2 text-left text-gray-400 font-medium w-8"></th>
-                    <th className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">Date</th>
-                    <th className="px-3 py-2 text-left text-gray-400 font-medium">Description</th>
-                    <th className="px-3 py-2 text-right text-gray-400 font-medium whitespace-nowrap">Amount</th>
-                    <th className="px-3 py-2 text-left text-gray-400 font-medium">Category</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr
-                      key={row._key}
-                      className={`border-b border-gray-50 dark:border-gray-700/50 ${row.skip ? 'opacity-40' : ''}`}
-                    >
-                      <td className="px-3 py-1.5">
-                        <input
-                          type="checkbox"
-                          checked={!row.skip}
-                          onChange={() => toggleSkip(row._key)}
-                          className="accent-gray-900 dark:accent-white"
-                        />
-                      </td>
-                      <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                        {row.date}
-                      </td>
-                      <td className="px-3 py-1.5 text-gray-800 dark:text-gray-200 max-w-[180px] truncate" title={row.name}>
-                        {row.name}
-                      </td>
-                      <td className="px-3 py-1.5 text-right tabular-nums font-medium whitespace-nowrap"
-                          style={{ color: row.amt > 0 ? '#3B6D11' : '#E24B4A' }}>
-                        {row.amt > 0 ? '+' : '-'}${Math.abs(row.amt).toFixed(2)}
-                      </td>
-                      <td className="px-3 py-1.5">
-                        <select
-                          value={row.cat}
-                          onChange={(e) => setRowCat(row._key, e.target.value)}
-                          className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
-                          disabled={row.skip}
+              {(() => {
+                // Columns already represented by the parsed fields
+                const usedCols = new Set(
+                  [mapping.dateCol, mapping.descCol, mapping.amtCol, mapping.debitCol, mapping.creditCol]
+                    .filter((i) => i >= 0)
+                );
+                // Extra raw columns to show (e.g. Type, Balance for Chase)
+                const extraCols = headers
+                  .map((h, i) => ({ h, i }))
+                  .filter(({ i }) => !usedCols.has(i));
+
+                return (
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-700">
+                        <th className="px-3 py-2 text-left text-gray-400 font-medium w-8"></th>
+                        <th className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">Date</th>
+                        <th className="px-3 py-2 text-left text-gray-400 font-medium">Description</th>
+                        <th className="px-3 py-2 text-right text-gray-400 font-medium whitespace-nowrap">Amount</th>
+                        {extraCols.map(({ h, i }) => (
+                          <th key={i} className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">{h}</th>
+                        ))}
+                        <th className="px-3 py-2 text-left text-gray-400 font-medium">Category</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr
+                          key={row._key}
+                          className={`border-b border-gray-50 dark:border-gray-700/50 ${row.skip ? 'opacity-40' : ''}`}
                         >
-                          {ALL_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <td className="px-3 py-1.5">
+                            <input
+                              type="checkbox"
+                              checked={!row.skip}
+                              onChange={() => toggleSkip(row._key)}
+                              className="accent-gray-900 dark:accent-white"
+                            />
+                          </td>
+                          <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {row.date}
+                          </td>
+                          <td className="px-3 py-1.5 text-gray-800 dark:text-gray-200 max-w-[180px] truncate" title={row.name}>
+                            {row.name}
+                          </td>
+                          <td className="px-3 py-1.5 text-right tabular-nums font-medium whitespace-nowrap"
+                              style={{ color: row.amt > 0 ? '#3B6D11' : '#E24B4A' }}>
+                            {row.amt > 0 ? '+' : '-'}${Math.abs(row.amt).toFixed(2)}
+                          </td>
+                          {extraCols.map(({ i }) => (
+                            <td key={i} className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                              {dataRows[row._key]?.[i] ?? ''}
+                            </td>
+                          ))}
+                          <td className="px-3 py-1.5">
+                            <select
+                              value={row.cat}
+                              onChange={(e) => setRowCat(row._key, e.target.value)}
+                              className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
+                              disabled={row.skip}
+                            >
+                              {ALL_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                );
+              })()}
             </div>
           )}
 
@@ -545,7 +601,7 @@ export default function CsvImportModal({ open, onClose }) {
 
           {step === 'preview' && (
             <>
-              <button onClick={() => setStep(dataRows.length ? 'mapping' : 'upload')}
+              <button onClick={() => setStep(detectedFormat ? 'upload' : 'mapping')}
                 className="flex-1 border border-gray-200 dark:border-gray-600 text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
                 ← Back
               </button>
