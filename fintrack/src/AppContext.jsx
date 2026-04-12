@@ -206,6 +206,13 @@ export function AppProvider({ children }) {
   async function signUp(email, password) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) throw error;
+    // Set onboardingComplete to false for new sign-ups (they should see onboarding)
+    if (data.user) {
+      await supabase
+        .from('user_preferences')
+        .upsert({ user_id: data.user.id, onboarding_complete: false }, { onConflict: 'user_id' })
+        .catch(() => {}); // Ignore errors here, not critical
+    }
     return data; // caller inspects data.session to detect "confirm email" flow
   }
 
@@ -401,10 +408,23 @@ export function AppProvider({ children }) {
       .eq('user_id', currentUser.id)
       .maybeSingle();
     if (error) { console.error('[nero] Prefs fetch failed:', error); setPrefsLoaded(true); return; }
+
     if (data) {
+      // User has existing preferences — use them
       const prefs = dbRowToPrefs(data);
       setPreferences(prefs);
       setDarkMode(prefs.darkMode);
+    } else {
+      // First time this user is loading preferences — assume they're existing user
+      // (unless they just signed up, in which case onboarding_complete would be set to false above)
+      const newPrefs = { ...PREF_DEFAULTS, onboardingComplete: true };
+      setPreferences(newPrefs);
+      setDarkMode(newPrefs.darkMode);
+      // Optionally save this for future loads
+      await supabase
+        .from('user_preferences')
+        .upsert({ user_id: currentUser.id, onboarding_complete: true }, { onConflict: 'user_id' })
+        .catch(() => {}); // Ignore errors
     }
     setPrefsLoaded(true);
   }
