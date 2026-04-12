@@ -24,7 +24,8 @@ function PlusIcon() {
 }
 
 export default function Overview() {
-  const { transactions, loading, openAddModal, openCsvModal } = useApp();
+  const { transactions, loading, openAddModal, openCsvModal, preferences } = useApp();
+  const twoCol = preferences.layoutStyle === 'two-column';
 
   const isEmpty = !loading && transactions.length === 0;
 
@@ -75,9 +76,17 @@ export default function Overview() {
               All →
             </Link>
           </div>
-          {transactions.slice(0, 5).map((t, i) => (
-            <TransactionRow key={i} txn={t} />
-          ))}
+          {twoCol ? (
+            <div className="grid grid-cols-2 gap-2">
+              {transactions.slice(0, 6).map((t, i) => (
+                <TransactionRow key={i} txn={t} />
+              ))}
+            </div>
+          ) : (
+            transactions.slice(0, 5).map((t, i) => (
+              <TransactionRow key={i} txn={t} />
+            ))
+          )}
         </>
       )}
     </>

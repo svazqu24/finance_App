@@ -1,31 +1,24 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from './AppContext';
 import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
 import CsvImportModal from './components/CsvImportModal';
 import BottomNav from './components/BottomNav';
+import { NAV_ITEMS, GearIcon } from './navItems';
 
-const tabs = [
-  { path: 'overview', label: 'Overview' },
-  { path: 'transactions', label: 'Transactions' },
-  { path: 'spending', label: 'Spending' },
-  { path: 'budget', label: 'Budget' },
-  { path: 'bills', label: 'Bills' },
-  { path: 'goals', label: 'Goals' },
-  { path: 'portfolio', label: 'Portfolio' },
+const TOP_TABS = [
+  'overview','transactions','spending','budget','bills','goals','portfolio',
 ];
 
 const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-/** Asymmetric leaf-cut N logo mark */
 function NeroMark({ size = 28 }) {
   return (
     <div
       className="flex items-center justify-center flex-shrink-0 text-white font-semibold"
       style={{
-        width: size,
-        height: size,
+        width: size, height: size,
         background: '#27AE60',
         borderRadius: '10px 3px 10px 3px',
         fontSize: size * 0.5,
@@ -42,14 +35,10 @@ function SunIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" />
-      <line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" />
-      <line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+      <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
     </svg>
   );
 }
@@ -62,111 +51,237 @@ function MoonIcon() {
   );
 }
 
+/** Sidebar used for left / right nav positions */
+function Sidebar({ side }) {
+  const { darkMode, toggleDark, signOut, user } = useApp();
+  return (
+    <aside
+      className="flex-shrink-0 flex flex-col bg-white dark:bg-nero-surface border-gray-200 dark:border-nero-border h-screen sticky top-0 overflow-y-auto"
+      style={{
+        width: 220,
+        borderRight: side === 'left'  ? '1px solid' : undefined,
+        borderLeft:  side === 'right' ? '1px solid' : undefined,
+        borderColor: 'inherit',
+      }}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-100 dark:border-nero-border">
+        <NeroMark size={28} />
+        <span className="text-[18px] font-semibold text-gray-900 dark:text-white tracking-tight">Nero</span>
+      </div>
+
+      {/* Nav links */}
+      <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
+        {NAV_ITEMS.map((item) => (
+          <NavLink
+            key={item.path}
+            to={`/${item.path}`}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${
+                isActive
+                  ? 'text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-nero-bg'
+              }`
+            }
+            style={({ isActive }) => isActive ? { background: '#27AE60' } : {}}
+          >
+            {({ isActive }) => (
+              <>
+                <span className="flex-shrink-0" style={isActive ? { color: 'white' } : {}}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Bottom: dark toggle + user */}
+      <div className="px-4 py-4 border-t border-gray-100 dark:border-nero-border">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={toggleDark}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button
+            onClick={signOut}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+        {user?.email && (
+          <p className="text-[10px] text-gray-400 mt-2 truncate">{user.email}</p>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/** Header row used inside the main content area */
+function Header({ compact }) {
+  const {
+    darkMode, toggleDark, user, signOut,
+    setCsvModalOpen, setAddModalOpen,
+  } = useApp();
+  const navigate = useNavigate();
+
+  return (
+    <div className={`flex justify-between items-start ${compact ? 'mb-3' : 'mb-6'}`}>
+      <div className="flex items-center gap-2.5">
+        <NeroMark size={32} />
+        <p className="text-[26px] font-semibold leading-tight text-gray-900 dark:text-white tracking-tight">
+          Nero
+        </p>
+      </div>
+
+      <div className="flex flex-col items-end gap-2 pt-1">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleDark}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <p className="text-xs text-gray-400 m-0">{monthLabel}</p>
+          <button
+            onClick={() => navigate('/settings')}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            aria-label="Settings"
+          >
+            <GearIcon />
+          </button>
+          <button
+            onClick={signOut}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+          >
+            Sign out
+          </button>
+        </div>
+        {user?.email && (
+          <span className="hidden sm:inline text-[11px] text-gray-400 truncate max-w-[200px]">
+            {user.email}
+          </span>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setCsvModalOpen(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+          >
+            Import CSV
+          </button>
+          <button
+            onClick={() => setAddModalOpen(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+            style={{ background: '#27AE60' }}
+          >
+            + Add Transaction
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Layout() {
   const {
-    transactions, loading, darkMode, toggleDark, user, signOut,
+    transactions, loading,
+    preferences,
     editTxn, setEditTxn,
     addModalOpen, setAddModalOpen,
     csvModalOpen, setCsvModalOpen,
   } = useApp();
+
+  const { navPosition, compactView } = preferences;
+  const compact = compactView;
 
   const monthTxns = filterMonth(transactions, currentMonthAbbr());
   const income   = monthTxns.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
   const spent    = monthTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
   const savedPct = income > 0 ? Math.max(0, Math.round(((income - spent) / income) * 100)) : 0;
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
-      <div className="py-6 px-4 font-sans max-w-[680px] mx-auto">
-
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6">
-          <div className="flex items-center gap-2.5">
-            <NeroMark size={32} />
-            <p className="text-[26px] font-semibold leading-tight text-gray-900 dark:text-white tracking-tight">
-              Nero
-            </p>
-          </div>
-
-          <div className="flex flex-col items-end gap-2 pt-1">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleDark}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-                aria-label="Toggle dark mode"
-              >
-                {darkMode ? <SunIcon /> : <MoonIcon />}
-              </button>
-              <p className="text-xs text-gray-400 m-0">{monthLabel}</p>
-              <button
-                onClick={signOut}
-                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              >
-                Sign out
-              </button>
-            </div>
-            {user?.email && (
-              <span className="hidden sm:inline text-[11px] text-gray-400 truncate max-w-[200px]">
-                {user.email}
-              </span>
-            )}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCsvModalOpen(true)}
-                className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
-              >
-                Import CSV
-              </button>
-              <button
-                onClick={() => setAddModalOpen(true)}
-                className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
-                style={{ background: '#27AE60' }}
-              >
-                + Add Transaction
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Summary stats */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
-          <StatCard label="income" value={loading ? '—' : fmtDollars(income)} sub="this month" />
-          <StatCard label="spent"  value={loading ? '—' : fmtDollars(spent)}  sub="this month" />
-          <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#27AE60' }} />
-        </div>
-
-        {/* Tab nav */}
-        <div className="hidden sm:flex border-b border-gray-200 dark:border-nero-border mb-6 overflow-x-auto transition-colors">
-          {tabs.map((tab) => (
-            <NavLink
-              key={tab.path}
-              to={`/${tab.path}`}
-              className={({ isActive }) =>
-                `no-underline flex-shrink-0 px-3 pt-2 pb-[9px] text-[13px] border-b-2 whitespace-nowrap -mb-px transition-colors ${
-                  isActive
-                    ? 'border-gray-900 dark:border-nero-green text-gray-900 dark:text-nero-green font-medium'
-                    : 'border-transparent text-gray-400 font-normal'
-                }`
-              }
-            >
-              {tab.label}
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="pb-24 sm:pb-0">
-          <Outlet />
-        </div>
-      </div>
-
-      <BottomNav />
-
+  const modals = (
+    <>
       <CsvImportModal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} />
-
       <AddTransactionModal
         open={addModalOpen || !!editTxn}
         onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
       />
+    </>
+  );
+
+  const statsRow = (
+    <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
+      <StatCard label="income" value={loading ? '—' : fmtDollars(income)} sub="this month" />
+      <StatCard label="spent"  value={loading ? '—' : fmtDollars(spent)}  sub="this month" />
+      <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#27AE60' }} />
+    </div>
+  );
+
+  const topTabs = (
+    <div className={`hidden sm:flex border-b border-gray-200 dark:border-nero-border ${compact ? 'mb-3' : 'mb-6'} overflow-x-auto transition-colors`}>
+      {TOP_TABS.map((path) => (
+        <NavLink
+          key={path}
+          to={`/${path}`}
+          className={({ isActive }) =>
+            `no-underline flex-shrink-0 px-3 pt-2 pb-[9px] text-[13px] border-b-2 whitespace-nowrap -mb-px transition-colors capitalize ${
+              isActive
+                ? 'border-gray-900 dark:border-nero-green text-gray-900 dark:text-nero-green font-medium'
+                : 'border-transparent text-gray-400 font-normal'
+            }`
+          }
+        >
+          {path.charAt(0).toUpperCase() + path.slice(1)}
+        </NavLink>
+      ))}
+    </div>
+  );
+
+  // ── Sidebar layouts ──────────────────────────────────────────────────────────
+  if (navPosition === 'left' || navPosition === 'right') {
+    return (
+      <div className="flex min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
+        {navPosition === 'left' && <Sidebar side="left" />}
+
+        <div className="flex-1 min-w-0 py-6 px-5 overflow-y-auto">
+          {statsRow}
+          <div className={compact ? 'pb-4' : 'pb-8'}>
+            <Outlet />
+          </div>
+        </div>
+
+        {navPosition === 'right' && <Sidebar side="right" />}
+        {modals}
+      </div>
+    );
+  }
+
+  // ── Top / Bottom layouts (centered, max-width) ───────────────────────────────
+  return (
+    <div className="min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
+      <div className={`${compact ? 'py-3' : 'py-6'} px-4 font-sans max-w-[680px] mx-auto`}>
+
+        <Header compact={compact} />
+        {statsRow}
+
+        {/* Top tabs — hidden when navPosition is 'bottom' or on mobile */}
+        {navPosition !== 'bottom' && topTabs}
+
+        <div className={navPosition === 'bottom' ? 'pb-24' : 'pb-24 sm:pb-0'}>
+          <Outlet />
+        </div>
+      </div>
+
+      {/* BottomNav: always on mobile; also on sm+ when navPosition=bottom */}
+      <BottomNav />
+
+      {modals}
     </div>
   );
 }

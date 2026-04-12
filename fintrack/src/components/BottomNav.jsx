@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useApp } from '../AppContext';
 
 const tabs = [
   {
@@ -68,8 +69,17 @@ const tabs = [
 ];
 
 export default function BottomNav() {
+  const { preferences } = useApp();
+  const { navPosition } = preferences;
+
+  // Hide entirely when using a sidebar layout
+  if (navPosition === 'left' || navPosition === 'right') return null;
+
+  // When navPosition === 'bottom', show on all screen sizes; otherwise mobile-only
+  const visibilityCls = navPosition === 'bottom' ? '' : 'sm:hidden';
+
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-nero-bg border-t border-gray-200 dark:border-nero-border transition-colors">
+    <nav className={`${visibilityCls} fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-nero-bg border-t border-gray-200 dark:border-nero-border transition-colors`}>
       <div className="flex max-w-[680px] mx-auto">
         {tabs.map((tab) => (
           <NavLink

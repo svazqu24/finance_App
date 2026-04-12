@@ -2,6 +2,34 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { goalClrMap, GOAL_COLORS } from './data';
 
+// ── Preferences ──────────────────────────────────────────────────────────────
+const PREF_DEFAULTS = {
+  darkMode:    true,
+  compactView: false,
+  layoutStyle: 'single',
+  navPosition: 'top',
+  currency:    'USD',
+};
+
+// DB column → JS key mapping
+const DB_TO_JS = {
+  dark_mode:    'darkMode',
+  compact_view: 'compactView',
+  layout_style: 'layoutStyle',
+  nav_position: 'navPosition',
+  currency:     'currency',
+};
+
+function dbRowToPrefs(row) {
+  const p = { ...PREF_DEFAULTS };
+  if (row.dark_mode    !== null && row.dark_mode    !== undefined) p.darkMode    = row.dark_mode;
+  if (row.compact_view !== null && row.compact_view !== undefined) p.compactView = row.compact_view;
+  if (row.layout_style) p.layoutStyle = row.layout_style;
+  if (row.nav_position) p.navPosition = row.nav_position;
+  if (row.currency)     p.currency    = row.currency;
+  return p;
+}
+
 // Map a Supabase bills row → app shape
 function dbRowToBill(row) {
   return {
@@ -59,13 +87,15 @@ export function AppProvider({ children }) {
   // ── Goals ─────────────────────────────────────────────────────────────────
   const [goalsData, setGoalsData] = useState([]);
 
+  // ── Preferences ───────────────────────────────────────────────────────────
+  const [preferences, setPreferences] = useState(PREF_DEFAULTS);
+
   // ── Bills ─────────────────────────────────────────────────────────────────
   const [billsData, setBillsData]       = useState([]);
   const [editBill, setEditBill]         = useState(null);
   const [billModalOpen, setBillModalOpen] = useState(false);
 
-  // ── UI state ─────────────────────────────────────────────────────────────────
-  // Lazy initializer reads localStorage so the preference survives refreshes
+  // ── Dark mode — localStorage fallback for logged-out state ──────────────────
   const [darkMode, setDarkMode] = useState(() => {
     try { return localStorage.getItem('fintrack-dark') !== 'false'; } catch { return true; }
   });
@@ -106,12 +136,14 @@ export function AppProvider({ children }) {
       setBudgetOverrides({});
       setGoalsData([]);
       setBillsData([]);
+      setPreferences(PREF_DEFAULTS);
       return;
     }
     loadTransactions(user);
     loadBudgetOverrides(user);
     loadGoals(user);
     loadBills(user);
+    loadPreferences(user);
   }, [user]);
 
   async function loadTransactions(currentUser) {
@@ -334,6 +366,32 @@ export function AppProvider({ children }) {
     setBillsData((prev) => prev.filter((b) => b.id !== id));
   }
 
+  async function loadPreferences(currentUser) {
+    const { data, error } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (error) { console.error('[nero] Prefs fetch failed:', error); return; }
+    if (!data) return; // no row yet — keep defaults
+    const prefs = dbRowToPrefs(data);
+    setPreferences(prefs);
+    setDarkMode(prefs.darkMode);
+  }
+
+  async function updatePreference(key, value) {
+    // Optimistic local update
+    setPreferences((prev) => ({ ...prev, [key]: value }));
+    if (key === 'darkMode') setDarkMode(value);
+    if (!user) return;
+    // Map JS key → DB column
+    const dbKey = Object.entries(DB_TO_JS).find(([, v]) => v === key)?.[0] ?? key;
+    const { error } = await supabase
+      .from('user_preferences')
+      .upsert({ user_id: user.id, [dbKey]: value }, { onConflict: 'user_id' });
+    if (error) console.error('[nero] Pref update failed:', error);
+  }
+
   async function markBillPaid(id, monthStr) {
     if (!user) return;
     const { data, error } = await supabase
@@ -394,9 +452,12 @@ export function AppProvider({ children }) {
         setEditBill,
         billModalOpen,
         setBillModalOpen,
+        // preferences
+        preferences,
+        updatePreference,
         // ui
         darkMode,
-        toggleDark: () => setDarkMode((d) => !d),
+        toggleDark: () => updatePreference('darkMode', !preferences.darkMode),
       }}
     >
       {children}

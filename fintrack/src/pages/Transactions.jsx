@@ -2,6 +2,19 @@ import { useState } from 'react';
 import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../AppContext';
 
+function groupByDate(txns) {
+  const groups = [];
+  const seen = new Map();
+  for (const t of txns) {
+    if (!seen.has(t.date)) {
+      seen.set(t.date, []);
+      groups.push({ date: t.date, items: seen.get(t.date) });
+    }
+    seen.get(t.date).push(t);
+  }
+  return groups;
+}
+
 function UploadIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -24,7 +37,8 @@ function SearchIcon() {
 }
 
 export default function Transactions() {
-  const { transactions, loading, openAddModal, openCsvModal } = useApp();
+  const { transactions, loading, openAddModal, openCsvModal, preferences } = useApp();
+  const dateGrouped = preferences.layoutStyle === 'date-grouped';
   const [activeFilter, setActiveFilter] = useState('all');
   const [search, setSearch] = useState('');
 
@@ -137,6 +151,13 @@ export default function Transactions() {
             </button>
           )}
         </div>
+      ) : dateGrouped ? (
+        groupByDate(filtered).map(({ date, items }) => (
+          <div key={date} className="mb-4">
+            <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1.5 px-0.5">{date}</p>
+            {items.map((t, i) => <TransactionRow key={i} txn={t} />)}
+          </div>
+        ))
       ) : (
         filtered.map((t, i) => <TransactionRow key={i} txn={t} />)
       )}

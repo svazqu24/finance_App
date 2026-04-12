@@ -9,6 +9,7 @@ import Budget from './pages/Budget';
 import Bills from './pages/Bills';
 import Goals from './pages/Goals';
 import Portfolio from './pages/Portfolio';
+import Settings from './pages/Settings';
 
 // Rendered inside AppProvider so it can read auth state from context
 function AppRoutes() {
@@ -41,6 +42,7 @@ function AppRoutes() {
           <Route path="bills"        element={<Bills />} />
           <Route path="goals"        element={<Goals />} />
           <Route path="portfolio"    element={<Portfolio />} />
+          <Route path="settings"     element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>
