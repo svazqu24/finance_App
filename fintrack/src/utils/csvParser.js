@@ -199,6 +199,47 @@ function toTitleCase(s) {
     .join(' ');
 }
 
+// ── Merchant name aliases ─────────────────────────────────────────────────────
+// Maps lowercased cleaned names → correctly-formatted display names.
+// Use this for: apostrophes that can't be inferred, brand capitalization,
+// and Chipotle payroll codes (CHIPGRIL = Chipotle's ACH payroll descriptor).
+const MERCHANT_ALIASES = {
+  "ellys brunch":       "Elly's Brunch",
+  "ellys":              "Elly's",
+  'chipgril':           'Chipotle Payroll',
+  'chipotle payroll':   'Chipotle Payroll',
+  "mcdonalds":          "McDonald's",
+  "wendy's":            "Wendy's",
+  "wendys":             "Wendy's",
+  "chick-fil-a":        'Chick-fil-A',
+  "chick fil a":        'Chick-fil-A',
+  "chickfila":          'Chick-fil-A',
+  "trader joe's":       "Trader Joe's",
+  "trader joes":        "Trader Joe's",
+  "mcdonald's":         "McDonald's",
+  "denny's":            "Denny's",
+  "dennys":             "Denny's",
+  "peet's coffee":      "Peet's Coffee",
+  "peets coffee":       "Peet's Coffee",
+  "ruth's chris":       "Ruth's Chris",
+  "arby's":             "Arby's",
+  "arbys":              "Arby's",
+  "hardee's":           "Hardee's",
+  "hardees":            "Hardee's",
+  "culver's":           "Culver's",
+  "culvers":            "Culver's",
+  "whataburger":        'Whataburger',
+  "moe's southwest":    "Moe's Southwest Grill",
+  "papa john's":        "Papa John's",
+  "papa johns":         "Papa John's",
+  "marco's pizza":      "Marco's Pizza",
+  "applebee's":         "Applebee's",
+  "applebees":          "Applebee's",
+  "chili's":            "Chili's",
+  "chilis":             "Chili's",
+  "dine brands":        'Dine Brands',
+};
+
 // Bank transfer descriptions — short-circuit when matched at start of string.
 const TRANSFER_PATTERNS = [
   [/^online\s+transfer\b/i,    'Online Transfer'],
@@ -230,6 +271,10 @@ export function cleanDescription(raw) {
   //     "TST* ONLINE TRANSFER" correctly triggers the transfer short-circuit.
   //     TST* = Toast POS, SQ* = Square, SPK* = Spark
   s = s.replace(/^(?:TST|SQ|SPK)\s*\*\s*/i, '');
+
+  // 0b. Strip ACH/PPD entry class descriptors Chase/banks append after merchant name
+  //     e.g. "EMPLOYER NAME PPD ID: 123456" → "EMPLOYER NAME"
+  s = s.replace(/\s+PPD\s+Id\b.*/i, '');
 
   // 0b. Short-circuit for verbose bank transfer descriptions
   for (const [re, label] of TRANSFER_PATTERNS) {
@@ -276,7 +321,8 @@ export function cleanDescription(raw) {
   // Safety fallback: if everything was stripped, title-case first 3 words of original
   if (!s) return toTitleCase(raw.trim().split(/\s+/).slice(0, 3).join(' '));
 
-  return toTitleCase(s);
+  const titled = toTitleCase(s);
+  return MERCHANT_ALIASES[titled.toLowerCase()] ?? titled;
 }
 
 // ── Chase credit card category mapping ───────────────────────────────────────
@@ -318,6 +364,7 @@ export const MERCHANT_DB = {
     'salary', 'payroll', 'direct deposit', 'mobile deposit', 'paycheck',
     'direct dep', 'ppd id', ' ppd ', 'freelance', 'consulting fee',
     'dividend', 'interest income', 'tax refund', 'reimbursement', '1099',
+    'chipgril',  // Chipotle's ACH payroll descriptor
   ],
 
   // ── Groceries ────────────────────────────────────────────────────────────────

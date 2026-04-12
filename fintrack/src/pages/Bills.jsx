@@ -236,13 +236,15 @@ export default function Bills() {
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors border border-transparent dark:border-nero-border"
                   >
                     <div className="flex items-center gap-3">
-                      {/* Category chip */}
-                      <span
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        style={{ background: sty.bg, color: sty.fg }}
+                      {/* Category avatar */}
+                      <div
+                        className="w-8 h-8 flex items-center justify-center flex-shrink-0"
+                        style={{ background: sty.bg, borderRadius: '10px 3px 10px 3px' }}
                       >
-                        {bill.cat}
-                      </span>
+                        <span className="text-[11px] font-medium" style={{ color: sty.fg }}>
+                          {bill.cat.slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
                       <div>
                         <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
                           {bill.name}
