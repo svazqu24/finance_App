@@ -26,10 +26,10 @@ export default function Portfolio() {
     <>
       <div className="grid grid-cols-3 gap-2 mb-6">
         {portfolio.map((p) => (
-          <div key={p.name} className="bg-[#f5f5f3] dark:bg-gray-800 rounded-lg px-3.5 py-3 transition-colors">
+          <div key={p.name} className="bg-[#f5f5f3] dark:bg-nero-surface rounded-lg px-3.5 py-3 transition-colors">
             <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1">{p.name}</p>
             <p className="text-[20px] font-medium tabular-nums m-0 text-gray-900 dark:text-white">${p.val.toLocaleString()}</p>
-            <p className="text-xs mt-0.5 m-0" style={{ color: '#3B6D11' }}>+{p.chg}% YTD</p>
+            <p className="text-xs mt-0.5 m-0" style={{ color: '#27AE60' }}>+{p.chg}% YTD</p>
           </div>
         ))}
       </div>
@@ -48,7 +48,7 @@ export default function Portfolio() {
         ))}
       </div>
 
-      <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-xl p-4 transition-colors">
+      <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4 transition-colors">
         <div className="flex justify-between items-center mb-2.5">
           <div>
             <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-0.5">
@@ -56,10 +56,10 @@ export default function Portfolio() {
             </p>
             <p className="text-base font-medium m-0 text-gray-900 dark:text-white">$50,000 net worth</p>
           </div>
-          <span className="text-sm font-medium" style={{ color: '#3B6D11' }}>95.7%</span>
+          <span className="text-sm font-medium" style={{ color: '#27AE60' }}>95.7%</span>
         </div>
-        <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mb-2 transition-colors">
-          <div className="h-full rounded" style={{ width: '95.7%', background: '#185FA5' }} />
+        <div className="h-1.5 bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-2 transition-colors">
+          <div className="h-full rounded" style={{ width: '95.7%', background: '#27AE60' }} />
         </div>
         <p className="text-xs text-gray-400 m-0">$2,160 away — you're almost there!</p>
       </div>

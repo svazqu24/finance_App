@@ -57,13 +57,13 @@ export default function Transactions() {
         <div className="flex gap-2.5 justify-center flex-wrap">
           <button
             onClick={openAddModal}
-            className="text-xs font-medium px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors"
+            className="text-xs font-medium px-4 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
           >
             + Add transaction
           </button>
           <button
             onClick={openCsvModal}
-            className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors"
           >
             <UploadIcon />
             Import from CSV
@@ -85,7 +85,7 @@ export default function Transactions() {
           placeholder="Search by name, category, or amount…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-8 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-gray-400 transition-colors"
+          className="w-full pl-8 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
         />
         {search && (
           <button
@@ -103,19 +103,22 @@ export default function Transactions() {
 
       {/* Category filter pills */}
       <div className="flex gap-1.5 mb-3.5 flex-wrap">
-        {allCats.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveFilter(cat)}
-            className={`text-xs px-3 py-1 rounded-full cursor-pointer whitespace-nowrap border transition-colors ${
-              activeFilter === cat
-                ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white'
-                : 'bg-transparent text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600'
-            }`}
-          >
-            {cat === 'all' ? 'All' : cat}
-          </button>
-        ))}
+        {allCats.map((cat) => {
+          const isActive = activeFilter === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveFilter(cat)}
+              className="text-xs px-3 py-1 rounded-[20px] cursor-pointer whitespace-nowrap border transition-colors"
+              style={isActive
+                ? { background: '#27AE60', color: '#fff', borderColor: '#27AE60' }
+                : { background: 'transparent', color: '#888', borderColor: '#D1D5DB' }
+              }
+            >
+              {cat === 'all' ? 'All' : cat}
+            </button>
+          );
+        })}
       </div>
 
       {filtered.length === 0 ? (

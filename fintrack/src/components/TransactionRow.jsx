@@ -20,7 +20,6 @@ export default function TransactionRow({ txn }) {
   const s = catSty[txn.cat] || { bg: '#DDDBD3', fg: '#444441' };
   const pos = txn.amt > 0;
 
-  // Auto-cancel confirmation after 3 s
   useEffect(() => {
     if (!confirming) return;
     const t = setTimeout(() => setConfirming(false), 3000);
@@ -28,29 +27,28 @@ export default function TransactionRow({ txn }) {
   }, [confirming]);
 
   function handleRowClick(e) {
-    // Don't open edit if clicking the delete controls
     if (e.target.closest('[data-delete]')) return;
     setEditTxn(txn);
   }
 
   if (confirming) {
     return (
-      <div className="flex items-center gap-2 py-2.5 border-b border-gray-200 dark:border-gray-700 transition-colors">
+      <div className="flex items-center gap-2 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors">
         <p className="flex-1 text-sm text-gray-600 dark:text-gray-300 m-0">
           Delete <span className="font-medium">{txn.name}</span>?
         </p>
         <button
           data-delete="true"
           onClick={() => deleteTransaction(txn.id)}
-          className="text-xs font-medium px-3 py-1.5 rounded-full text-white transition-colors"
-          style={{ background: '#E24B4A' }}
+          className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+          style={{ background: '#f87171' }}
         >
           Delete
         </button>
         <button
           data-delete="true"
           onClick={() => setConfirming(false)}
-          className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 transition-colors"
+          className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-200 dark:border-nero-border text-gray-600 dark:text-gray-300 transition-colors"
         >
           Cancel
         </button>
@@ -60,12 +58,12 @@ export default function TransactionRow({ txn }) {
 
   return (
     <div
-      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-gray-700 transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-gray-800/50 rounded-sm"
+      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-nero-surface/50 rounded-sm"
       onClick={handleRowClick}
     >
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-        style={{ background: s.bg }}
+        className="w-9 h-9 flex items-center justify-center flex-shrink-0"
+        style={{ background: s.bg, borderRadius: '10px 3px 10px 3px' }}
       >
         <span className="text-[11px] font-medium" style={{ color: s.fg }}>
           {txn.cat.slice(0, 2).toUpperCase()}
@@ -77,7 +75,7 @@ export default function TransactionRow({ txn }) {
       </div>
       <span
         className="text-sm font-medium tabular-nums flex-shrink-0"
-        style={{ color: pos ? '#3B6D11' : '#E24B4A' }}
+        style={{ color: pos ? '#27AE60' : '#f87171' }}
       >
         {pos ? '+' : '-'}${Math.abs(txn.amt).toFixed(2)}
       </span>

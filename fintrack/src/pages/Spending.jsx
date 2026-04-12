@@ -118,11 +118,11 @@ export default function Spending() {
         </p>
         <div className="flex gap-2.5 justify-center flex-wrap">
           <button onClick={openAddModal}
-            className="text-xs font-medium px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors">
+            className="text-xs font-medium px-4 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}>
             + Add transaction
           </button>
           <button onClick={openCsvModal}
-            className="text-xs font-medium px-4 py-2 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
+            className="text-xs font-medium px-4 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
             Import from CSV
           </button>
         </div>
@@ -154,7 +154,7 @@ export default function Spending() {
             spendCats.map((s) => (
               <div
                 key={s.label}
-                className="flex justify-between items-center py-[5px] border-b border-gray-200 dark:border-gray-700 transition-colors"
+                className="flex justify-between items-center py-[5px] border-b border-gray-200 dark:border-nero-border transition-colors"
               >
                 <span className="flex items-center gap-1.5 text-xs text-gray-900 dark:text-white">
                   <span className="w-2 h-2 rounded-[2px] inline-block" style={{ background: s.clr }} />
@@ -180,7 +180,7 @@ export default function Spending() {
       </div>
 
       {/* Dynamic insight */}
-      <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-lg p-3.5 transition-colors">
+      <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-lg p-3.5 transition-colors">
         <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1.5">
           {monthLabel} insight
         </p>

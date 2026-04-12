@@ -14,8 +14,8 @@ const ALL_CATS = [
 ];
 
 const inputCls =
-  'w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm ' +
-  'bg-white dark:bg-gray-700 text-gray-900 dark:text-white ' +
+  'w-full border border-gray-200 dark:border-nero-border rounded-lg px-3 py-2 text-sm ' +
+  'bg-white dark:bg-nero-bg text-gray-900 dark:text-white ' +
   'outline-none focus:border-gray-400 dark:focus:border-gray-400 transition-colors';
 
 const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1';
@@ -60,7 +60,7 @@ function UploadIcon() {
 
 function CheckIcon() {
   return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3B6D11"
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#27AE60"
          strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
       <polyline points="22 4 12 14.01 9 11.01" />
@@ -238,10 +238,10 @@ export default function CsvImportModal({ open, onClose }) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Dialog card */}
-      <div className="relative bg-white dark:bg-gray-800 w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col shadow-2xl z-10">
+      <div className="relative bg-white dark:bg-nero-surface w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col shadow-2xl z-10">
 
         {/* ── Header ── */}
-        <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+        <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-nero-border flex-shrink-0">
           {/* Handle (mobile) */}
           <div className="w-10 h-1 bg-gray-200 dark:bg-gray-600 rounded-full mx-auto mb-3 sm:hidden" />
           <div className="flex items-center justify-between">
@@ -304,7 +304,7 @@ export default function CsvImportModal({ open, onClose }) {
             <div className="px-5 py-5 flex flex-col gap-4">
               {/* Drop zone */}
               <div
-                className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-10 flex flex-col items-center gap-3 cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                className="border-2 border-dashed border-gray-200 dark:border-nero-border rounded-xl py-10 flex flex-col items-center gap-3 cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
                 onClick={() => fileRef.current?.click()}
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
@@ -317,7 +317,7 @@ export default function CsvImportModal({ open, onClose }) {
                   <p className="text-xs text-gray-400 mt-0.5">or click to browse</p>
                 </div>
                 {fileName && (
-                  <span className="text-xs font-medium px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full">
+                  <span className="text-xs font-medium px-3 py-1 bg-gray-100 dark:bg-nero-bg text-gray-600 dark:text-gray-300 rounded-full">
                     {fileName}
                   </span>
                 )}
@@ -352,7 +352,7 @@ export default function CsvImportModal({ open, onClose }) {
                     <button
                       onClick={handlePasteSubmit}
                       disabled={!pasteText.trim()}
-                      className="self-end text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 disabled:opacity-40 transition-colors"
+                      className="self-end text-xs font-medium px-3 py-1.5 rounded-[20px] text-white disabled:opacity-40 transition-colors" style={{ background: '#27AE60' }}
                     >
                       Parse →
                     </button>
@@ -367,7 +367,7 @@ export default function CsvImportModal({ open, onClose }) {
               )}
 
               {/* Format help */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3.5 py-3">
+              <div className="bg-gray-50 dark:bg-nero-bg/50 rounded-lg px-3.5 py-3">
                 <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1.5">Supported formats</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                   Chase, Bank of America, Wells Fargo, Capital One, Mint, AMEX, and most bank CSV exports.
@@ -386,10 +386,10 @@ export default function CsvImportModal({ open, onClose }) {
 
               {/* Sample of first 2 data rows */}
               {dataRows.length > 0 && (
-                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-nero-border">
                   <table className="min-w-full text-xs">
                     <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-700/50">
+                      <tr className="bg-gray-50 dark:bg-nero-bg/50">
                         {headers.map((h, i) => (
                           <th key={i} className="px-2.5 py-1.5 text-left text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap">
                             {h || `Col ${i+1}`}
@@ -399,7 +399,7 @@ export default function CsvImportModal({ open, onClose }) {
                     </thead>
                     <tbody>
                       {dataRows.slice(0, 3).map((row, ri) => (
-                        <tr key={ri} className="border-t border-gray-100 dark:border-gray-700">
+                        <tr key={ri} className="border-t border-gray-100 dark:border-nero-border">
                           {row.map((cell, ci) => (
                             <td key={ci} className="px-2.5 py-1.5 text-gray-700 dark:text-gray-300 whitespace-nowrap max-w-[120px] truncate">
                               {cell}
@@ -418,13 +418,13 @@ export default function CsvImportModal({ open, onClose }) {
               {/* Amount mode */}
               <div>
                 <label className={labelCls}>Amount type</label>
-                <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                <div className="flex rounded-lg overflow-hidden border border-gray-200 dark:border-nero-border">
                   {[['single','Single amount column'],['debitcredit','Debit / Credit columns']].map(([val, label]) => (
                     <button
                       key={val}
                       type="button"
                       onClick={() => setMappingField('amtMode', val)}
-                      className="flex-1 py-2 text-xs font-medium transition-colors first:border-r border-gray-200 dark:border-gray-600"
+                      className="flex-1 py-2 text-xs font-medium transition-colors first:border-r border-gray-200 dark:border-nero-border"
                       style={mapping.amtMode === val
                         ? { background: '#1a1a1a', color: '#fff' }
                         : { background: 'transparent', color: '#888' }}
@@ -476,7 +476,7 @@ export default function CsvImportModal({ open, onClose }) {
           {step === 'preview' && (
             <div>
               {/* Detected mapping banner */}
-              <div className="px-5 py-2.5 bg-gray-50 dark:bg-gray-700/40 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between gap-2">
+              <div className="px-5 py-2.5 bg-gray-50 dark:bg-nero-bg/40 border-b border-gray-100 dark:border-nero-border flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-[11px] text-gray-400">
                     {activeRows.length} of {rows.length} rows selected
@@ -519,7 +519,7 @@ export default function CsvImportModal({ open, onClose }) {
                 return (
                   <table className="w-full text-xs border-collapse">
                     <thead>
-                      <tr className="border-b border-gray-100 dark:border-gray-700">
+                      <tr className="border-b border-gray-100 dark:border-nero-border">
                         <th className="px-3 py-2 text-left text-gray-400 font-medium w-8"></th>
                         <th className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">Date</th>
                         <th className="px-3 py-2 text-left text-gray-400 font-medium">Description</th>
@@ -534,7 +534,7 @@ export default function CsvImportModal({ open, onClose }) {
                       {rows.map((row) => (
                         <tr
                           key={row._key}
-                          className={`border-b border-gray-50 dark:border-gray-700/50 ${row.skip ? 'opacity-40' : ''}`}
+                          className={`border-b border-gray-50 dark:border-nero-border/50 ${row.skip ? 'opacity-40' : ''}`}
                         >
                           <td className="px-3 py-1.5">
                             <input
@@ -551,7 +551,7 @@ export default function CsvImportModal({ open, onClose }) {
                             {row.name}
                           </td>
                           <td className="px-3 py-1.5 text-right tabular-nums font-medium whitespace-nowrap"
-                              style={{ color: row.amt > 0 ? '#3B6D11' : '#E24B4A' }}>
+                              style={{ color: row.amt > 0 ? '#27AE60' : '#f87171' }}>
                             {row.amt > 0 ? '+' : '-'}${Math.abs(row.amt).toFixed(2)}
                           </td>
                           {extraCols.map(({ i }) => (
@@ -563,7 +563,7 @@ export default function CsvImportModal({ open, onClose }) {
                             <select
                               value={row.cat}
                               onChange={(e) => setRowCat(row._key, e.target.value)}
-                              className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
+                              className="text-xs border border-gray-200 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-bg text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
                               disabled={row.skip}
                             >
                               {ALL_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -596,10 +596,10 @@ export default function CsvImportModal({ open, onClose }) {
         </div>{/* end scrollable body */}
 
         {/* ── Footer ── */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-gray-700 flex-shrink-0 flex gap-2.5">
+        <div className="px-5 py-4 border-t border-gray-100 dark:border-nero-border flex-shrink-0 flex gap-2.5">
           {step === 'upload' && (
             <button onClick={onClose}
-              className="flex-1 border border-gray-200 dark:border-gray-600 text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
+              className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
               Cancel
             </button>
           )}
@@ -607,13 +607,13 @@ export default function CsvImportModal({ open, onClose }) {
           {step === 'mapping' && (
             <>
               <button onClick={() => setStep('upload')}
-                className="flex-1 border border-gray-200 dark:border-gray-600 text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
+                className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
                 ← Back
               </button>
               <button
                 onClick={applyMapping}
                 disabled={!mappingComplete}
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium py-2.5 rounded-lg disabled:opacity-40 transition-colors"
+                className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] disabled:opacity-40 transition-colors" style={{ background: '#27AE60' }}
               >
                 Preview →
               </button>
@@ -623,13 +623,13 @@ export default function CsvImportModal({ open, onClose }) {
           {step === 'preview' && (
             <>
               <button onClick={() => setStep(detectedFormat ? 'upload' : 'mapping')}
-                className="flex-1 border border-gray-200 dark:border-gray-600 text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
+                className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
                 ← Back
               </button>
               <button
                 onClick={handleImport}
                 disabled={activeRows.length === 0 || submitting}
-                className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium py-2.5 rounded-lg disabled:opacity-40 transition-colors"
+                className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] disabled:opacity-40 transition-colors" style={{ background: '#27AE60' }}
               >
                 {submitting
                   ? 'Importing…'
@@ -640,7 +640,7 @@ export default function CsvImportModal({ open, onClose }) {
 
           {step === 'success' && (
             <button onClick={onClose}
-              className="flex-1 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium py-2.5 rounded-lg transition-colors">
+              className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] transition-colors" style={{ background: '#27AE60' }}>
               Done
             </button>
           )}

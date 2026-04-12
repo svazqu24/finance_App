@@ -20,7 +20,7 @@ export default function BudgetBar({ b }) {
   const pct    = b.budget > 0 ? (b.spent / b.budget) * 100 : 0;
   const over   = b.spent > b.budget;
   const near   = pct >= 85 && pct <= 100;
-  const barClr = over ? '#E24B4A' : near ? '#BA7517' : '#639922';
+  const barClr = over ? '#f87171' : near ? '#F59E0B' : '#27AE60';
   const diff   = Math.abs(b.budget - b.spent);
   const s      = catSty[b.cat] || { bg: '#DDDBD3', fg: '#444441' };
 
@@ -45,11 +45,10 @@ export default function BudgetBar({ b }) {
   return (
     <div className="mb-4">
       <div className="flex justify-between items-center mb-1.5">
-        {/* Left: avatar + category name */}
         <div className="flex items-center gap-2">
           <div
-            className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: s.bg }}
+            className="w-7 h-7 flex items-center justify-center"
+            style={{ background: s.bg, borderRadius: '10px 3px 10px 3px' }}
           >
             <span className="text-[11px] font-medium" style={{ color: s.fg }}>
               {b.cat.slice(0, 2).toUpperCase()}
@@ -58,7 +57,6 @@ export default function BudgetBar({ b }) {
           <span className="text-sm font-medium text-gray-900 dark:text-white">{b.cat}</span>
         </div>
 
-        {/* Right: spent / limit (editable) */}
         <div className="flex items-center gap-1.5">
           <span className="text-[13px] tabular-nums text-gray-900 dark:text-white">
             ${b.spent.toFixed(0)}
@@ -74,7 +72,7 @@ export default function BudgetBar({ b }) {
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               autoFocus
-              className="w-20 text-[13px] tabular-nums border border-gray-300 dark:border-gray-500 rounded px-1.5 py-0.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:border-gray-500"
+              className="w-20 text-[13px] tabular-nums border border-gray-300 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-surface text-gray-900 dark:text-white outline-none focus:border-gray-500"
             />
           ) : (
             <button
@@ -91,7 +89,7 @@ export default function BudgetBar({ b }) {
         </div>
       </div>
 
-      <div className="h-[7px] bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mb-1 transition-colors">
+      <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1 transition-colors">
         <div
           className="h-full rounded transition-all duration-300"
           style={{ width: `${Math.min(pct, 100)}%`, background: barClr }}
@@ -99,7 +97,7 @@ export default function BudgetBar({ b }) {
       </div>
 
       <div className="flex justify-between">
-        <span className="text-[11px]" style={{ color: over ? '#E24B4A' : '#888' }}>
+        <span className="text-[11px]" style={{ color: over ? '#f87171' : '#888' }}>
           {over ? `$${diff.toFixed(0)} over budget` : `$${diff.toFixed(0)} remaining`}
         </span>
         <span className="text-[11px] text-gray-400">{pct.toFixed(0)}%</span>

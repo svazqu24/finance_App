@@ -18,7 +18,7 @@ function AppRoutes() {
   // prevents a flash of the Auth page on refresh when already logged in
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center transition-colors">
+      <div className="min-h-screen bg-white dark:bg-nero-bg flex items-center justify-center transition-colors">
         <p className="text-sm text-gray-400">Loading…</p>
       </div>
     );

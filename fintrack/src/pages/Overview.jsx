@@ -31,7 +31,7 @@ export default function Overview() {
   return (
     <>
       {/* Net worth placeholder */}
-      <div className="h-32 mb-6 rounded-xl bg-[#f5f5f3] dark:bg-gray-800 flex items-center justify-center transition-colors">
+      <div className="h-32 mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface flex items-center justify-center transition-colors">
         <p className="text-xs text-gray-400 text-center leading-relaxed px-4">
           Net worth history will appear here once you start tracking your accounts.
         </p>
@@ -39,9 +39,9 @@ export default function Overview() {
 
       {isEmpty ? (
         /* ── Empty state ── */
-        <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-2xl px-6 py-10 text-center transition-colors">
+        <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-2xl px-6 py-10 text-center transition-colors">
           <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">
-            Welcome to FinTrack
+            Welcome to Nero
           </p>
           <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px] mx-auto">
             Add your first transaction manually or import a CSV from your bank to get started.
@@ -49,14 +49,14 @@ export default function Overview() {
           <div className="flex gap-2.5 justify-center flex-wrap">
             <button
               onClick={openAddModal}
-              className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
             >
               <PlusIcon />
               Add transaction
             </button>
             <button
               onClick={openCsvModal}
-              className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-700 dark:text-gray-300 hover:border-gray-400 transition-colors"
             >
               <UploadIcon />
               Import from CSV
@@ -71,7 +71,7 @@ export default function Overview() {
               <p className="text-[13px] font-medium m-0 text-gray-900 dark:text-white">Recent activity</p>
               <p className="text-xs text-gray-400 mt-0.5 m-0">10-second fraud check</p>
             </div>
-            <Link to="/transactions" className="text-xs no-underline" style={{ color: '#185FA5' }}>
+            <Link to="/transactions" className="text-xs no-underline" style={{ color: '#27AE60' }}>
               All →
             </Link>
           </div>

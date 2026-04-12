@@ -43,7 +43,7 @@ export default function Goals() {
 
       <button
         onClick={() => setAddOpen(true)}
-        className="w-full mt-3 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+        className="w-full mt-3 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-nero-border text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-nero-green transition-colors"
       >
         + Add Goal
       </button>

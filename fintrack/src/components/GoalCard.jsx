@@ -18,12 +18,12 @@ export default function GoalCard({ g }) {
   const initials = g.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
-    <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-xl px-4 py-3.5 mb-2.5 transition-colors">
+    <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-4 py-3.5 mb-2.5 transition-colors">
       <div className="flex justify-between items-start mb-2.5">
         <div className="flex gap-2.5 items-center">
           <div
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: g.bg }}
+            className="w-9 h-9 flex items-center justify-center flex-shrink-0"
+            style={{ background: g.bg, borderRadius: '10px 3px 10px 3px' }}
           >
             <span className="text-[11px] font-medium" style={{ color: g.fg }}>{initials}</span>
           </div>
@@ -48,7 +48,7 @@ export default function GoalCard({ g }) {
           </button>
         </div>
       </div>
-      <div className="h-[7px] bg-gray-200 dark:bg-gray-700 rounded overflow-hidden mb-1.5 transition-colors">
+      <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1.5 transition-colors">
         <div className="h-full rounded" style={{ width: `${pct}%`, background: g.clr }} />
       </div>
       <div className="flex justify-between">

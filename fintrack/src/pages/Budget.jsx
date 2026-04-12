@@ -59,7 +59,7 @@ export default function Budget() {
           label="remaining"
           value={fmtDollars(Math.abs(remaining))}
           sub={remaining < 0 ? 'over budget' : 'in budget'}
-          valueStyle={{ color: remaining < 0 ? '#E24B4A' : '#3B6D11' }}
+          valueStyle={{ color: remaining < 0 ? '#f87171' : '#27AE60' }}
         />
       </div>
 
@@ -79,7 +79,7 @@ export default function Budget() {
         )}
         {overBudget > 0 && (
           <span className="text-xs font-medium px-2.5 py-[3px] rounded-full"
-                style={{ color: '#791F1F', background: '#F7C1C1' }}>
+                style={{ color: '#991B1B', background: '#FEE2E2' }}>
             {overBudget} over budget
           </span>
         )}
@@ -87,17 +87,17 @@ export default function Budget() {
 
       {/* No-transactions hint */}
       {!loading && !hasTransactions && (
-        <div className="bg-[#f5f5f3] dark:bg-gray-800 rounded-xl px-4 py-3.5 mb-5 flex items-center justify-between gap-3 transition-colors">
+        <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-4 py-3.5 mb-5 flex items-center justify-between gap-3 transition-colors">
           <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed m-0">
             No transactions yet. Add one or import a CSV to track spending against these limits.
           </p>
           <div className="flex gap-2 flex-shrink-0">
             <button onClick={openAddModal}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 whitespace-nowrap transition-colors">
+              className="text-xs font-medium px-2.5 py-1.5 rounded-[20px] text-white whitespace-nowrap transition-colors" style={{ background: '#27AE60' }}>
               + Add
             </button>
             <button onClick={openCsvModal}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 whitespace-nowrap transition-colors">
+              className="text-xs font-medium px-2.5 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 whitespace-nowrap transition-colors">
               Import
             </button>
           </div>
@@ -131,7 +131,7 @@ export default function Budget() {
             {subs.map((s) => (
               <div
                 key={s.name}
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-gray-800 transition-colors"
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
               >
                 <div>
                   <div className="flex items-center gap-2">

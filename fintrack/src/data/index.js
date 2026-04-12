@@ -44,8 +44,8 @@ export const txns = [
 ];
 
 export const catSty = {
-  Income:        { bg: '#C8EBB4', fg: '#27500A' },
-  Housing:       { bg: '#BAD6F2', fg: '#0C447C' },
+  Income:        { bg: '#D1FAE5', fg: '#065F46' },
+  Housing:       { bg: '#D1FAE5', fg: '#065F46' },
   Groceries:     { bg: '#C8EBB4', fg: '#27500A' },
   Dining:        { bg: '#F5C9B8', fg: '#993C1D' },
   Subscriptions: { bg: '#D8D5F5', fg: '#3C3489' },
@@ -54,15 +54,15 @@ export const catSty = {
   Health:        { bg: '#F2C2D0', fg: '#72243E' },
   Shopping:      { bg: '#DDDBD3', fg: '#444441' },
   Utilities:     { bg: '#DDDBD3', fg: '#444441' },
-  Insurance:     { bg: '#BAD6F2', fg: '#0C447C' },
+  Insurance:     { bg: '#D1FAE5', fg: '#065F46' },
   Transfer:      { bg: '#E2E8F0', fg: '#334155' },
 };
 
 /** Chart color for each spending category */
 export const catClr = {
-  Housing:       '#185FA5',
+  Housing:       '#27AE60',
   Travel:        '#1D9E75',
-  Insurance:     '#378ADD',
+  Insurance:     '#4ade80',
   Groceries:     '#639922',
   Dining:        '#D85A30',
   Shopping:      '#888780',
@@ -74,9 +74,9 @@ export const catClr = {
 };
 
 export const spendCats = [
-  { label: 'Housing', amt: 1450, clr: '#185FA5' },
+  { label: 'Housing', amt: 1450, clr: '#27AE60' },
   { label: 'Travel', amt: 342, clr: '#1D9E75' },
-  { label: 'Insurance', amt: 180, clr: '#378ADD' },
+  { label: 'Insurance', amt: 180, clr: '#4ade80' },
   { label: 'Groceries', amt: 211, clr: '#639922' },
   { label: 'Dining', amt: 157, clr: '#D85A30' },
   { label: 'Shopping', amt: 110, clr: '#888780' },
@@ -110,7 +110,7 @@ export const bills = [
 
 /** Preset goal color palette — clr is the bar/accent, bg/fg are the avatar chip */
 export const GOAL_COLORS = [
-  { clr: '#185FA5', bg: '#BAD6F2', fg: '#0C447C' },
+  { clr: '#27AE60', bg: '#D1FAE5', fg: '#065F46' },
   { clr: '#1D9E75', bg: '#B4E5D0', fg: '#085041' },
   { clr: '#7F77DD', bg: '#D8D5F5', fg: '#3C3489' },
   { clr: '#D85A30', bg: '#F5C9B8', fg: '#993C1D' },
@@ -122,14 +122,14 @@ export const GOAL_COLORS = [
 export const goalClrMap = Object.fromEntries(GOAL_COLORS.map((c) => [c.clr, c]));
 
 export const goals = [
-  { name: 'Emergency fund', target: 15000, saved: 9540, monthly: 400, clr: '#185FA5', bg: '#BAD6F2', fg: '#0C447C' },
+  { name: 'Emergency fund', target: 15000, saved: 9540, monthly: 400, clr: '#27AE60', bg: '#D1FAE5', fg: '#065F46' },
   { name: 'Japan vacation', target: 4500, saved: 1800, monthly: 200, clr: '#1D9E75', bg: '#B4E5D0', fg: '#085041' },
   { name: 'New laptop', target: 2500, saved: 650, monthly: 150, clr: '#7F77DD', bg: '#D8D5F5', fg: '#3C3489' },
   { name: 'Down payment', target: 80000, saved: 12000, monthly: 500, clr: '#D85A30', bg: '#F5C9B8', fg: '#993C1D' },
 ];
 
 export const portfolio = [
-  { name: '401(k)', val: 22400, chg: 3.2, clr: '#185FA5' },
+  { name: '401(k)', val: 22400, chg: 3.2, clr: '#27AE60' },
   { name: 'Roth IRA', val: 10800, chg: 2.8, clr: '#7F77DD' },
   { name: 'Brokerage', val: 5100, chg: 5.1, clr: '#1D9E75' },
 ];

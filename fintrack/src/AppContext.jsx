@@ -67,7 +67,7 @@ export function AppProvider({ children }) {
   // ── UI state ─────────────────────────────────────────────────────────────────
   // Lazy initializer reads localStorage so the preference survives refreshes
   const [darkMode, setDarkMode] = useState(() => {
-    try { return localStorage.getItem('fintrack-dark') === 'true'; } catch { return false; }
+    try { return localStorage.getItem('fintrack-dark') !== 'false'; } catch { return true; }
   });
 
   useEffect(() => {

@@ -69,7 +69,7 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 transition-colors">
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-nero-bg border-t border-gray-200 dark:border-nero-border transition-colors">
       <div className="flex max-w-[680px] mx-auto">
         {tabs.map((tab) => (
           <NavLink
@@ -78,7 +78,7 @@ export default function BottomNav() {
             className={({ isActive }) =>
               `flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] transition-colors ${
                 isActive
-                  ? 'text-gray-900 dark:text-white'
+                  ? 'text-gray-900 dark:text-nero-green'
                   : 'text-gray-400 dark:text-gray-500'
               }`
             }

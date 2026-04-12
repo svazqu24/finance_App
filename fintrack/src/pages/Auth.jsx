@@ -2,17 +2,11 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 
 const inputCls =
-  'w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm ' +
-  'bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 ' +
-  'outline-none focus:border-gray-400 dark:focus:border-gray-400 transition-colors';
+  'w-full border border-gray-200 dark:border-nero-border rounded-lg px-3 py-2 text-sm ' +
+  'bg-white dark:bg-nero-surface text-gray-900 dark:text-white placeholder:text-gray-400 ' +
+  'outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors';
 
 const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1';
-
-// Possible modes:
-//   'login'  — sign in form
-//   'signup' — create account form
-//   'forgot' — enter email to receive reset link
-//   'reset'  — enter new password (reached via password-reset email link)
 
 export default function Auth() {
   const { signIn, signUp, signOut, resetPassword, updatePassword, passwordRecovery } = useApp();
@@ -25,7 +19,6 @@ export default function Auth() {
   const [notice, setNotice]     = useState('');
   const [busy, setBusy]         = useState(false);
 
-  // If the PASSWORD_RECOVERY event arrives after mount (async), switch automatically
   useEffect(() => {
     if (passwordRecovery) setMode('reset');
   }, [passwordRecovery]);
@@ -45,34 +38,24 @@ export default function Auth() {
     try {
       if (mode === 'login') {
         await signIn(email, password);
-        // onAuthStateChange in AppContext drives the rest — nothing to do here
-
       } else if (mode === 'signup') {
         const data = await signUp(email, password);
         if (!data.session) {
-          // Email confirmation is required — show a clear message and go to login
-          // (set fields individually so we control exactly what stays/clears)
           setMode('login');
           setPassword('');
           setError('');
-          setNotice(
-            'Check your email and click the confirmation link to continue.'
-          );
+          setNotice('Check your email and click the confirmation link to continue.');
         }
-        // If data.session exists, onAuthStateChange logs the user in automatically
-
       } else if (mode === 'forgot') {
         await resetPassword(email);
         setNotice('Check your email for a password reset link.');
         setEmail('');
-
       } else if (mode === 'reset') {
         if (password !== confirm) {
           setError('Passwords do not match.');
           return;
         }
         await updatePassword(password);
-        // passwordRecovery becomes false → App.jsx shows the dashboard
       }
     } catch (err) {
       setError(err.message);
@@ -81,7 +64,6 @@ export default function Auth() {
     }
   }
 
-  // ── Derived UI strings ────────────────────────────────────────────────────────
   const titles = {
     login:  'Sign in to your account',
     signup: 'Create your account',
@@ -97,34 +79,49 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center px-4 transition-colors">
+    <div className="min-h-screen bg-white dark:bg-nero-bg flex items-center justify-center px-4 transition-colors">
       <div className="w-full max-w-sm">
 
-        {/* Title */}
+        {/* Nero logo mark + wordmark */}
         <div className="mb-8">
-          <h1 className="text-2xl font-medium text-gray-900 dark:text-white mb-1">FinTrack</h1>
+          <div className="flex items-center gap-2.5 mb-3">
+            <div
+              className="flex items-center justify-center text-white font-semibold"
+              style={{
+                width: 36,
+                height: 36,
+                background: '#27AE60',
+                borderRadius: '10px 3px 10px 3px',
+                fontSize: 18,
+                fontFamily: 'Geist, system-ui, sans-serif',
+              }}
+            >
+              N
+            </div>
+            <span className="text-[26px] font-semibold text-gray-900 dark:text-white tracking-tight"
+                  style={{ fontFamily: 'Geist, system-ui, sans-serif' }}>
+              Nero
+            </span>
+          </div>
           <p className="text-sm text-gray-400">{titles[mode]}</p>
         </div>
 
-        {/* Notice banner */}
         {notice && (
           <div className="text-sm rounded-lg px-4 py-3 mb-4 leading-relaxed"
-               style={{ background: '#C8EBB4', color: '#27500A' }}>
+               style={{ background: '#D1FAE5', color: '#065F46' }}>
             {notice}
           </div>
         )}
 
-        {/* Error banner */}
         {error && (
           <div className="text-sm rounded-lg px-4 py-3 mb-4"
-               style={{ background: '#F7C1C1', color: '#791F1F' }}>
+               style={{ background: '#FEE2E2', color: '#991B1B' }}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
-          {/* Email — shown on all modes except reset */}
           {mode !== 'reset' && (
             <div>
               <label className={labelCls}>Email</label>
@@ -133,7 +130,6 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Password — shown on login, signup, and reset */}
           {(mode === 'login' || mode === 'signup' || mode === 'reset') && (
             <div>
               <label className={labelCls}>
@@ -149,7 +145,6 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Confirm password — reset only */}
           {mode === 'reset' && (
             <div>
               <label className={labelCls}>Confirm new password</label>
@@ -158,7 +153,6 @@ export default function Auth() {
             </div>
           )}
 
-          {/* Forgot password link — login only */}
           {mode === 'login' && (
             <div className="flex justify-end -mt-1">
               <button type="button" onClick={() => goTo('forgot')}
@@ -168,19 +162,23 @@ export default function Auth() {
             </div>
           )}
 
-          <button type="submit" disabled={busy}
-            className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-medium py-2.5 rounded-lg mt-1 transition-colors disabled:opacity-50">
+          <button
+            type="submit"
+            disabled={busy}
+            className="text-white text-sm font-medium py-2.5 rounded-[20px] mt-1 transition-colors disabled:opacity-50"
+            style={{ background: '#27AE60' }}
+          >
             {submitLabel[mode]}
           </button>
         </form>
 
-        {/* Footer links */}
         <div className="mt-5 text-center">
           {mode === 'login' && (
             <p className="text-xs text-gray-400">
               Don't have an account?{' '}
               <button type="button" onClick={() => goTo('signup')}
-                className="text-gray-900 dark:text-white font-medium hover:underline underline-offset-2">
+                className="font-medium hover:underline underline-offset-2"
+                style={{ color: '#27AE60' }}>
                 Sign up
               </button>
             </p>
@@ -190,7 +188,8 @@ export default function Auth() {
             <p className="text-xs text-gray-400">
               Already have an account?{' '}
               <button type="button" onClick={() => goTo('login')}
-                className="text-gray-900 dark:text-white font-medium hover:underline underline-offset-2">
+                className="font-medium hover:underline underline-offset-2"
+                style={{ color: '#27AE60' }}>
                 Sign in
               </button>
             </p>

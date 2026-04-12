@@ -42,9 +42,8 @@ function CalendarCell({ day, bills, onBillClick }) {
   return (
     <div className="aspect-square rounded-lg p-1 flex flex-col" style={{ minHeight: 48 }}>
       <span
-        className={`text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full ${
-          isToday ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'text-gray-500 dark:text-gray-400'
-        }`}
+        className="text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full"
+        style={isToday ? { background: '#27AE60', color: '#fff' } : {}}
       >
         {day}
       </span>
@@ -174,7 +173,7 @@ export default function Bills() {
           </button>
           <button
             onClick={() => { setEditBill(null); setBillModalOpen(true); }}
-            className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors"
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
           >
             + Add bill
           </button>
@@ -182,9 +181,9 @@ export default function Bills() {
       </div>
 
       {/* Calendar */}
-      <div className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden mb-5">
+      <div className="rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden mb-5">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-gray-700">
+        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-nero-border">
           {SHORT_DAYS.map((d) => (
             <div key={d} className="py-2 text-center text-[10px] font-medium text-gray-400 uppercase tracking-wide">
               {d}
@@ -192,9 +191,9 @@ export default function Bills() {
           ))}
         </div>
         {/* Cells */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-gray-700">
+        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-nero-border">
           {cells.map((day, i) => (
-            <div key={i} className="bg-white dark:bg-gray-800">
+            <div key={i} className="bg-white dark:bg-nero-surface">
               <CalendarCell
                 day={day}
                 bills={day ? (byDay[day] || []) : []}
@@ -214,7 +213,7 @@ export default function Bills() {
           </p>
           <button
             onClick={() => { setEditBill(null); setBillModalOpen(true); }}
-            className="text-xs font-medium px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors"
+            className="text-xs font-medium px-4 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
           >
             + Add bill
           </button>
@@ -234,7 +233,7 @@ export default function Bills() {
                 return (
                   <div
                     key={bill.id}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-gray-800 transition-colors"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors border border-transparent dark:border-nero-border"
                   >
                     <div className="flex items-center gap-3">
                       {/* Category chip */}

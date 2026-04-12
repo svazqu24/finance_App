@@ -18,6 +18,26 @@ const tabs = [
 
 const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+/** Asymmetric leaf-cut N logo mark */
+function NeroMark({ size = 28 }) {
+  return (
+    <div
+      className="flex items-center justify-center flex-shrink-0 text-white font-semibold"
+      style={{
+        width: size,
+        height: size,
+        background: '#27AE60',
+        borderRadius: '10px 3px 10px 3px',
+        fontSize: size * 0.5,
+        letterSpacing: '-0.02em',
+        fontFamily: 'Geist, system-ui, sans-serif',
+      }}
+    >
+      N
+    </div>
+  );
+}
+
 function SunIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -50,27 +70,25 @@ export default function Layout() {
     csvModalOpen, setCsvModalOpen,
   } = useApp();
 
-  // Stat cards show current-month figures only
   const monthTxns = filterMonth(transactions, currentMonthAbbr());
   const income   = monthTxns.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
   const spent    = monthTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
   const savedPct = income > 0 ? Math.max(0, Math.round(((income - spent) / income) * 100)) : 0;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
       <div className="py-6 px-4 font-sans max-w-[680px] mx-auto">
 
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
-          <div>
-            <p className="text-[28px] font-semibold leading-tight text-gray-900 dark:text-white tracking-tight">
-              FinTrack
+          <div className="flex items-center gap-2.5">
+            <NeroMark size={32} />
+            <p className="text-[26px] font-semibold leading-tight text-gray-900 dark:text-white tracking-tight">
+              Nero
             </p>
           </div>
 
-          {/* Right side: controls + user */}
           <div className="flex flex-col items-end gap-2 pt-1">
-            {/* Row 1: dark toggle · date · sign out · email */}
             <div className="flex items-center gap-2">
               <button
                 onClick={toggleDark}
@@ -87,23 +105,22 @@ export default function Layout() {
                 Sign out
               </button>
             </div>
-            {/* Row 2: email (sm+ only) */}
             {user?.email && (
               <span className="hidden sm:inline text-[11px] text-gray-400 truncate max-w-[200px]">
                 {user.email}
               </span>
             )}
-            {/* Row 3: action buttons — always visible on their own row */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCsvModalOpen(true)}
-                className="text-xs font-medium px-3 py-1.5 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+                className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
               >
                 Import CSV
               </button>
               <button
                 onClick={() => setAddModalOpen(true)}
-                className="text-xs font-medium px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 transition-colors whitespace-nowrap"
+                className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+                style={{ background: '#27AE60' }}
               >
                 + Add Transaction
               </button>
@@ -111,15 +128,15 @@ export default function Layout() {
           </div>
         </div>
 
-        {/* Summary stats — computed from live transactions */}
+        {/* Summary stats */}
         <div className="grid grid-cols-3 gap-2 mb-6">
           <StatCard label="income" value={loading ? '—' : fmtDollars(income)} sub="this month" />
           <StatCard label="spent"  value={loading ? '—' : fmtDollars(spent)}  sub="this month" />
-          <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#3B6D11' }} />
+          <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#27AE60' }} />
         </div>
 
-        {/* Tab nav — hidden on mobile (replaced by BottomNav) */}
-        <div className="hidden sm:flex border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto transition-colors">
+        {/* Tab nav */}
+        <div className="hidden sm:flex border-b border-gray-200 dark:border-nero-border mb-6 overflow-x-auto transition-colors">
           {tabs.map((tab) => (
             <NavLink
               key={tab.path}
@@ -127,7 +144,7 @@ export default function Layout() {
               className={({ isActive }) =>
                 `no-underline flex-shrink-0 px-3 pt-2 pb-[9px] text-[13px] border-b-2 whitespace-nowrap -mb-px transition-colors ${
                   isActive
-                    ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white font-medium'
+                    ? 'border-gray-900 dark:border-nero-green text-gray-900 dark:text-nero-green font-medium'
                     : 'border-transparent text-gray-400 font-normal'
                 }`
               }
@@ -137,7 +154,6 @@ export default function Layout() {
           ))}
         </div>
 
-        {/* Page content — bottom padding clears the mobile nav bar */}
         <div className="pb-24 sm:pb-0">
           <Outlet />
         </div>
