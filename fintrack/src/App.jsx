@@ -6,6 +6,7 @@ import Overview from './pages/Overview';
 import Transactions from './pages/Transactions';
 import Spending from './pages/Spending';
 import Budget from './pages/Budget';
+import Bills from './pages/Bills';
 import Goals from './pages/Goals';
 import Portfolio from './pages/Portfolio';
 
@@ -37,6 +38,7 @@ function AppRoutes() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="spending"     element={<Spending />} />
           <Route path="budget"       element={<Budget />} />
+          <Route path="bills"        element={<Bills />} />
           <Route path="goals"        element={<Goals />} />
           <Route path="portfolio"    element={<Portfolio />} />
         </Route>

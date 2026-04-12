@@ -4,7 +4,7 @@ import BudgetBar from '../components/BudgetBar';
 import BillRow from '../components/BillRow';
 import { budgets, bills } from '../data';
 import {
-  currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars,
+  currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars, detectSubscriptions,
 } from '../utils';
 
 export default function Budget() {
@@ -35,6 +35,19 @@ export default function Budget() {
   }).length;
   const onTrack = liveBudgets.length - overBudget - approaching;
   const hasTransactions = transactions.length > 0;
+
+  // Subscription detector
+  const subs = detectSubscriptions(transactions);
+  const monthlySubTotal = subs
+    .filter((s) => s.frequency === 'monthly')
+    .reduce((sum, s) => sum + s.amt, 0);
+  const weeklySubTotal = subs
+    .filter((s) => s.frequency === 'weekly')
+    .reduce((sum, s) => sum + s.amt * 4, 0);
+  const biweeklySubTotal = subs
+    .filter((s) => s.frequency === 'biweekly')
+    .reduce((sum, s) => sum + s.amt * 2, 0);
+  const totalMonthlySubCost = monthlySubTotal + weeklySubTotal + biweeklySubTotal;
 
   return (
     <>
@@ -102,6 +115,48 @@ export default function Budget() {
       {bills.map((b) => (
         <BillRow key={b.name} b={b} />
       ))}
+
+      {/* Subscription detector */}
+      {subs.length > 0 && (
+        <>
+          <div className="flex items-center justify-between mt-6 mb-2.5">
+            <p className="text-[13px] font-medium text-gray-900 dark:text-white">
+              Detected subscriptions
+            </p>
+            <span className="text-[11px] text-gray-400">
+              ~{fmtDollars(totalMonthlySubCost)}/mo
+            </span>
+          </div>
+          <div className="flex flex-col gap-2">
+            {subs.map((s) => (
+              <div
+                key={s.name}
+                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-gray-800 transition-colors"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
+                      {s.name}
+                    </p>
+                    {s.possibleCancelled && (
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                            style={{ background: '#FEF3C7', color: '#92400E' }}>
+                        possibly cancelled
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
+                    {s.frequency} · last {s.lastCharged}
+                  </p>
+                </div>
+                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
+                  {fmtDollars(s.amt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </>
   );
 }

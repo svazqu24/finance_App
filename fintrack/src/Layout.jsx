@@ -11,6 +11,7 @@ const tabs = [
   { path: 'transactions', label: 'Transactions' },
   { path: 'spending', label: 'Spending' },
   { path: 'budget', label: 'Budget' },
+  { path: 'bills', label: 'Bills' },
   { path: 'goals', label: 'Goals' },
   { path: 'portfolio', label: 'Portfolio' },
 ];

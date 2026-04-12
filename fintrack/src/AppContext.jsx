@@ -2,6 +2,18 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { goalClrMap, GOAL_COLORS } from './data';
 
+// Map a Supabase bills row → app shape
+function dbRowToBill(row) {
+  return {
+    id:         row.id,
+    name:       row.name,
+    amount:     Number(row.amount),
+    due_day:    row.due_day,
+    cat:        row.cat,
+    paid_month: row.paid_month ?? null,
+  };
+}
+
 const AppContext = createContext(null);
 
 // Map a Supabase row → the shape the rest of the app expects.
@@ -47,6 +59,11 @@ export function AppProvider({ children }) {
   // ── Goals ─────────────────────────────────────────────────────────────────
   const [goalsData, setGoalsData] = useState([]);
 
+  // ── Bills ─────────────────────────────────────────────────────────────────
+  const [billsData, setBillsData]       = useState([]);
+  const [editBill, setEditBill]         = useState(null);
+  const [billModalOpen, setBillModalOpen] = useState(false);
+
   // ── UI state ─────────────────────────────────────────────────────────────────
   // Lazy initializer reads localStorage so the preference survives refreshes
   const [darkMode, setDarkMode] = useState(() => {
@@ -88,11 +105,13 @@ export function AppProvider({ children }) {
       setTransactions([]);
       setBudgetOverrides({});
       setGoalsData([]);
+      setBillsData([]);
       return;
     }
     loadTransactions(user);
     loadBudgetOverrides(user);
     loadGoals(user);
+    loadBills(user);
   }, [user]);
 
   async function loadTransactions(currentUser) {
@@ -276,6 +295,56 @@ export function AppProvider({ children }) {
     setGoalsData((prev) => prev.filter((g) => g.id !== id));
   }
 
+  // ── Bills CRUD ────────────────────────────────────────────────────────────
+  async function loadBills(currentUser) {
+    const { data, error } = await supabase
+      .from('bills')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('due_day', { ascending: true });
+    if (error) { console.error('[fintrack] Bills fetch failed:', error); return; }
+    setBillsData(data.map(dbRowToBill));
+  }
+
+  async function addBill(bill) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('bills')
+      .insert({ user_id: user.id, name: bill.name, amount: bill.amount, due_day: bill.due_day, cat: bill.cat })
+      .select().single();
+    if (error) { console.error('[fintrack] Bill insert failed:', error); return; }
+    setBillsData((prev) => [...prev, dbRowToBill(data)].sort((a, b) => a.due_day - b.due_day));
+  }
+
+  async function updateBill(id, updates) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ name: updates.name, amount: updates.amount, due_day: updates.due_day, cat: updates.cat })
+      .eq('id', id).eq('user_id', user.id)
+      .select().single();
+    if (error) { console.error('[fintrack] Bill update failed:', error); return; }
+    setBillsData((prev) => prev.map((b) => (b.id === id ? dbRowToBill(data) : b)).sort((a, b) => a.due_day - b.due_day));
+  }
+
+  async function deleteBill(id) {
+    if (!user) return;
+    const { error } = await supabase.from('bills').delete().eq('id', id).eq('user_id', user.id);
+    if (error) { console.error('[fintrack] Bill delete failed:', error); return; }
+    setBillsData((prev) => prev.filter((b) => b.id !== id));
+  }
+
+  async function markBillPaid(id, monthStr) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('bills')
+      .update({ paid_month: monthStr })
+      .eq('id', id).eq('user_id', user.id)
+      .select().single();
+    if (error) { console.error('[fintrack] Bill paid update failed:', error); return; }
+    setBillsData((prev) => prev.map((b) => (b.id === id ? dbRowToBill(data) : b)));
+  }
+
   return (
     <AppContext.Provider
       value={{
@@ -315,6 +384,16 @@ export function AppProvider({ children }) {
         deleteGoal,
         editGoal,
         setEditGoal,
+        // bills
+        billsData,
+        addBill,
+        updateBill,
+        deleteBill,
+        markBillPaid,
+        editBill,
+        setEditBill,
+        billModalOpen,
+        setBillModalOpen,
         // ui
         darkMode,
         toggleDark: () => setDarkMode((d) => !d),
