@@ -44,17 +44,18 @@ export const txns = [
 ];
 
 export const catSty = {
-  Income: { bg: '#C8EBB4', fg: '#27500A' },
-  Housing: { bg: '#BAD6F2', fg: '#0C447C' },
-  Groceries: { bg: '#C8EBB4', fg: '#27500A' },
-  Dining: { bg: '#F5C9B8', fg: '#993C1D' },
+  Income:        { bg: '#C8EBB4', fg: '#27500A' },
+  Housing:       { bg: '#BAD6F2', fg: '#0C447C' },
+  Groceries:     { bg: '#C8EBB4', fg: '#27500A' },
+  Dining:        { bg: '#F5C9B8', fg: '#993C1D' },
   Subscriptions: { bg: '#D8D5F5', fg: '#3C3489' },
-  Travel: { bg: '#B4E5D0', fg: '#085041' },
-  Transport: { bg: '#F5DEB0', fg: '#633806' },
-  Health: { bg: '#F2C2D0', fg: '#72243E' },
-  Shopping: { bg: '#DDDBD3', fg: '#444441' },
-  Utilities: { bg: '#DDDBD3', fg: '#444441' },
-  Insurance: { bg: '#BAD6F2', fg: '#0C447C' },
+  Travel:        { bg: '#B4E5D0', fg: '#085041' },
+  Transport:     { bg: '#F5DEB0', fg: '#633806' },
+  Health:        { bg: '#F2C2D0', fg: '#72243E' },
+  Shopping:      { bg: '#DDDBD3', fg: '#444441' },
+  Utilities:     { bg: '#DDDBD3', fg: '#444441' },
+  Insurance:     { bg: '#BAD6F2', fg: '#0C447C' },
+  Transfer:      { bg: '#E2E8F0', fg: '#334155' },
 };
 
 /** Chart color for each spending category */
@@ -69,6 +70,7 @@ export const catClr = {
   Health:        '#D4537E',
   Transport:     '#BA7517',
   Subscriptions: '#7F77DD',
+  Transfer:      '#8B9DC3',
 };
 
 export const spendCats = [
@@ -85,16 +87,17 @@ export const spendCats = [
 ];
 
 export const budgets = [
-  { cat: 'Housing', budget: 1500, spent: 1450 },
-  { cat: 'Groceries', budget: 300, spent: 211 },
-  { cat: 'Dining', budget: 150, spent: 157 },
-  { cat: 'Transport', budget: 100, spent: 59 },
-  { cat: 'Health', budget: 100, spent: 68 },
-  { cat: 'Subscriptions', budget: 50, spent: 26 },
-  { cat: 'Shopping', budget: 100, spent: 110 },
-  { cat: 'Utilities', budget: 120, spent: 89 },
-  { cat: 'Insurance', budget: 200, spent: 180 },
-  { cat: 'Travel', budget: 200, spent: 342 },
+  { cat: 'Housing',       budget: 1500, spent: 1450 },
+  { cat: 'Groceries',     budget: 300,  spent: 211 },
+  { cat: 'Dining',        budget: 150,  spent: 157 },
+  { cat: 'Transport',     budget: 100,  spent: 59 },
+  { cat: 'Health',        budget: 100,  spent: 68 },
+  { cat: 'Subscriptions', budget: 50,   spent: 26 },
+  { cat: 'Shopping',      budget: 100,  spent: 110 },
+  { cat: 'Utilities',     budget: 120,  spent: 89 },
+  { cat: 'Insurance',     budget: 200,  spent: 180 },
+  { cat: 'Travel',        budget: 200,  spent: 342 },
+  { cat: 'Transfer',      budget: 1000, spent: 0 },
 ];
 
 export const bills = [

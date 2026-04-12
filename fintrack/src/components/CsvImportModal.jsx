@@ -10,7 +10,7 @@ import {
 
 const ALL_CATS = [
   'Housing', 'Groceries', 'Dining', 'Subscriptions', 'Travel',
-  'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance', 'Income',
+  'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance', 'Income', 'Transfer',
 ];
 
 const inputCls =

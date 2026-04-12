@@ -178,8 +178,6 @@ export function dateToAppFmt(d) {
 // ── Description cleaning ──────────────────────────────────────────────────────
 
 // US state abbreviations used as an anchor to strip trailing city+state blocks.
-// We match the state as a whole word at end-of-string so "SHELL OIL" (ends in
-// "IL" but not " IL") and "HOLIDAY INN" (ends in "INN" not " IN") are safe.
 const TRAILING_LOCATION_RE = new RegExp(
   String.raw`\s+(?:[A-Z]+\s+){0,2}` +
   String.raw`(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|` +
@@ -201,69 +199,66 @@ function toTitleCase(s) {
     .join(' ');
 }
 
-// Verbose bank transfer descriptions — matched at the start of the raw string.
-// When one matches, we short-circuit and return just the core label.
+// Bank transfer descriptions — short-circuit when matched at start of string.
 const TRANSFER_PATTERNS = [
-  [/^online\s+transfer\b/i,               'Online Transfer'],
-  [/^wire\s+transfer\b/i,                 'Wire Transfer'],
-  [/^ach\s+(?:transfer|credit|debit)\b/i, 'ACH Transfer'],
-  [/^internal\s+transfer\b/i,             'Internal Transfer'],
-  [/^zelle\b/i,                           'Zelle Payment'],
-  [/^direct\s+deposit\b/i,               'Direct Deposit'],
-  [/^mobile\s+(?:check\s+)?deposit\b/i,   'Mobile Deposit'],
+  [/^online\s+transfer\b/i,    'Online Transfer'],
+  [/^wire\s+transfer\b/i,      'Wire Transfer'],
+  [/^ach\s+transfer\b/i,       'ACH Transfer'],   // "ach transfer" only — not "ach credit/debit" (may be payroll)
+  [/^internal\s+transfer\b/i,  'Internal Transfer'],
+  [/^zelle\b/i,                'Zelle Payment'],
+  [/^direct\s+deposit\b/i,     'Direct Deposit'],
+  [/^mobile\s+(?:check\s+)?deposit\b/i, 'Mobile Deposit'],
 ];
 
 /**
  * Clean a raw bank description into a human-readable merchant name.
  *
- * Handles Chase-style suffixes and common bank noise:
  *   "PANERA BREAD #606393 K CHICAGO IL 04/09"              → "Panera Bread"
- *   "PANERA BREAD 773-342-2804"                             → "Panera Bread"
- *   "MCDONALDS 6298"                                        → "Mcdonalds"
- *   "PAYPAL *MICROSOFT"                                     → "Paypal Microsoft"
- *   "Online Transfer From Chk ...8601 Transaction#: 123"   → "Online Transfer"
- *   "NETFLIX.COM 04/09"                                     → "Netflix"
+ *   "TST* STARBUCKS #123"                                  → "Starbucks"
+ *   "SQ *LOCAL COFFEE SHOP"                                → "Local Coffee Shop"
+ *   "PANERA BREAD 773-342-2804"                            → "Panera Bread"
+ *   "MCDONALDS 6298"                                       → "Mcdonalds"
+ *   "PAYPAL *MICROSOFT"                                    → "Paypal Microsoft"
+ *   "Online Transfer From Chk ...8601 Transaction#: 123"  → "Online Transfer"
+ *   "NETFLIX.COM 04/09"                                    → "Netflix"
  */
 export function cleanDescription(raw) {
   if (!raw) return '';
   let s = raw.trim();
 
-  // 0. Short-circuit for verbose bank transfer descriptions
+  // 0a. Strip POS terminal prefixes — must run BEFORE transfer pattern check so
+  //     "TST* ONLINE TRANSFER" correctly triggers the transfer short-circuit.
+  //     TST* = Toast POS, SQ* = Square, SPK* = Spark
+  s = s.replace(/^(?:TST|SQ|SPK)\s*\*\s*/i, '');
+
+  // 0b. Short-circuit for verbose bank transfer descriptions
   for (const [re, label] of TRANSFER_PATTERNS) {
     if (re.test(s)) return label;
   }
 
   // 1. Strip transaction/confirmation reference tokens and account fragments
-  //    "Transaction#: 20488335973"  →  gone
-  //    "Chk ...8601", "Sav ...1234" →  gone
   s = s.replace(/\b(?:transaction|confirmation|reference|ref|conf)#?\s*:?\s*[\w-]+/gi, '');
   s = s.replace(/\b(?:chk|sav|acct|account)\s*\.{0,3}\s*\d+/gi, '');
 
   // 2. Strip trailing MM/DD date fragment Chase appends to every transaction
   s = s.replace(/\s+\d{2}\/\d{2}$/, '');
 
-  // 3. Strip trailing city + state block (uses known state list as anchor)
-  //    Removes up to 2 preceding all-caps words (city / noise code) + state.
-  //    e.g. "K CHICAGO IL" → gone; "SAN FRANCISCO CA" → gone
+  // 3. Strip trailing city + state block (up to 2 preceding all-caps words + state)
   s = s.replace(TRAILING_LOCATION_RE, '');
 
   // 4. Strip phone numbers in NNN-NNN-NNNN, NNN.NNN.NNNN, or NNN NNN NNNN format
   s = s.replace(/\b\d{3}[.\-\s]\d{3}[.\-\s]\d{4}\b/g, '');
 
   // 5. Replace * with a space ("PAYPAL *MICROSOFT" → "PAYPAL MICROSOFT")
-  //    Handles AMEX-style "UBER* EATS" and PayPal vendor asterisks.
-  //    Note: step 6 still catches #DIGITS; this step handles * before text.
   s = s.replace(/\s*\*\s*/g, ' ');
 
   // 6. Strip store/reference numbers that follow # (e.g. "#606393")
   s = s.replace(/\s*#\d+/g, '');
 
-  // 7. Strip long all-digit sequences (≥6 digits: account refs, confirmation numbers)
+  // 7. Strip long all-digit sequences (≥6 digits)
   s = s.replace(/\b\d{6,}\b/g, '');
 
   // 8. Strip trailing standalone short numbers (3–5 digits) — store location codes
-  //    "MCDONALDS 6298" → "MCDONALDS"
-  //    Runs after phone removal so remnants of stripped phone numbers are gone.
   s = s.replace(/\s+\d{3,5}(?=\s|$)/g, '');
 
   // 9. Strip standalone single capital letters (Chase noise codes like "K")
@@ -298,29 +293,280 @@ export const CHASE_CC_CATEGORY_MAP = {
   'gas':               'Transport',
   'home':              'Housing',
   'payment':           'Income',
+  'transfer':          'Transfer',
 };
 
-// ── Category guessing ─────────────────────────────────────────────────────────
+// ── Merchant database ─────────────────────────────────────────────────────────
+//
+// Organized by category for easy expansion. Each entry is a lowercase substring
+// matched against the cleaned, lowercased description.
+// ORDER MATTERS: categories are checked in CATEGORY_ORDER below; first match wins.
+// Place more-specific terms (e.g. "uber eats") before broader ones (e.g. "uber").
+//
+export const MERCHANT_DB = {
 
-const CATEGORY_RULES = [
-  { re: /walmart|trader joe|whole foods|kroger|safeway|aldi|publix|wegmans|sprouts|h-e-b|ralph|vons|jewel|food lion|giant|market basket|grocery|supermarket/i, cat: 'Groceries' },
-  { re: /netflix|spotify|hulu|disney\+?|peacock|paramount\+?|apple\.com\/bill|apple\.com\/us|prime video|youtube premium|hbo|subscription|t-mobile|verizon|at&t|comcast|xfinity|spectrum|wireless/i, cat: 'Subscriptions' },
-  { re: /doordash|grubhub|uber eats|postmates|instacart|seamless|chipotle|mcdonald|burger king|wendy|taco bell|chick.fil|panera|subway|starbucks|dunkin|peet|coffee|restaurant|dining|pizza|sushi|thai|noodle|bbq|cafe|bar |tavern|eatery/i, cat: 'Dining' },
-  { re: /uber(?! eats)|lyft|cta |ventra|mta |bart |metro |transit|amtrak|greyhound|shell|bp |exxon|chevron|sunoco|mobil|speedway|casey|marathon |fuel|gas station|parking|divvy|bird |lime /i, cat: 'Transport' },
-  { re: /delta air|united air|american air|southwest|jetblue|spirit air|frontier|allegiant|airbnb|vrbo|marriott|hilton|hyatt|sheraton|westin|holiday inn|expedia|booking\.com|hotels\.com|kayak/i, cat: 'Travel' },
-  { re: /walgreen|cvs|rite aid|pharmacy|rx|dental|dentist|optometry|doctor|physician|hospital|urgent care|health|medical|anthem|cigna|blue cross|kaiser|gym|planet fitness|la fitness|equinox|ymca/i, cat: 'Health' },
-  { re: /amazon|ebay|etsy|shopify|best buy|apple store|nordstrom|macy|bloomingdale|saks|neiman|gap|old navy|banana republic|h&m|zara|uniqlo|tj maxx|ross dress|marshalls|target(?! pharmacy)/i, cat: 'Shopping' },
-  { re: /comed|pg&e|con ed|national grid|duke energy|dominion|dte |consumers energy|electric|water (?:bill|co|company|dept)|sewage|utility|utilities/i, cat: 'Utilities' },
-  { re: /geico|progressive|state farm|allstate|liberty mutual|nationwide|usaa|travelers |insurance|aaa /i, cat: 'Insurance' },
-  { re: /rent |mortgage|hoa |homeowner|lease |landlord|property management/i, cat: 'Housing' },
-  { re: /salary|payroll|direct dep|paycheck|employer|w-2|1099|freelance|invoice|consulting|dividend|interest income|refund/i, cat: 'Income' },
+  // ── Transfers ────────────────────────────────────────────────────────────────
+  // Checked first so transfers are never misclassified as Income or Shopping.
+  Transfer: [
+    'online transfer', 'wire transfer', 'ach transfer', 'internal transfer',
+    'account transfer', 'bank transfer', 'funds transfer',
+    'zelle', 'venmo', 'cash app', 'cashapp', 'cash.app',
+  ],
+
+  // ── Income ───────────────────────────────────────────────────────────────────
+  Income: [
+    'salary', 'payroll', 'direct deposit', 'mobile deposit', 'paycheck',
+    'direct dep', 'ppd id', ' ppd ', 'freelance', 'consulting fee',
+    'dividend', 'interest income', 'tax refund', 'reimbursement', '1099',
+  ],
+
+  // ── Groceries ────────────────────────────────────────────────────────────────
+  // Checked before Dining so "instacart" and "amazon fresh" → Groceries.
+  Groceries: [
+    'walmart', 'trader joe', 'whole foods', 'wholefds',
+    'kroger', 'safeway', 'aldi', 'publix', 'wegmans', 'sprouts',
+    'h-e-b', 'heb store', "ralph's", 'ralphs', 'vons',
+    'jewel-osco', 'jewel osco', 'food lion', 'market basket',
+    'stop & shop', 'stop and shop', 'harris teeter', 'winn-dixie',
+    'winco foods', 'save-a-lot', 'meijer', 'hy-vee', 'price chopper',
+    'stater bros', 'piggly wiggly', 'food 4 less', 'smart & final',
+    'hannaford', 'shoprite', 'king soopers', 'grocery outlet',
+    'natural grocers', 'fresh thyme', 'earth fare', 'fresh market',
+    "sam's club", 'costco', "bj's wholesale", 'bjs wholesale',
+    'instacart', 'amazon fresh',
+    'grocery', 'supermarket',
+  ],
+
+  // ── Dining ───────────────────────────────────────────────────────────────────
+  // Checked before Transport so "uber eats" → Dining, not Transport.
+  Dining: [
+    // Delivery platforms
+    'doordash', 'grubhub', 'uber eats', 'seamless', 'gopuff', 'caviar',
+    // Coffee & bakeries
+    'starbucks', 'dunkin', "peet's coffee", 'peets coffee', 'dutch bros',
+    'tim horton', 'caribou coffee', 'einstein bagel', 'philz coffee',
+    'blue bottle', 'the coffee bean', 'coffee beanery', "panera",
+    // Fast food / QSR
+    'mcdonald', 'burger king', "wendy's", 'wendys', 'taco bell',
+    'chick-fil-a', 'chick fil a', 'chickfila',
+    'popeyes', "popeye's", 'kfc', 'sonic drive',
+    'jack in the box', "arby's", 'arbys', 'five guys',
+    'in-n-out', 'whataburger', "hardee's", "carl's jr",
+    'dairy queen', "culver's", 'steak n shake',
+    'shake shack', 'smashburger', 'habit burger', 'portillo',
+    'raising cane', "zaxby's", 'cookout',
+    // Mexican
+    'chipotle', 'qdoba', 'taco cabana', 'del taco', 'baja fresh',
+    "moe's southwest", 'taqueria', 'taco ', 'burrito',
+    // Pizza
+    'domino', 'pizza hut', "papa john", 'little caesars', "papa murphy",
+    "round table pizza", 'marco\'s pizza',
+    // Subs & sandwiches
+    'subway', 'jimmy john', 'jersey mike', 'firehouse sub',
+    'potbelly', 'quiznos',
+    // Casual / chain restaurants
+    'noodles & company', "applebee's", "chili's", 'olive garden',
+    'red lobster', 'ihop', "denny's", 'outback steakhouse',
+    'texas roadhouse', 'cracker barrel', 'red robin', 'tgi friday',
+    'bob evans', 'golden corral', 'buffalo wild wings', 'cheesecake factory',
+    'pf chang', 'yard house', 'legal sea food', "ruth's chris",
+    "bonefish grill", "longhorn steakhouse", "carrabba",
+    'first watch', 'panda express', 'wingstop', 'raising cane',
+    'el pollo loco', "dine brands",
+    // Generic / keywords
+    'restaurant', 'dining', 'sushi', 'ramen', 'pho ',
+    'steakhouse', 'chophouse', 'trattoria', 'bistro', 'brasserie',
+    'taproom', 'brewery', 'brew pub', 'eatery', 'pizzeria',
+    'coffee', 'cafe', 'cantina', ' bar ', ' bar,',
+    'grill', 'kitchen', 'bbq', 'noodle', 'thai food',
+  ],
+
+  // ── Transport ────────────────────────────────────────────────────────────────
+  Transport: [
+    // Ride share — "uber" after "uber eats" so Dining match wins for Uber Eats
+    'uber', 'lyft',
+    // Public transit
+    'cta chicago', 'ventra', 'mta ', 'bart ', 'wmata', 'septa',
+    'mbta', 'trimet', 'marta ', 'lacmta', 'njtransit', 'metra ',
+    // Rail / bus
+    'amtrak', 'greyhound', 'megabus',
+    // Gas stations
+    'shell ', 'bp ', 'exxon', 'chevron', 'sunoco', 'mobil ',
+    'speedway', "casey's", 'marathon petro', 'kwik trip', 'kwiktrip',
+    'wawa', 'sheetz', 'circle k', 'quiktrip', 'racetrac', 'valero',
+    'arco ', 'citgo', "phillips 66", 'pilot flying j',
+    "love's travel", 'holiday station',
+    // Parking / tolls
+    'parking', 'spothero', 'parkwhiz', 'parkmobile',
+    'ipass', 'e-zpass', 'ezpass', 'sunpass', 'fastrak',
+    // Bike & scooter share
+    'divvy', 'bird ', 'lime ', 'citi bike', 'bluebikes', 'capital bikeshare',
+    // Generic
+    'fuel', 'gas station', 'auto fuel',
+  ],
+
+  // ── Travel ───────────────────────────────────────────────────────────────────
+  Travel: [
+    // Airlines
+    'delta air', 'united air', 'american air', 'southwest air',
+    'jetblue', 'spirit air', 'frontier airline', 'allegiant air',
+    'alaska air', 'hawaiian air', 'sun country', 'breeze airways',
+    // Hotels
+    'airbnb', 'vrbo', 'marriott', 'hilton', 'hyatt', 'sheraton',
+    'westin', 'holiday inn', 'hampton inn', 'courtyard marriott',
+    'residence inn', 'fairfield inn', 'best western', 'motel 6',
+    'super 8', 'days inn', 'wyndham', 'radisson', 'doubletree',
+    'embassy suites', 'ritz carlton', 'four seasons',
+    'kimpton', 'omni hotel', 'loews hotel',
+    // Booking & OTAs
+    'expedia', 'booking.com', 'hotels.com', 'kayak', 'priceline',
+    'trivago', 'travelocity', 'orbitz', 'hotwire',
+    // Car rental
+    'hertz', 'avis ', 'budget car', 'enterprise rent',
+    'national car rental', 'alamo rent', 'dollar rent', 'thrifty car',
+  ],
+
+  // ── Health ───────────────────────────────────────────────────────────────────
+  Health: [
+    // Pharmacy
+    'walgreens', 'cvs', 'rite aid', 'duane reade', 'bartell drug', 'kinney drug',
+    // Medical
+    'pharmacy', 'dental', 'dentist', 'orthodont', 'optometry',
+    'eye care', 'lenscrafters', 'visionworks', 'doctor', 'physician',
+    'hospital', 'urgent care', 'emergency room', 'labcorp',
+    'quest diagnostics', 'concentra', 'health clinic', 'health center',
+    'healthcare', 'medical center',
+    // Health insurance
+    'anthem', 'cigna', 'blue cross', 'kaiser', 'united health',
+    'aetna', 'humana', 'molina health', 'centene',
+    // Fitness
+    'planet fitness', 'la fitness', 'equinox', 'ymca',
+    'anytime fitness', "gold's gym", '24 hour fitness',
+    'orangetheory', 'orange theory', 'soulcycle', 'crunch fitness',
+    'lifetime fitness', 'f45 training', 'classpass', 'peloton',
+    'pure barre', "barry's bootcamp", 'solidcore',
+    'gym ', ' gym',
+  ],
+
+  // ── Subscriptions ────────────────────────────────────────────────────────────
+  Subscriptions: [
+    // Video streaming
+    'netflix', 'hulu', 'disney+', 'disney plus', 'peacock',
+    'paramount+', 'paramount plus', 'hbo max', 'max.com',
+    'prime video', 'amazon prime', 'apple tv+', 'apple tv plus',
+    'crunchyroll', 'funimation', 'showtime', 'starz',
+    'discovery+', 'espn+', 'fubo tv', 'sling tv', 'philo',
+    // Music
+    'spotify', 'youtube premium', 'youtube music', 'apple music',
+    'tidal', 'pandora', 'amazon music', 'deezer',
+    // Cloud / productivity
+    'microsoft 365', 'office 365', 'google one', 'icloud storage',
+    'dropbox', 'adobe creative', 'creative cloud', 'canva pro',
+    // Reading / learning
+    'audible', 'kindle unlimited', 'scribd', 'duolingo', 'babbel',
+    // Wellness / apps
+    'headspace', 'calm ', 'noom', 'calm app',
+    // Mobile & internet carriers — after Utilities to avoid overlap
+    't-mobile', 'verizon wireless', 'at&t wireless', 'comcast',
+    'xfinity', 'spectrum', 'cox cable', 'optimum online',
+    'frontier comm', 'google fi',
+    // Generic
+    'subscription', 'monthly plan',
+  ],
+
+  // ── Utilities ────────────────────────────────────────────────────────────────
+  Utilities: [
+    // Electric
+    'comed', 'pg&e', 'pge ', 'con ed', 'coned', 'national grid',
+    'duke energy', 'dominion energy', 'dte energy', 'consumers energy',
+    'ameren', 'entergy', 'evergy', 'puget sound energy', 'pseg',
+    'eversource', 'avangrid', 'firstenergy', 'xcel energy',
+    'nv energy', 'hawaiian electric',
+    // Gas utility (home heating/cooking)
+    'nicor gas', 'peoples gas', 'atmos energy', 'spire energy',
+    'columbia gas', 'centerpoint energy',
+    // Water & sewer
+    'water dept', 'water utility', 'water bill', 'sewage',
+    // Trash
+    'waste management', 'republic services', 'trash pickup',
+    // Generic
+    'electric bill', 'utilities',
+  ],
+
+  // ── Insurance ────────────────────────────────────────────────────────────────
+  Insurance: [
+    'geico', 'progressive', 'state farm', 'allstate',
+    'liberty mutual', 'nationwide insurance', 'usaa', 'travelers ',
+    'farmers insurance', 'american family insurance',
+    'esurance', 'root insurance', 'metlife', 'new york life',
+    'prudential', 'principal financial', 'guardian life',
+    'aaa insurance', 'insurance',
+  ],
+
+  // ── Housing ──────────────────────────────────────────────────────────────────
+  Housing: [
+    'rent payment', 'rent ', 'mortgage', 'hoa dues', 'hoa ',
+    'homeowner', 'lease payment', 'lease ', 'landlord',
+    'property management', 'apartment fee',
+  ],
+
+  // ── Shopping (catch-all) ─────────────────────────────────────────────────────
+  Shopping: [
+    // E-commerce
+    'amazon', 'ebay', 'etsy', 'shopify',
+    // Electronics
+    'best buy', 'apple store', 'microsoft store',
+    'samsung store', 'b&h photo', 'adorama', 'newegg',
+    // Department / apparel
+    'nordstrom', "macy's", 'macys', 'bloomingdale', 'saks',
+    'neiman marcus', 'gap', 'old navy', 'banana republic',
+    'h&m', 'zara', 'uniqlo', 'forever 21', 'urban outfitters',
+    'free people', 'anthropologie', 'j.crew',
+    // Off-price
+    'tj maxx', 'ross dress', 'marshalls', 'burlington coat',
+    // Big box
+    'target', "kohl's", 'kohls', 'jcpenney',
+    "dick's sporting", 'academy sports',
+    // Home improvement
+    'home depot', "lowe's", 'lowes home', 'menards', 'ace hardware',
+    // Home goods / furniture
+    'ikea', 'wayfair', 'overstock', 'bed bath',
+    'williams sonoma', 'crate and barrel', 'pottery barn', 'west elm',
+    // Craft / hobby
+    'michaels', 'hobby lobby', "jo-ann fabric",
+    // Dollar / discount
+    'dollar tree', 'dollar general', 'family dollar', 'five below',
+    // Outdoor / sports
+    'rei', 'bass pro', 'cabelas',
+    // Fashion / athletic brands
+    'nike', 'adidas', 'under armour', 'lululemon', 'patagonia',
+    // Pet
+    'chewy', 'petco', 'petsmart',
+    // Auto parts
+    'autozone', "o'reilly auto", 'advance auto', 'napa auto',
+    // Books
+    'barnes & noble',
+  ],
+};
+
+// Categories are checked in this order — first match wins.
+// Transfer and Income come first to avoid misclassifying known special transactions.
+// Groceries before Dining (instacart = groceries), Dining before Transport (uber eats ≠ transport).
+const CATEGORY_ORDER = [
+  'Transfer', 'Income', 'Groceries', 'Dining', 'Transport',
+  'Travel', 'Health', 'Subscriptions', 'Utilities', 'Insurance',
+  'Housing', 'Shopping',
 ];
 
-/** Guess a category from a merchant/description string. Defaults to 'Shopping'. */
+/** Guess a category from a cleaned merchant/description string. Defaults to 'Shopping'. */
 export function guessCategory(desc) {
   if (!desc) return 'Shopping';
-  for (const { re, cat } of CATEGORY_RULES) {
-    if (re.test(desc)) return cat;
+  const lc = desc.toLowerCase();
+  for (const cat of CATEGORY_ORDER) {
+    const terms = MERCHANT_DB[cat] || [];
+    for (const term of terms) {
+      if (lc.includes(term)) return cat;
+    }
   }
   return 'Shopping';
 }
@@ -332,6 +578,7 @@ export function guessCategory(desc) {
  * @param {string[][]} rows - data rows (no header)
  * @param {object} mapping
  * @param {object|null} categoryMap - optional map of raw category string → app category
+ *   (used for Chase CC imports; applied as fallback for unrecognized merchants)
  * @returns {{ name, date, amt, cat, _key }[]}
  */
 export function buildRows(rows, mapping, categoryMap = null) {
@@ -345,13 +592,29 @@ export function buildRows(rows, mapping, categoryMap = null) {
     const amt     = computeAmount(cells, mapping);
     // Skip rows with no name or zero amount
     if (!name || amt === 0) continue;
+
+    const guessed = guessCategory(name);
     let cat;
-    if (categoryMap && mapping.catCol >= 0 && cells[mapping.catCol]) {
-      const rawCat = String(cells[mapping.catCol]).toLowerCase().trim();
-      cat = categoryMap[rawCat] || (amt > 0 ? 'Income' : guessCategory(name));
+
+    if (guessed === 'Transfer') {
+      // Transfers override amount-based heuristics (both directions are transfers)
+      cat = 'Transfer';
+    } else if (amt > 0) {
+      // Positive amounts are always income after the transfer check
+      cat = 'Income';
     } else {
-      cat = amt > 0 ? 'Income' : guessCategory(name);
+      // Expense: use our merchant DB result if specific (not generic Shopping),
+      // otherwise fall back to the Chase CC category column as a hint.
+      if (guessed !== 'Shopping') {
+        cat = guessed;
+      } else if (categoryMap && mapping.catCol >= 0 && cells[mapping.catCol]) {
+        const rawCat = String(cells[mapping.catCol]).toLowerCase().trim();
+        cat = categoryMap[rawCat] || 'Shopping';
+      } else {
+        cat = 'Shopping';
+      }
     }
+
     result.push({ _key: i, name, date, amt, cat });
   }
   return result;

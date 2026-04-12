@@ -3,7 +3,7 @@ import { useApp } from '../AppContext';
 
 const EXPENSE_CATS = [
   'Housing', 'Groceries', 'Dining', 'Subscriptions',
-  'Travel', 'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance',
+  'Travel', 'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance', 'Transfer',
 ];
 
 function todayISO() {
