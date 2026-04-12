@@ -44,18 +44,18 @@ export const txns = [
 ];
 
 export const catSty = {
-  Income:        { bg: '#D1FAE5', fg: '#065F46' },
-  Housing:       { bg: '#D1FAE5', fg: '#065F46' },
-  Groceries:     { bg: '#C8EBB4', fg: '#27500A' },
-  Dining:        { bg: '#F5C9B8', fg: '#993C1D' },
-  Subscriptions: { bg: '#D8D5F5', fg: '#3C3489' },
-  Travel:        { bg: '#B4E5D0', fg: '#085041' },
-  Transport:     { bg: '#F5DEB0', fg: '#633806' },
-  Health:        { bg: '#F2C2D0', fg: '#72243E' },
-  Shopping:      { bg: '#DDDBD3', fg: '#444441' },
-  Utilities:     { bg: '#DDDBD3', fg: '#444441' },
-  Insurance:     { bg: '#D1FAE5', fg: '#065F46' },
-  Transfer:      { bg: '#E2E8F0', fg: '#334155' },
+  Dining:        { bg: '#2a1a10', fg: '#f97316' },
+  Groceries:     { bg: '#1a2a1a', fg: '#4ade80' },
+  Income:        { bg: '#1a2a1a', fg: '#27AE60' },
+  Shopping:      { bg: '#1a1a2a', fg: '#818cf8' },
+  Subscriptions: { bg: '#1a1a2a', fg: '#a78bfa' },
+  Transport:     { bg: '#2a2a1a', fg: '#facc15' },
+  Health:        { bg: '#2a1a1a', fg: '#f87171' },
+  Housing:       { bg: '#1a1f2a', fg: '#60a5fa' },
+  Utilities:     { bg: '#1f1f1f', fg: '#94a3b8' },
+  Travel:        { bg: '#1a2a2a', fg: '#2dd4bf' },
+  Transfer:      { bg: '#1f1f1f', fg: '#888888' },
+  Insurance:     { bg: '#1a1f2a', fg: '#93c5fd' }, // blue family like Housing
 };
 
 /** Chart color for each spending category */

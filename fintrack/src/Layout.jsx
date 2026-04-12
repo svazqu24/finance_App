@@ -4,6 +4,7 @@ import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
 import CsvImportModal from './components/CsvImportModal';
+import OnboardingModal from './components/OnboardingModal';
 import BottomNav from './components/BottomNav';
 import { NAV_ITEMS, GearIcon } from './navItems';
 
@@ -191,7 +192,7 @@ function Header({ compact }) {
 export default function Layout() {
   const {
     transactions, loading,
-    preferences,
+    preferences, prefsLoaded,
     editTxn, setEditTxn,
     addModalOpen, setAddModalOpen,
     csvModalOpen, setCsvModalOpen,
@@ -212,6 +213,7 @@ export default function Layout() {
         open={addModalOpen || !!editTxn}
         onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
       />
+      {prefsLoaded && !preferences.onboardingComplete && <OnboardingModal />}
     </>
   );
 

@@ -36,9 +36,18 @@ export default function Goals() {
       ))}
 
       {goalsData.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-8">
-          No goals yet — add your first one below.
-        </p>
+        <div className="text-center py-10">
+          <div
+            className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
+            style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontFamily: 'Geist, system-ui, sans-serif' }}
+          >
+            N
+          </div>
+          <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">Create your first savings goal</p>
+          <p className="text-sm text-gray-400 leading-relaxed mb-0 max-w-[240px] mx-auto">
+            Track progress toward vacations, emergency funds, or big purchases.
+          </p>
+        </div>
       )}
 
       <button

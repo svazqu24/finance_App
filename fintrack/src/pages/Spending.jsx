@@ -112,18 +112,24 @@ export default function Spending() {
   if (!loading && !hasAnyTransactions) {
     return (
       <div className="text-center py-12">
-        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1.5">No spending data yet</p>
-        <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-          Add transactions or import a CSV to see your spending breakdown.
+        <div
+          className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
+          style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontFamily: 'Geist, system-ui, sans-serif' }}
+        >
+          N
+        </div>
+        <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">Add transactions to see your breakdown</p>
+        <p className="text-sm text-gray-400 mb-6 leading-relaxed max-w-[260px] mx-auto">
+          Your spending by category will appear here once you have transactions.
         </p>
         <div className="flex gap-2.5 justify-center flex-wrap">
           <button onClick={openAddModal}
-            className="text-xs font-medium px-4 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}>
+            className="text-sm font-medium px-4 py-2.5 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}>
             + Add transaction
           </button>
           <button onClick={openCsvModal}
-            className="text-xs font-medium px-4 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
-            Import from CSV
+            className="text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors">
+            Import CSV
           </button>
         </div>
       </div>

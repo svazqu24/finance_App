@@ -197,31 +197,26 @@ function exportCSV(transactions) {
 export default function Settings() {
   const {
     preferences, updatePreference,
-    transactions, signOut, updatePassword, user,
+    transactions, resetPassword, deleteAccount, user,
   } = useApp();
 
   // Change password state
-  const [pwdOpen,    setPwdOpen]    = useState(false);
-  const [newPwd,     setNewPwd]     = useState('');
-  const [confirmPwd, setConfirmPwd] = useState('');
-  const [pwdError,   setPwdError]   = useState('');
-  const [pwdSuccess, setPwdSuccess] = useState(false);
   const [pwdBusy,    setPwdBusy]    = useState(false);
+  const [pwdNotice,  setPwdNotice]  = useState('');
+  const [pwdError,   setPwdError]   = useState('');
 
   // Delete account state
-  const [deleteStep, setDeleteStep] = useState(0); // 0=idle 1=confirm 2=done
+  const [deleteStep,  setDeleteStep]  = useState(0); // 0=idle 1=confirm
+  const [deleteBusy,  setDeleteBusy]  = useState(false);
 
-  async function handlePwdSubmit(e) {
-    e.preventDefault();
+  async function handleSendResetEmail() {
+    if (!user?.email) return;
     setPwdError('');
-    if (newPwd.length < 6) { setPwdError('Minimum 6 characters.'); return; }
-    if (newPwd !== confirmPwd) { setPwdError('Passwords do not match.'); return; }
+    setPwdNotice('');
     setPwdBusy(true);
     try {
-      await updatePassword(newPwd);
-      setPwdSuccess(true);
-      setNewPwd(''); setConfirmPwd('');
-      setTimeout(() => { setPwdSuccess(false); setPwdOpen(false); }, 2000);
+      await resetPassword(user.email);
+      setPwdNotice('Reset link sent — check your inbox.');
     } catch (err) {
       setPwdError(err.message);
     } finally {
@@ -229,16 +224,15 @@ export default function Settings() {
     }
   }
 
-  function handleDeleteAccount() {
+  async function handleDeleteAccount() {
     if (deleteStep === 0) { setDeleteStep(1); return; }
-    // Sign out — actual deletion requires a server function
-    signOut();
+    setDeleteBusy(true);
+    try {
+      await deleteAccount();
+    } finally {
+      setDeleteBusy(false);
+    }
   }
-
-  const inputCls =
-    'w-full border border-gray-200 dark:border-nero-border rounded-lg px-3 py-2 text-sm ' +
-    'bg-white dark:bg-nero-bg text-gray-900 dark:text-white placeholder:text-gray-400 ' +
-    'outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors';
 
   const { layoutStyle, navPosition } = preferences;
 
@@ -309,48 +303,15 @@ export default function Settings() {
           </span>
         </Row>
 
-        <Row label="Change password" sub={user?.email}>
+        <Row label="Change password" sub={pwdNotice || pwdError || user?.email}>
           <button
-            onClick={() => { setPwdOpen((o) => !o); setPwdError(''); }}
-            className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 transition-colors"
+            onClick={handleSendResetEmail}
+            disabled={pwdBusy}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 disabled:opacity-50 transition-colors"
           >
-            {pwdOpen ? 'Cancel' : 'Change'}
+            {pwdBusy ? '…' : 'Send reset link'}
           </button>
         </Row>
-
-        {pwdOpen && (
-          <div className="px-4 pb-4">
-            <form onSubmit={handlePwdSubmit} className="flex flex-col gap-2.5 p-4 rounded-xl bg-gray-50 dark:bg-nero-bg border border-gray-100 dark:border-nero-border">
-              {pwdError && (
-                <p className="text-xs rounded-lg px-3 py-2" style={{ background: '#FEE2E2', color: '#991B1B' }}>
-                  {pwdError}
-                </p>
-              )}
-              {pwdSuccess && (
-                <p className="text-xs rounded-lg px-3 py-2" style={{ background: '#D1FAE5', color: '#065F46' }}>
-                  Password updated!
-                </p>
-              )}
-              <div>
-                <label className="text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1">New password</label>
-                <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
-                  className={inputCls} minLength={6} placeholder="Min. 6 characters" required />
-              </div>
-              <div>
-                <label className="text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1">Confirm password</label>
-                <input type="password" value={confirmPwd} onChange={(e) => setConfirmPwd(e.target.value)}
-                  className={inputCls} minLength={6} placeholder="Repeat new password" required />
-              </div>
-              <button
-                type="submit" disabled={pwdBusy}
-                className="text-white text-sm font-medium py-2 rounded-[20px] disabled:opacity-50"
-                style={{ background: '#27AE60' }}
-              >
-                {pwdBusy ? 'Saving…' : 'Update password'}
-              </button>
-            </form>
-          </div>
-        )}
 
         <Row label="Export my data" sub={`${transactions.length} transactions`}>
           <button
@@ -362,7 +323,7 @@ export default function Settings() {
           </button>
         </Row>
 
-        <Row label="Delete account" sub="This action cannot be undone" last>
+        <Row label="Delete account" sub="Deletes all your data permanently" last>
           {deleteStep === 0 ? (
             <button
               onClick={() => setDeleteStep(1)}
@@ -376,10 +337,11 @@ export default function Settings() {
               <span className="text-xs text-gray-400">Are you sure?</span>
               <button
                 onClick={handleDeleteAccount}
-                className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+                disabled={deleteBusy}
+                className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white disabled:opacity-50 transition-colors"
                 style={{ background: '#f87171' }}
               >
-                Confirm
+                {deleteBusy ? '…' : 'Confirm'}
               </button>
               <button
                 onClick={() => setDeleteStep(0)}

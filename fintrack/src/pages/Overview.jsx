@@ -40,12 +40,18 @@ export default function Overview() {
 
       {isEmpty ? (
         /* ── Empty state ── */
-        <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-2xl px-6 py-10 text-center transition-colors">
+        <div className="text-center py-12">
+          <div
+            className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
+            style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontFamily: 'Geist, system-ui, sans-serif' }}
+          >
+            N
+          </div>
           <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">
-            Welcome to Nero
+            Start tracking your money
           </p>
-          <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[280px] mx-auto">
-            Add your first transaction manually or import a CSV from your bank to get started.
+          <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[260px] mx-auto">
+            Add your first transaction or import a CSV from your bank.
           </p>
           <div className="flex gap-2.5 justify-center flex-wrap">
             <button
@@ -60,7 +66,7 @@ export default function Overview() {
               className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-700 dark:text-gray-300 hover:border-gray-400 transition-colors"
             >
               <UploadIcon />
-              Import from CSV
+              Import CSV
             </button>
           </div>
         </div>

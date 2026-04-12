@@ -87,18 +87,25 @@ export default function Budget() {
 
       {/* No-transactions hint */}
       {!loading && !hasTransactions && (
-        <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-4 py-3.5 mb-5 flex items-center justify-between gap-3 transition-colors">
-          <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed m-0">
-            No transactions yet. Add one or import a CSV to track spending against these limits.
+        <div className="text-center py-8 mb-5">
+          <div
+            className="w-10 h-10 flex items-center justify-center text-white font-semibold mx-auto mb-3"
+            style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontFamily: 'Geist, system-ui, sans-serif', fontSize: 18 }}
+          >
+            N
+          </div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Set your first budget limit</p>
+          <p className="text-xs text-gray-400 mb-4 leading-relaxed max-w-[240px] mx-auto">
+            Add transactions to see live spending vs. your budget limits.
           </p>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="flex gap-2 justify-center">
             <button onClick={openAddModal}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-[20px] text-white whitespace-nowrap transition-colors" style={{ background: '#27AE60' }}>
-              + Add
+              className="text-xs font-medium px-3 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}>
+              + Add transaction
             </button>
             <button onClick={openCsvModal}
-              className="text-xs font-medium px-2.5 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 whitespace-nowrap transition-colors">
-              Import
+              className="text-xs font-medium px-3 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 transition-colors">
+              Import CSV
             </button>
           </div>
         </div>

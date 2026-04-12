@@ -4,20 +4,22 @@ import { goalClrMap, GOAL_COLORS } from './data';
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 const PREF_DEFAULTS = {
-  darkMode:    true,
-  compactView: false,
-  layoutStyle: 'single',
-  navPosition: 'top',
-  currency:    'USD',
+  darkMode:           true,
+  compactView:        false,
+  layoutStyle:        'single',
+  navPosition:        'top',
+  currency:           'USD',
+  onboardingComplete: false,
 };
 
 // DB column → JS key mapping
 const DB_TO_JS = {
-  dark_mode:    'darkMode',
-  compact_view: 'compactView',
-  layout_style: 'layoutStyle',
-  nav_position: 'navPosition',
-  currency:     'currency',
+  dark_mode:           'darkMode',
+  compact_view:        'compactView',
+  layout_style:        'layoutStyle',
+  nav_position:        'navPosition',
+  currency:            'currency',
+  onboarding_complete: 'onboardingComplete',
 };
 
 function dbRowToPrefs(row) {
@@ -27,6 +29,7 @@ function dbRowToPrefs(row) {
   if (row.layout_style) p.layoutStyle = row.layout_style;
   if (row.nav_position) p.navPosition = row.nav_position;
   if (row.currency)     p.currency    = row.currency;
+  if (row.onboarding_complete !== null && row.onboarding_complete !== undefined) p.onboardingComplete = row.onboarding_complete;
   return p;
 }
 
@@ -89,6 +92,7 @@ export function AppProvider({ children }) {
 
   // ── Preferences ───────────────────────────────────────────────────────────
   const [preferences, setPreferences] = useState(PREF_DEFAULTS);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   // ── Bills ─────────────────────────────────────────────────────────────────
   const [billsData, setBillsData]       = useState([]);
@@ -137,6 +141,7 @@ export function AppProvider({ children }) {
       setGoalsData([]);
       setBillsData([]);
       setPreferences(PREF_DEFAULTS);
+      setPrefsLoaded(false);
       return;
     }
     loadTransactions(user);
@@ -327,6 +332,20 @@ export function AppProvider({ children }) {
     setGoalsData((prev) => prev.filter((g) => g.id !== id));
   }
 
+  // ── Account deletion ─────────────────────────────────────────────────────
+  async function deleteAccount() {
+    if (!user) return;
+    // Delete all user data, then sign out (client can't delete auth user directly)
+    await Promise.all([
+      supabase.from('transactions').delete().eq('user_id', user.id),
+      supabase.from('goals').delete().eq('user_id', user.id),
+      supabase.from('bills').delete().eq('user_id', user.id),
+      supabase.from('budgets').delete().eq('user_id', user.id),
+      supabase.from('user_preferences').delete().eq('user_id', user.id),
+    ]);
+    await signOut();
+  }
+
   // ── Bills CRUD ────────────────────────────────────────────────────────────
   async function loadBills(currentUser) {
     const { data, error } = await supabase
@@ -372,11 +391,13 @@ export function AppProvider({ children }) {
       .select('*')
       .eq('user_id', currentUser.id)
       .maybeSingle();
-    if (error) { console.error('[nero] Prefs fetch failed:', error); return; }
-    if (!data) return; // no row yet — keep defaults
-    const prefs = dbRowToPrefs(data);
-    setPreferences(prefs);
-    setDarkMode(prefs.darkMode);
+    if (error) { console.error('[nero] Prefs fetch failed:', error); setPrefsLoaded(true); return; }
+    if (data) {
+      const prefs = dbRowToPrefs(data);
+      setPreferences(prefs);
+      setDarkMode(prefs.darkMode);
+    }
+    setPrefsLoaded(true);
   }
 
   async function updatePreference(key, value) {
@@ -455,6 +476,8 @@ export function AppProvider({ children }) {
         // preferences
         preferences,
         updatePreference,
+        prefsLoaded,
+        deleteAccount,
         // ui
         darkMode,
         toggleDark: () => updatePreference('darkMode', !preferences.darkMode),
