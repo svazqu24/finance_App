@@ -3,7 +3,8 @@
     "allow": [
       "Bash(git -C C:/web_program/finApp fetch origin)",
       "Bash(git -C C:/web_program/finApp pull origin main)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

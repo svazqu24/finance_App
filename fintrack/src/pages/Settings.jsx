@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
 import { fmtDollars } from '../utils';
+import { catSty } from '../data';
 
 // ── Toggle switch ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -177,6 +178,41 @@ function PickerCard({ label, active, onClick, children }) {
   );
 }
 
+// ── Category color picker ──────────────────────────────────────────────────────
+function CategoryColorItem({ cat, bgColor, fgColor, onBgChange, onFgChange, onReset }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-nero-border last:border-b-0">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-900 dark:text-white">{cat}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex gap-1">
+          <input
+            type="color"
+            value={bgColor}
+            onChange={(e) => onBgChange(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-nero-border"
+            title="Background color"
+          />
+          <input
+            type="color"
+            value={fgColor}
+            onChange={(e) => onFgChange(e.target.value)}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-nero-border"
+            title="Foreground color"
+          />
+        </div>
+        <button
+          onClick={onReset}
+          className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-2 py-1.5 rounded transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Export helper ──────────────────────────────────────────────────────────────
 function exportCSV(transactions) {
   const header = 'Date,Description,Category,Amount';
@@ -208,6 +244,19 @@ export default function Settings() {
   // Delete account state
   const [deleteStep,  setDeleteStep]  = useState(0); // 0=idle 1=confirm
   const [deleteBusy,  setDeleteBusy]  = useState(false);
+
+  function handleUpdateCategoryColor(cat, field, value) {
+    const updated = { ...preferences.categoryColors };
+    if (!updated[cat]) updated[cat] = { ...catSty[cat] };
+    updated[cat][field] = value;
+    updatePreference('categoryColors', updated);
+  }
+
+  function handleResetCategoryColor(cat) {
+    const updated = { ...preferences.categoryColors };
+    delete updated[cat];
+    updatePreference('categoryColors', updated);
+  }
 
   async function handleSendResetEmail() {
     if (!user?.email) return;
@@ -292,6 +341,27 @@ export default function Settings() {
               <NavPreview type={key} />
             </PickerCard>
           ))}
+        </div>
+      </Section>
+
+      {/* ── Category colors ── */}
+      <Section title="Category colors">
+        <div className="rounded-xl border border-gray-200 dark:border-nero-border overflow-hidden bg-white dark:bg-nero-surface">
+          {Object.keys(catSty).map((cat) => {
+            const custom = preferences.categoryColors?.[cat];
+            const colors = custom || catSty[cat];
+            return (
+              <CategoryColorItem
+                key={cat}
+                cat={cat}
+                bgColor={colors.bg}
+                fgColor={colors.fg}
+                onBgChange={(val) => handleUpdateCategoryColor(cat, 'bg', val)}
+                onFgChange={(val) => handleUpdateCategoryColor(cat, 'fg', val)}
+                onReset={() => handleResetCategoryColor(cat)}
+              />
+            );
+          })}
         </div>
       </Section>
 

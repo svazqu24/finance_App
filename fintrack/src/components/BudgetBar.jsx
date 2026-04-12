@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { catSty } from '../data';
 import { useApp } from '../AppContext';
 
 function PencilIcon() {
@@ -13,7 +12,7 @@ function PencilIcon() {
 }
 
 export default function BudgetBar({ b }) {
-  const { saveBudgetLimit } = useApp();
+  const { saveBudgetLimit, getCategorySty } = useApp();
   const [editing, setEditing]       = useState(false);
   const [draftLimit, setDraftLimit] = useState('');
 
@@ -22,7 +21,7 @@ export default function BudgetBar({ b }) {
   const near   = pct >= 85 && pct <= 100;
   const barClr = over ? '#f87171' : near ? '#F59E0B' : '#27AE60';
   const diff   = Math.abs(b.budget - b.spent);
-  const s      = catSty[b.cat] || { bg: '#DDDBD3', fg: '#444441' };
+  const s      = getCategorySty(b.cat);
 
   function startEdit() {
     setDraftLimit(String(b.budget));

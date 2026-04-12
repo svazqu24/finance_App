@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { catSty } from '../data';
 import { useApp } from '../AppContext';
 
 function TrashIcon() {
@@ -15,9 +14,10 @@ function TrashIcon() {
 }
 
 export default function TransactionRow({ txn }) {
-  const { deleteTransaction, setEditTxn } = useApp();
+  const { deleteTransaction, setEditTxn, getCategorySty } = useApp();
   const [confirming, setConfirming] = useState(false);
-  const s = catSty[txn.cat] || { bg: '#DDDBD3', fg: '#444441' };
+  const [isHovered, setIsHovered] = useState(false);
+  const s = getCategorySty(txn.cat);
   const pos = txn.amt > 0;
 
   useEffect(() => {
@@ -60,6 +60,8 @@ export default function TransactionRow({ txn }) {
     <div
       className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-nero-surface/50 rounded-sm"
       onClick={handleRowClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div
         className="w-9 h-9 flex items-center justify-center flex-shrink-0"
@@ -79,14 +81,16 @@ export default function TransactionRow({ txn }) {
       >
         {pos ? '+' : '-'}${Math.abs(txn.amt).toFixed(2)}
       </span>
-      <button
-        data-delete="true"
-        onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
-        className="ml-1 flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-400 dark:text-gray-600 dark:hover:text-red-400 transition-colors"
-        aria-label="Delete transaction"
-      >
-        <TrashIcon />
-      </button>
+      {isHovered && (
+        <button
+          data-delete="true"
+          onClick={(e) => { e.stopPropagation(); setConfirming(true); }}
+          className="ml-1 flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-400 dark:text-gray-600 dark:hover:text-red-400 transition-colors"
+          aria-label="Delete transaction"
+        >
+          <TrashIcon />
+        </button>
+      )}
     </div>
   );
 }

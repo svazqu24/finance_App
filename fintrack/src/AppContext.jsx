@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { goalClrMap, GOAL_COLORS } from './data';
+import { goalClrMap, GOAL_COLORS, catSty } from './data';
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 const PREF_DEFAULTS = {
@@ -10,6 +10,7 @@ const PREF_DEFAULTS = {
   navPosition:        'top',
   currency:           'USD',
   onboardingComplete: false,
+  categoryColors:     {}, // { categoryName: { bg, fg }, ... }
 };
 
 // DB column → JS key mapping
@@ -20,6 +21,7 @@ const DB_TO_JS = {
   nav_position:        'navPosition',
   currency:            'currency',
   onboarding_complete: 'onboardingComplete',
+  category_colors:     'categoryColors',
 };
 
 function dbRowToPrefs(row) {
@@ -30,6 +32,13 @@ function dbRowToPrefs(row) {
   if (row.nav_position) p.navPosition = row.nav_position;
   if (row.currency)     p.currency    = row.currency;
   if (row.onboarding_complete !== null && row.onboarding_complete !== undefined) p.onboardingComplete = row.onboarding_complete;
+  if (row.category_colors) {
+    try {
+      p.categoryColors = typeof row.category_colors === 'string'
+        ? JSON.parse(row.category_colors)
+        : row.category_colors;
+    } catch { p.categoryColors = {}; }
+  }
   return p;
 }
 
@@ -407,9 +416,11 @@ export function AppProvider({ children }) {
     if (!user) return;
     // Map JS key → DB column
     const dbKey = Object.entries(DB_TO_JS).find(([, v]) => v === key)?.[0] ?? key;
+    // Serialize JSON for categoryColors
+    const dbValue = key === 'categoryColors' ? JSON.stringify(value) : value;
     const { error } = await supabase
       .from('user_preferences')
-      .upsert({ user_id: user.id, [dbKey]: value }, { onConflict: 'user_id' });
+      .upsert({ user_id: user.id, [dbKey]: dbValue }, { onConflict: 'user_id' });
     if (error) console.error('[nero] Pref update failed:', error);
   }
 
@@ -422,6 +433,13 @@ export function AppProvider({ children }) {
       .select().single();
     if (error) { console.error('[fintrack] Bill paid update failed:', error); return; }
     setBillsData((prev) => prev.map((b) => (b.id === id ? dbRowToBill(data) : b)));
+  }
+
+  // Helper: Get category styles (custom or default)
+  function getCategorySty(categoryName) {
+    const custom = preferences.categoryColors?.[categoryName];
+    if (custom) return custom;
+    return catSty[categoryName] || { bg: '#DDDBD3', fg: '#444441' };
   }
 
   return (
@@ -481,6 +499,7 @@ export function AppProvider({ children }) {
         // ui
         darkMode,
         toggleDark: () => updatePreference('darkMode', !preferences.darkMode),
+        getCategorySty,
       }}
     >
       {children}

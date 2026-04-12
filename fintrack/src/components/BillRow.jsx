@@ -1,7 +1,8 @@
-import { catSty } from '../data';
+import { useApp } from '../AppContext';
 
 export default function BillRow({ b }) {
-  const s = catSty[b.cat] || { bg: '#DDDBD3', fg: '#444441' };
+  const { getCategorySty } = useApp();
+  const s = getCategorySty(b.cat);
   const urgent = b.due.includes('Apr') && parseInt(b.due.split(' ')[1]) <= 15;
 
   return (
