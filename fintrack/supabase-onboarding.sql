@@ -3,3 +3,6 @@
 
 ALTER TABLE user_preferences
   ADD COLUMN IF NOT EXISTS onboarding_complete boolean DEFAULT false;
+
+ALTER TABLE user_preferences
+  ADD COLUMN IF NOT EXISTS category_colors jsonb DEFAULT '{}';

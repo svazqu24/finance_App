@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 
 const NotificationContext = createContext(null);
 
@@ -52,10 +52,11 @@ export function NotificationProvider({ children }) {
   }, []);
 
   // Set up the global dispatcher when this provider mounts
-  useRef(() => {
+  useEffect(() => {
     setNotificationDispatcher(showNotification);
     dispatcherRef.current = showNotification;
-  }).current?.();
+    return () => { notificationDispatcher = null; };
+  }, [showNotification]);
 
   const value = {
     toasts,

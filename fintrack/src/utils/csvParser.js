@@ -207,6 +207,7 @@ const MERCHANT_ALIASES = {
   "ellys brunch":       "Elly's Brunch",
   "ellys":              "Elly's",
   'chipgril':           'Chipotle Payroll',
+  'chipgril payments':  'Chipotle Payroll',
   'chipotle payroll':   'Chipotle Payroll',
   "mcdonalds":          "McDonald's",
   "wendy's":            "Wendy's",

@@ -446,6 +446,14 @@ export function AppProvider({ children }) {
     if (data) {
       // User has existing preferences — use them
       const prefs = dbRowToPrefs(data);
+      // localStorage fallback: if DB column doesn't exist yet (null), check localStorage
+      if (!prefs.onboardingComplete && data.onboarding_complete == null) {
+        try {
+          if (localStorage.getItem('nero-onboarding-complete') === 'true') {
+            prefs.onboardingComplete = true;
+          }
+        } catch {}
+      }
       setPreferences(prefs);
       setDarkMode(prefs.darkMode);
       console.log('[onboarding] Loaded preferences:', { onboardingComplete: prefs.onboardingComplete });
@@ -469,6 +477,10 @@ export function AppProvider({ children }) {
     // Optimistic local update
     setPreferences((prev) => ({ ...prev, [key]: value }));
     if (key === 'darkMode') setDarkMode(value);
+    // localStorage fallback so onboarding state persists even if DB column doesn't exist yet
+    if (key === 'onboardingComplete' && value === true) {
+      try { localStorage.setItem('nero-onboarding-complete', 'true'); } catch {}
+    }
     if (!user) return;
     // Map JS key → DB column
     const dbKey = Object.entries(DB_TO_JS).find(([, v]) => v === key)?.[0] ?? key;
