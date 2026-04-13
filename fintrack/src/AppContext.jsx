@@ -320,18 +320,42 @@ export function AppProvider({ children }) {
   }
 
   // ── Bulk insert ──────────────────────────────────────────────────────────
-  async function bulkInsertTransactions(txnArray) {
+  async function bulkInsertTransactions(txnArray, { onProgress } = {}) {
     if (!user || txnArray.length === 0) return 0;
-    // Chunk into batches of 100 to stay within PostgREST request limits
+
+    // Dedup: skip rows that already exist (same date + amount + name)
+    const existingKeys = new Set(
+      transactions.map((t) => `${t.date}|${t.amt}|${t.name}`)
+    );
+    const deduped = txnArray.filter(
+      (t) => !existingKeys.has(`${t.date}|${t.amt}|${t.name}`)
+    );
+    if (deduped.length === 0) {
+      sendNotification('All rows already exist — nothing imported', { type: 'success', duration: 3000 });
+      return 0;
+    }
+
+    const BATCH_SIZE = 50;
     let inserted = [];
-    for (let i = 0; i < txnArray.length; i += 100) {
-      const chunk = txnArray.slice(i, i + 100).map((t) => ({
+    let batchNum = 0;
+
+    for (let i = 0; i < deduped.length; i += BATCH_SIZE) {
+      batchNum++;
+      const chunk = deduped.slice(i, i + BATCH_SIZE).map((t) => ({
         name: t.name, cat: t.cat, amt: t.amt, date: t.date, user_id: user.id,
       }));
       const { data, error } = await supabase.from('transactions').insert(chunk).select();
-      if (error) { console.error('[fintrack] Bulk insert chunk failed:', error); continue; }
+      if (error) {
+        console.error(`[fintrack] Bulk insert batch ${batchNum} failed:`, error);
+        sendNotification(`Import error on batch ${batchNum} — some rows may be missing`, { type: 'error', duration: 6000 });
+        // still advance progress so the indicator doesn't stall
+        if (onProgress) onProgress(Math.min(i + BATCH_SIZE, deduped.length), deduped.length);
+        continue;
+      }
       inserted = inserted.concat(data.map(dbRowToTxn));
+      if (onProgress) onProgress(Math.min(i + BATCH_SIZE, deduped.length), deduped.length);
     }
+
     if (inserted.length > 0) {
       setTransactions((prev) => [...inserted, ...prev]);
       sendNotification(`${inserted.length} transaction${inserted.length === 1 ? '' : 's'} imported`, {

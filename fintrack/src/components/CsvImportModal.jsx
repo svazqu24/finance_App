@@ -109,6 +109,7 @@ export default function CsvImportModal({ open, onClose }) {
   const [mapping, setMapping]       = useState(DEFAULT_MAPPING);
   const [rows, setRows]             = useState([]);  // { _key, name, date, amt, cat }[]
   const [submitting, setSubmitting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null); // { current, total } | null
   const [importedCount, setImportedCount] = useState(0);
   const [detectedFormat, setDetectedFormat] = useState(null); // 'chase' | null
 
@@ -128,6 +129,7 @@ export default function CsvImportModal({ open, onClose }) {
       setRows([]);
       setImportedCount(0);
       setSubmitting(false);
+      setImportProgress(null);
       setDetectedFormat(null);
     }
   }, [open]);
@@ -222,8 +224,12 @@ export default function CsvImportModal({ open, onClose }) {
   async function handleImport() {
     if (activeRows.length === 0) return;
     setSubmitting(true);
-    const count = await bulkInsertTransactions(activeRows);
+    setImportProgress({ current: 0, total: activeRows.length });
+    const count = await bulkInsertTransactions(activeRows, {
+      onProgress: (current, total) => setImportProgress({ current, total }),
+    });
     setImportedCount(count);
+    setImportProgress(null);
     setSubmitting(false);
     setStep('success');
   }
@@ -632,7 +638,9 @@ export default function CsvImportModal({ open, onClose }) {
                 className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] disabled:opacity-40 transition-colors" style={{ background: '#27AE60' }}
               >
                 {submitting
-                  ? 'Importing…'
+                  ? importProgress && importProgress.total > 0
+                    ? `Importing ${importProgress.current} of ${importProgress.total}…`
+                    : 'Importing…'
                   : `Import ${activeRows.length} transaction${activeRows.length !== 1 ? 's' : ''}`}
               </button>
             </>
