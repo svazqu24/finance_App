@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './AppContext';
+import { NotificationProvider } from './NotificationContext';
+import Toast from './components/Toast';
 import Layout from './Layout';
 import Auth from './pages/Auth';
 import Overview from './pages/Overview';
@@ -51,8 +53,11 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <NotificationProvider>
+      <AppProvider>
+        <AppRoutes />
+        <Toast />
+      </AppProvider>
+    </NotificationProvider>
   );
 }

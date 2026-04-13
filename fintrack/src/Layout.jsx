@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from './AppContext';
+import { useState, useEffect, useRef } from 'react';
 import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
@@ -206,6 +207,58 @@ export default function Layout() {
   const spent    = monthTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
   const savedPct = income > 0 ? Math.max(0, Math.round(((income - spent) / income) * 100)) : 0;
 
+  // Animation state for stat numbers
+  const [animIncome, setAnimIncome] = useState(0);
+  const [animSpent, setAnimSpent] = useState(0);
+  const [animSaved, setAnimSaved] = useState(0);
+  const animInitialRef = useRef({ hasAnimated: false, prevTxnCount: 0 });
+
+  // Animate numbers on first load after transactions are populated
+  useEffect(() => {
+    if (loading || transactions.length === 0) return;
+
+    const isFirstPopulation = !animInitialRef.current.hasAnimated && animInitialRef.current.prevTxnCount === 0;
+    if (!isFirstPopulation) {
+      // Already animated or was already populated, just show final values
+      setAnimIncome(income);
+      setAnimSpent(spent);
+      setAnimSaved(savedPct);
+      return;
+    }
+
+    animInitialRef.current.hasAnimated = true;
+
+    const DURATION = 800; // ms
+    const START = performance.now();
+
+    const animate = (now) => {
+      const elapsed = now - START;
+      const progress = Math.min(elapsed / DURATION, 1);
+      // Ease-out: 1 - (1-progress)^3
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+      setAnimIncome(income * easeProgress);
+      setAnimSpent(spent * easeProgress);
+      setAnimSaved(savedPct * easeProgress);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    requestAnimationFrame(animate);
+    animInitialRef.current.prevTxnCount = transactions.length;
+  }, [transactions, loading, income, spent, savedPct]);
+
+  // Update displayed values when final values change (not animating)
+  useEffect(() => {
+    if (animInitialRef.current.hasAnimated) {
+      setAnimIncome(income);
+      setAnimSpent(spent);
+      setAnimSaved(savedPct);
+    }
+  }, [income, spent, savedPct]);
+
   const modals = (
     <>
       <CsvImportModal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} />
@@ -213,15 +266,20 @@ export default function Layout() {
         open={addModalOpen || !!editTxn}
         onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
       />
-      {prefsLoaded && !preferences.onboardingComplete && <OnboardingModal />}
+      {prefsLoaded && !preferences.onboardingComplete && (
+        <>
+          {console.log('[layout] Showing onboarding modal, onboardingComplete:', preferences.onboardingComplete)}
+          <OnboardingModal />
+        </>
+      )}
     </>
   );
 
   const statsRow = (
     <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
-      <StatCard label="income" value={loading ? '—' : fmtDollars(income)} sub="this month" />
-      <StatCard label="spent"  value={loading ? '—' : fmtDollars(spent)}  sub="this month" />
-      <StatCard label="saved"  value={loading ? '—' : `${savedPct}%`}      sub="of income" valueStyle={{ color: '#27AE60' }} />
+      <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub="this month" />
+      <StatCard label="spent"  value={loading ? '—' : fmtDollars(animSpent)}  sub="this month" />
+      <StatCard label="saved"  value={loading ? '—' : `${Math.round(animSaved)}%`}      sub="of income" valueStyle={{ color: '#27AE60' }} />
     </div>
   );
 

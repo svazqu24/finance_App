@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { goalClrMap, GOAL_COLORS, catSty } from './data';
+import { sendNotification } from './NotificationContext';
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 const PREF_DEFAULTS = {
@@ -249,17 +250,45 @@ export function AppProvider({ children }) {
       .single();
     if (error) { console.error('[fintrack] Update failed:', error); return; }
     setTransactions((prev) => prev.map((t) => (t.id === id ? dbRowToTxn(data) : t)));
+    sendNotification('Changes saved', { type: 'success', duration: 3000 });
   }
 
   async function deleteTransaction(id) {
     if (!user) return;
-    const { error } = await supabase
-      .from('transactions')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', user.id);
-    if (error) { console.error('[fintrack] Delete failed:', error); return; }
+
+    // Store the transaction for potential undo
+    const txnToDelete = transactions.find((t) => t.id === id);
+
+    // Optimistically remove from UI
     setTransactions((prev) => prev.filter((t) => t.id !== id));
+
+    // Show undo notification
+    sendNotification('Deleted · Undo', {
+      type: 'undo',
+      duration: 5000,
+      onUndo: () => {
+        // Restore to state
+        if (txnToDelete) {
+          setTransactions((prev) => [txnToDelete, ...prev]);
+        }
+      },
+    });
+
+    // Delete from DB after a brief delay (in case user hits undo)
+    setTimeout(async () => {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[fintrack] Delete failed:', error);
+        // Restore if delete failed
+        if (txnToDelete) {
+          setTransactions((prev) => [txnToDelete, ...prev]);
+        }
+      }
+    }, 5000);
   }
 
   async function addTransaction(txn) {
@@ -287,6 +316,7 @@ export function AppProvider({ children }) {
 
     console.log('[fintrack] Insert succeeded:', data);
     setTransactions((prev) => [dbRowToTxn(data), ...prev]);
+    sendNotification('Transaction added', { type: 'success', duration: 3000 });
   }
 
   // ── Bulk insert ──────────────────────────────────────────────────────────
@@ -304,6 +334,10 @@ export function AppProvider({ children }) {
     }
     if (inserted.length > 0) {
       setTransactions((prev) => [...inserted, ...prev]);
+      sendNotification(`${inserted.length} transaction${inserted.length === 1 ? '' : 's'} imported`, {
+        type: 'success',
+        duration: 3000,
+      });
     }
     return inserted.length;
   }
@@ -414,12 +448,14 @@ export function AppProvider({ children }) {
       const prefs = dbRowToPrefs(data);
       setPreferences(prefs);
       setDarkMode(prefs.darkMode);
+      console.log('[onboarding] Loaded preferences:', { onboardingComplete: prefs.onboardingComplete });
     } else {
       // First time this user is loading preferences — assume they're existing user
       // (unless they just signed up, in which case onboarding_complete would be set to false above)
       const newPrefs = { ...PREF_DEFAULTS, onboardingComplete: true };
       setPreferences(newPrefs);
       setDarkMode(newPrefs.darkMode);
+      console.log('[onboarding] No preferences record found, defaulting to onboardingComplete: true (existing user)');
       // Optionally save this for future loads
       await supabase
         .from('user_preferences')

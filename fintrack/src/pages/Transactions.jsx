@@ -158,9 +158,9 @@ export default function Transactions() {
           )}
         </div>
       ) : dateGrouped ? (
-        groupByDate(filtered).map(({ date, items }) => (
-          <div key={date} className="mb-4">
-            <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1.5 px-0.5">{date}</p>
+        groupByDate(filtered).map(({ date, items }, idx) => (
+          <div key={date} className={`mb-4 ${idx > 0 ? 'pt-4 border-t border-gray-200 dark:border-nero-border' : ''}`}>
+            <p className="text-xs uppercase tracking-[.08em] text-gray-500 dark:text-gray-400 mb-2 px-0.5">{date}</p>
             {items.map((t, i) => <TransactionRow key={i} txn={t} />)}
           </div>
         ))
