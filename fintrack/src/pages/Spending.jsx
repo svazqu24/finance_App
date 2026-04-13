@@ -35,16 +35,42 @@ const barOptions = {
 };
 
 // ── Dynamic insight text ──────────────────────────────────────────────────────
-function buildInsight(currExpenses, prevExpenses, monthLabel) {
+// currExpenses and prevExpenses already have Transfer excluded.
+function buildInsight(currExpenses, prevExpenses, income, monthLabel) {
   const currTotal = Object.values(currExpenses).reduce((a, b) => a + b, 0);
+  if (currTotal === 0 && income === 0) return `No activity recorded in ${monthLabel} yet.`;
   if (currTotal === 0) return `No expenses recorded in ${monthLabel} yet.`;
 
   const sorted = Object.entries(currExpenses).sort((a, b) => b[1] - a[1]);
   const [topCat, topAmt] = sorted[0];
   const topPct = Math.round((topAmt / currTotal) * 100);
+  const savedPct = income > 0 ? Math.round(((income - currTotal) / income) * 100) : null;
 
+  // Spending exceeded income
+  if (income > 0 && currTotal > income) {
+    return `You spent more than you earned this month. Your top real expense was ${topCat} at ${topPct}%.`;
+  }
+
+  // Great savings month (≥20%)
+  if (savedPct !== null && savedPct >= 20) {
+    let text = `Great month! You saved ${savedPct}% of your income.`;
+    const prevAmt = prevExpenses[topCat] || 0;
+    if (prevAmt > 0) {
+      const change = Math.round(((topAmt - prevAmt) / prevAmt) * 100);
+      if (Math.abs(change) >= 5) {
+        text += ` ${topCat} is ${change > 0 ? 'up' : 'down'} ${Math.abs(change)}% vs last month.`;
+      }
+    }
+    return text;
+  }
+
+  // Low savings nudge (<10%)
+  if (savedPct !== null && savedPct < 10) {
+    return `You saved ${Math.max(0, savedPct)}% this month. Small wins add up! Your top expense was ${topCat} at ${topPct}%.`;
+  }
+
+  // Default: top category + MoM change + second category
   let text = `${topCat} is your largest expense at ${topPct}% of ${monthLabel} spending.`;
-
   const prevAmt = prevExpenses[topCat] || 0;
   if (prevAmt > 0) {
     const change = Math.round(((topAmt - prevAmt) / prevAmt) * 100);
@@ -52,13 +78,11 @@ function buildInsight(currExpenses, prevExpenses, monthLabel) {
       text += ` ${topCat} is ${change > 0 ? 'up' : 'down'} ${Math.abs(change)}% vs last month.`;
     }
   }
-
   if (sorted.length > 1) {
     const secondCat = sorted[1][0];
     const secondPct = Math.round((sorted[1][1] / currTotal) * 100);
     text += ` ${secondCat} follows at ${secondPct}%.`;
   }
-
   return text;
 }
 
@@ -66,24 +90,31 @@ function buildInsight(currExpenses, prevExpenses, monthLabel) {
 export default function Spending() {
   const { transactions, loading, openAddModal, openCsvModal } = useApp();
 
-  const currAbbr  = currentMonthAbbr();
-  const prevAbbr  = prevMonthAbbr();
+  const currAbbr   = currentMonthAbbr();
+  const prevAbbr   = prevMonthAbbr();
   const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long' });
 
-  // Current-month category breakdown (expenses only, sorted largest first)
-  const currExpenses = groupExpensesByCategory(filterMonth(transactions, currAbbr));
-  const prevExpenses = groupExpensesByCategory(filterMonth(transactions, prevAbbr));
+  // Exclude Transfer from all spending views
+  const currMonthTxns = filterMonth(transactions, currAbbr).filter((t) => t.cat !== 'Transfer');
+  const prevMonthTxns = filterMonth(transactions, prevAbbr).filter((t) => t.cat !== 'Transfer');
+  const currExpenses  = groupExpensesByCategory(currMonthTxns);
+  const prevExpenses  = groupExpensesByCategory(prevMonthTxns);
+
+  // Income is all positive transactions this month (includes transfers in — correct)
+  const income = filterMonth(transactions, currAbbr)
+    .filter((t) => t.amt > 0)
+    .reduce((s, t) => s + t.amt, 0);
 
   const spendCats = Object.entries(currExpenses)
     .sort((a, b) => b[1] - a[1])
     .map(([label, amt]) => ({ label, amt, clr: catClr[label] || '#888780' }));
 
-  // Last 6 months of total expenses for the bar chart
-  const last6       = getLastNMonthLabels(6);
-  const barAmounts  = last6.map((mon) =>
+  // Last 6 months for bar chart — exclude Transfer, show "Mon YY" labels
+  const last6      = getLastNMonthLabels(6);
+  const barAmounts = last6.map(({ abbr }) =>
     Math.round(
-      filterMonth(transactions, mon)
-        .filter((t) => t.amt < 0)
+      filterMonth(transactions, abbr)
+        .filter((t) => t.amt < 0 && t.cat !== 'Transfer')
         .reduce((s, t) => s + Math.abs(t.amt), 0)
     )
   );
@@ -98,7 +129,7 @@ export default function Spending() {
   };
 
   const barData = {
-    labels: last6,
+    labels: last6.map((m) => m.label),   // "Nov 24", "Dec 24", "Jan 25" …
     datasets: [{
       data:            barAmounts,
       backgroundColor: 'rgba(24,95,165,.7)',
@@ -106,7 +137,7 @@ export default function Spending() {
     }],
   };
 
-  const insight = buildInsight(currExpenses, prevExpenses, monthLabel);
+  const insight = buildInsight(currExpenses, prevExpenses, income, monthLabel);
   const hasAnyTransactions = transactions.length > 0;
 
   if (!loading && !hasAnyTransactions) {

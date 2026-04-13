@@ -46,12 +46,15 @@ function dbRowToPrefs(row) {
 // Map a Supabase bills row → app shape
 function dbRowToBill(row) {
   return {
-    id:         row.id,
-    name:       row.name,
-    amount:     Number(row.amount),
-    due_day:    row.due_day,
-    cat:        row.cat,
-    paid_month: row.paid_month ?? null,
+    id:              row.id,
+    name:            row.name,
+    amount:          Number(row.amount),
+    due_day:         row.due_day,
+    cat:             row.cat,
+    paid_month:      row.paid_month ?? null,
+    is_subscription: row.is_subscription ?? false,
+    frequency:       row.frequency ?? null,
+    next_due_date:   row.next_due_date ?? null,
   };
 }
 
@@ -435,7 +438,16 @@ export function AppProvider({ children }) {
     if (!user) return;
     const { data, error } = await supabase
       .from('bills')
-      .insert({ user_id: user.id, name: bill.name, amount: bill.amount, due_day: bill.due_day, cat: bill.cat })
+      .insert({
+        user_id:         user.id,
+        name:            bill.name,
+        amount:          bill.amount,
+        due_day:         bill.due_day,
+        cat:             bill.cat,
+        is_subscription: bill.is_subscription ?? false,
+        frequency:       bill.frequency ?? null,
+        next_due_date:   bill.next_due_date ?? null,
+      })
       .select().single();
     if (error) { console.error('[fintrack] Bill insert failed:', error); return; }
     setBillsData((prev) => [...prev, dbRowToBill(data)].sort((a, b) => a.due_day - b.due_day));

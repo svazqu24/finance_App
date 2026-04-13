@@ -1,14 +1,34 @@
+import { useState } from 'react';
 import { useApp } from '../AppContext';
 import StatCard from '../components/StatCard';
 import BudgetBar from '../components/BudgetBar';
 import BillRow from '../components/BillRow';
+import SubscriptionModal from '../components/SubscriptionModal';
 import { budgets, bills } from '../data';
 import {
   currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars, detectSubscriptions,
 } from '../utils';
 
+function TrashIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
+
 export default function Budget() {
-  const { transactions, loading, budgetOverrides, openAddModal, openCsvModal } = useApp();
+  const {
+    transactions, loading,
+    budgetOverrides, openAddModal, openCsvModal,
+    billsData, deleteBill,
+  } = useApp();
+
+  const [subModalOpen, setSubModalOpen] = useState(false);
 
   // Compute this month's spending per category from real transactions
   const currExpenses = groupExpensesByCategory(
@@ -36,18 +56,27 @@ export default function Budget() {
   const onTrack = liveBudgets.length - overBudget - approaching;
   const hasTransactions = transactions.length > 0;
 
-  // Subscription detector
-  const subs = detectSubscriptions(transactions);
-  const monthlySubTotal = subs
-    .filter((s) => s.frequency === 'monthly')
-    .reduce((sum, s) => sum + s.amt, 0);
-  const weeklySubTotal = subs
-    .filter((s) => s.frequency === 'weekly')
-    .reduce((sum, s) => sum + s.amt * 4, 0);
-  const biweeklySubTotal = subs
-    .filter((s) => s.frequency === 'biweekly')
-    .reduce((sum, s) => sum + s.amt * 2, 0);
-  const totalMonthlySubCost = monthlySubTotal + weeklySubTotal + biweeklySubTotal;
+  // Auto-detected subscriptions
+  const autoSubs = detectSubscriptions(transactions);
+
+  // Manual subscriptions from bills table
+  const manualSubs = billsData.filter((b) => b.is_subscription);
+
+  // Monthly cost estimate
+  const freqToMonthly = (s) => {
+    if (s.frequency === 'weekly')   return s.amount * 4;
+    if (s.frequency === 'biweekly') return s.amount * 2;
+    if (s.frequency === 'yearly')   return s.amount / 12;
+    return s.amount; // monthly
+  };
+
+  const autoMonthly   = autoSubs.filter((s) => s.frequency === 'monthly').reduce((sum, s) => sum + s.amt, 0)
+                      + autoSubs.filter((s) => s.frequency === 'weekly').reduce((sum, s) => sum + s.amt * 4, 0)
+                      + autoSubs.filter((s) => s.frequency === 'biweekly').reduce((sum, s) => sum + s.amt * 2, 0);
+  const manualMonthly = manualSubs.reduce((sum, s) => sum + freqToMonthly(s), 0);
+  const totalMonthlySubCost = autoMonthly + manualMonthly;
+
+  const hasAnySubs = autoSubs.length > 0 || manualSubs.length > 0;
 
   return (
     <>
@@ -63,7 +92,7 @@ export default function Budget() {
         />
       </div>
 
-      {/* Status badges — only render badges with count > 0 */}
+      {/* Status badges */}
       <div className="flex gap-2 mb-5 flex-wrap">
         {onTrack > 0 && (
           <span className="text-xs font-medium px-2.5 py-[3px] rounded-full"
@@ -111,7 +140,7 @@ export default function Budget() {
         </div>
       )}
 
-      {/* Budget progress bars with live spent amounts */}
+      {/* Budget progress bars */}
       {liveBudgets.map((b) => (
         <BudgetBar key={b.cat} b={b} />
       ))}
@@ -123,47 +152,102 @@ export default function Budget() {
         <BillRow key={b.name} b={b} />
       ))}
 
-      {/* Subscription detector */}
-      {subs.length > 0 && (
-        <>
-          <div className="flex items-center justify-between mt-6 mb-2.5">
-            <p className="text-[13px] font-medium text-gray-900 dark:text-white">
-              Detected subscriptions
-            </p>
+      {/* Subscriptions section — auto-detected + manual */}
+      <div className="flex items-center justify-between mt-6 mb-2.5">
+        <div className="flex items-center gap-2">
+          <p className="text-[13px] font-medium text-gray-900 dark:text-white">
+            Detected subscriptions
+          </p>
+          {hasAnySubs && (
             <span className="text-[11px] text-gray-400">
               ~{fmtDollars(totalMonthlySubCost)}/mo
             </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {subs.map((s) => (
-              <div
-                key={s.name}
-                className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
-                      {s.name}
-                    </p>
-                    {s.possibleCancelled && (
-                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
-                            style={{ background: '#FEF3C7', color: '#92400E' }}>
-                        possibly cancelled
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
-                    {s.frequency} · last {s.lastCharged}
+          )}
+        </div>
+        <button
+          onClick={() => setSubModalOpen(true)}
+          className="text-xs font-medium px-2.5 py-1 rounded-[20px] text-white transition-colors"
+          style={{ background: '#27AE60' }}
+        >
+          + Add
+        </button>
+      </div>
+
+      {hasAnySubs ? (
+        <div className="flex flex-col gap-2">
+          {/* Auto-detected */}
+          {autoSubs.map((s) => (
+            <div
+              key={s.name}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
+                    {s.name}
                   </p>
+                  {s.possibleCancelled && (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                          style={{ background: '#FEF3C7', color: '#92400E' }}>
+                      possibly cancelled
+                    </span>
+                  )}
                 </div>
-                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
-                  {fmtDollars(s.amt)}
-                </span>
+                <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
+                  {s.frequency} · last {s.lastCharged}
+                </p>
               </div>
-            ))}
-          </div>
-        </>
+              <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
+                {fmtDollars(s.amt)}
+              </span>
+            </div>
+          ))}
+
+          {/* Manual subscriptions */}
+          {manualSubs.map((s) => (
+            <div
+              key={s.id}
+              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
+                    {s.name}
+                  </p>
+                  <span
+                    className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+                    style={{ background: '#C8EBB4', color: '#27500A' }}
+                  >
+                    manual
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
+                  {s.frequency ?? 'monthly'}
+                  {s.next_due_date && ` · due ${new Date(s.next_due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
+                  {fmtDollars(s.amount)}
+                </span>
+                <button
+                  onClick={() => deleteBill(s.id)}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
+                  aria-label="Delete subscription"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-gray-400 leading-relaxed">
+          Recurring charges with 3+ consistent payments will appear here automatically.
+        </p>
       )}
+
+      <SubscriptionModal open={subModalOpen} onClose={() => setSubModalOpen(false)} />
     </>
   );
 }
