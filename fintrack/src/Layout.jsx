@@ -310,6 +310,22 @@ export default function Layout() {
         {navPosition === 'left' && <Sidebar side="left" />}
 
         <div className="flex-1 min-w-0 py-6 px-5 overflow-y-auto">
+          {/* Action buttons row */}
+          <div className="flex justify-end items-center gap-2 mb-4">
+            <button
+              onClick={() => setCsvModalOpen(true)}
+              className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+            >
+              Import CSV
+            </button>
+            <button
+              onClick={() => setAddModalOpen(true)}
+              className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+              style={{ background: '#27AE60' }}
+            >
+              + Add Transaction
+            </button>
+          </div>
           {statsRow}
           <div className={compact ? 'pb-4' : 'pb-8'}>
             <Outlet />
