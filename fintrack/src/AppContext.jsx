@@ -242,7 +242,7 @@ export function AppProvider({ children }) {
   }
 
   // ── Transaction actions ───────────────────────────────────────────────────────
-  async function updateTransaction(id, updates) {
+  async function updateTransaction(id, updates, { silent = false } = {}) {
     if (!user) return;
     const { data, error } = await supabase
       .from('transactions')
@@ -253,7 +253,36 @@ export function AppProvider({ children }) {
       .single();
     if (error) { console.error('[fintrack] Update failed:', error); return; }
     setTransactions((prev) => prev.map((t) => (t.id === id ? dbRowToTxn(data) : t)));
-    sendNotification('Changes saved', { type: 'success', duration: 3000 });
+    if (!silent) sendNotification('Changes saved', { type: 'success', duration: 3000 });
+  }
+
+  async function bulkRenameTransactions(originalName, newName) {
+    if (!user || !originalName || !newName || originalName === newName) return;
+    // Collect IDs so the rollback is precise
+    const ids = transactions.filter((t) => t.name === originalName).map((t) => t.id);
+    if (ids.length === 0) return;
+    // Optimistic update
+    setTransactions((prev) =>
+      prev.map((t) => (ids.includes(t.id) ? { ...t, name: newName } : t))
+    );
+    const { error } = await supabase
+      .from('transactions')
+      .update({ name: newName })
+      .eq('user_id', user.id)
+      .eq('name', originalName);
+    if (error) {
+      console.error('[fintrack] Bulk rename failed:', error);
+      // Rollback
+      setTransactions((prev) =>
+        prev.map((t) => (ids.includes(t.id) ? { ...t, name: originalName } : t))
+      );
+      sendNotification('Rename failed', { type: 'error', duration: 4000 });
+      return;
+    }
+    sendNotification(
+      `${ids.length} transaction${ids.length === 1 ? '' : 's'} renamed`,
+      { type: 'success', duration: 3000 }
+    );
   }
 
   async function deleteTransaction(id) {
@@ -324,7 +353,7 @@ export function AppProvider({ children }) {
 
   // ── Bulk insert ──────────────────────────────────────────────────────────
   async function bulkInsertTransactions(txnArray, { onProgress } = {}) {
-    if (!user || txnArray.length === 0) return 0;
+    if (!user || txnArray.length === 0) return { count: 0, skipped: 0 };
 
     // Dedup: skip rows that already exist (same date + amount + name)
     const existingKeys = new Set(
@@ -333,9 +362,11 @@ export function AppProvider({ children }) {
     const deduped = txnArray.filter(
       (t) => !existingKeys.has(`${t.date}|${t.amt}|${t.name}`)
     );
+    const skipped = txnArray.length - deduped.length;
+
     if (deduped.length === 0) {
       sendNotification('All rows already exist — nothing imported', { type: 'success', duration: 3000 });
-      return 0;
+      return { count: 0, skipped };
     }
 
     const BATCH_SIZE = 50;
@@ -361,12 +392,8 @@ export function AppProvider({ children }) {
 
     if (inserted.length > 0) {
       setTransactions((prev) => [...inserted, ...prev]);
-      sendNotification(`${inserted.length} transaction${inserted.length === 1 ? '' : 's'} imported`, {
-        type: 'success',
-        duration: 3000,
-      });
     }
-    return inserted.length;
+    return { count: inserted.length, skipped };
   }
 
   // ── Budget limit actions ──────────────────────────────────────────────────
@@ -564,6 +591,7 @@ export function AppProvider({ children }) {
         updateTransaction,
         deleteTransaction,
         bulkInsertTransactions,
+        bulkRenameTransactions,
         loading,
         // modal triggers (usable from any page)
         addModalOpen,

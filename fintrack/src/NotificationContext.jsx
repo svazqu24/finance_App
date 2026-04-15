@@ -22,13 +22,15 @@ export function NotificationProvider({ children }) {
 
   const showNotification = useCallback((message, options = {}) => {
     const {
-      type = 'success',      // 'success', 'error', 'undo'
+      type = 'success',      // 'success', 'error', 'undo', 'action'
       duration = 3000,       // ms
       onUndo = null,         // callback for undo action
+      onYes  = null,         // callback for action-type "Yes" button
+      onNo   = null,         // callback for action-type "No" button
     } = options;
 
     const id = Math.random().toString(36).substr(2, 9);
-    const toast = { id, message, type, onUndo };
+    const toast = { id, message, type, onUndo, onYes, onNo };
 
     setToasts((prev) => [...prev, toast]);
 

@@ -3,7 +3,7 @@ import { useApp } from '../AppContext';
 import {
   parseCSV, detectColumns, isAutoDetectComplete,
   buildRows, computeAmount, parseAmount,
-  CHASE_CC_CATEGORY_MAP,
+  cleanDescription, CHASE_CC_CATEGORY_MAP,
 } from '../utils/csvParser';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -68,6 +68,26 @@ function CheckIcon() {
   );
 }
 
+function SummaryRow({ icon, label, value, highlight }) {
+  return (
+    <div
+      className="flex items-center justify-between px-4 py-3 border-b border-gray-50 dark:border-nero-border last:border-b-0"
+      style={highlight ? { background: 'rgba(39,174,96,0.06)' } : {}}
+    >
+      <div className="flex items-center gap-2.5">
+        <span className="text-base leading-none w-4 text-center">{icon}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+      </div>
+      <span
+        className="text-sm font-semibold tabular-nums"
+        style={{ color: highlight ? '#27AE60' : undefined }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 // ── Chase format detection ────────────────────────────────────────────────────
 
 function isChaseFormat(hdrs) {
@@ -96,7 +116,7 @@ function isChaseCCFormat(hdrs) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function CsvImportModal({ open, onClose }) {
+export default function CsvImportModal({ open, onClose, onViewTransactions }) {
   const { bulkInsertTransactions } = useApp();
 
   const [step, setStep]             = useState('upload');
@@ -110,7 +130,7 @@ export default function CsvImportModal({ open, onClose }) {
   const [rows, setRows]             = useState([]);  // { _key, name, date, amt, cat }[]
   const [submitting, setSubmitting] = useState(false);
   const [importProgress, setImportProgress] = useState(null); // { current, total } | null
-  const [importedCount, setImportedCount] = useState(0);
+  const [importSummary, setImportSummary]   = useState(null); // { count, skipped, cleaned, subs }
   const [detectedFormat, setDetectedFormat] = useState(null); // 'chase' | null
 
   const fileRef = useRef(null);
@@ -127,7 +147,7 @@ export default function CsvImportModal({ open, onClose }) {
       setDataRows([]);
       setMapping(DEFAULT_MAPPING);
       setRows([]);
-      setImportedCount(0);
+      setImportSummary(null);
       setSubmitting(false);
       setImportProgress(null);
       setDetectedFormat(null);
@@ -225,10 +245,20 @@ export default function CsvImportModal({ open, onClose }) {
     if (activeRows.length === 0) return;
     setSubmitting(true);
     setImportProgress({ current: 0, total: activeRows.length });
-    const count = await bulkInsertTransactions(activeRows, {
+
+    // Pre-compute stats from the active rows
+    const subsCount = activeRows.filter((r) => r.cat === 'Subscriptions').length;
+    // Count rows where cleanDescription changed the raw description
+    let cleanedCount = 0;
+    for (const row of activeRows) {
+      const rawDesc = (dataRows[row._key]?.[mapping.descCol] ?? '').trim();
+      if (rawDesc && rawDesc !== row.name) cleanedCount++;
+    }
+
+    const { count, skipped } = await bulkInsertTransactions(activeRows, {
       onProgress: (current, total) => setImportProgress({ current, total }),
     });
-    setImportedCount(count);
+    setImportSummary({ count, skipped, cleaned: cleanedCount, subs: subsCount });
     setImportProgress(null);
     setSubmitting(false);
     setStep('success');
@@ -585,16 +615,47 @@ export default function CsvImportModal({ open, onClose }) {
           )}
 
           {/* ── Step: success ── */}
-          {step === 'success' && (
-            <div className="px-5 py-12 flex flex-col items-center gap-4">
+          {step === 'success' && importSummary && (
+            <div className="px-5 py-10 flex flex-col items-center gap-5">
               <CheckIcon />
               <div className="text-center">
                 <p className="text-[17px] font-semibold text-gray-900 dark:text-white">
-                  {importedCount} transaction{importedCount !== 1 ? 's' : ''} imported
+                  Import complete
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                  They're now visible in your Transactions tab.
+                  Your transactions are ready to review.
                 </p>
+              </div>
+
+              {/* Summary stats */}
+              <div className="w-full max-w-xs rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden">
+                <SummaryRow
+                  icon={<span style={{ color: '#27AE60' }}>↓</span>}
+                  label="Transactions imported"
+                  value={importSummary.count}
+                  highlight
+                />
+                {importSummary.cleaned > 0 && (
+                  <SummaryRow
+                    icon={<span style={{ color: '#60a5fa' }}>✦</span>}
+                    label="Merchant names cleaned"
+                    value={importSummary.cleaned}
+                  />
+                )}
+                {importSummary.subs > 0 && (
+                  <SummaryRow
+                    icon={<span style={{ color: '#a78bfa' }}>↺</span>}
+                    label="Subscriptions detected"
+                    value={importSummary.subs}
+                  />
+                )}
+                {importSummary.skipped > 0 && (
+                  <SummaryRow
+                    icon={<span style={{ color: '#94a3b8' }}>⊘</span>}
+                    label="Duplicates skipped"
+                    value={importSummary.skipped}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -647,10 +708,19 @@ export default function CsvImportModal({ open, onClose }) {
           )}
 
           {step === 'success' && (
-            <button onClick={onClose}
-              className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] transition-colors" style={{ background: '#27AE60' }}>
-              Done
-            </button>
+            <>
+              <button onClick={onClose}
+                className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
+                Done
+              </button>
+              <button
+                onClick={() => { onClose(); onViewTransactions?.(); }}
+                className="flex-1 text-white text-sm font-medium py-2.5 rounded-[20px] transition-colors"
+                style={{ background: '#27AE60' }}
+              >
+                View transactions →
+              </button>
+            </>
           )}
         </div>
 

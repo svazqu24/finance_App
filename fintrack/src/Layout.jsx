@@ -198,6 +198,7 @@ export default function Layout() {
     addModalOpen, setAddModalOpen,
     csvModalOpen, setCsvModalOpen,
   } = useApp();
+  const navigate = useNavigate();
 
   const { navPosition, compactView } = preferences;
   const compact = compactView;
@@ -263,7 +264,11 @@ export default function Layout() {
 
   const modals = (
     <>
-      <CsvImportModal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} />
+      <CsvImportModal
+        open={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        onViewTransactions={() => navigate('/transactions')}
+      />
       <AddTransactionModal
         open={addModalOpen || !!editTxn}
         onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
