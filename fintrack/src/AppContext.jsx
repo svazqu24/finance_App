@@ -327,15 +327,17 @@ export function AppProvider({ children }) {
     if (!user) return;
     console.log('[fintrack] Inserting transaction:', txn);
 
+    const payload = sanitizeTransactionPayload({
+      user_id: user.id,
+      name:    txn.name,
+      cat:     txn.cat,
+      amt:     txn.amt,
+      date:    txn.date,
+    });
+
     const { data, error } = await supabase
       .from('transactions')
-      .insert({
-        name:    txn.name,
-        cat:     txn.cat,
-        amt:     txn.amt,
-        date:    txn.date,
-        user_id: user.id,
-      })
+      .insert(payload)
       .select()
       .single();
 
@@ -349,6 +351,16 @@ export function AppProvider({ children }) {
     console.log('[fintrack] Insert succeeded:', data);
     setTransactions((prev) => [dbRowToTxn(data), ...prev]);
     sendNotification('Transaction added', { type: 'success', duration: 3000 });
+  }
+
+  function sanitizeTransactionPayload(txn) {
+    return {
+      user_id: String(txn.user_id ?? '').trim(),
+      name:    String(txn.name ?? '').trim().slice(0, 255),
+      cat:     String(txn.cat ?? '').trim(),
+      amt:     Number(txn.amt),
+      date:    String(txn.date ?? '').trim(),
+    };
   }
 
   // ── Bulk insert ──────────────────────────────────────────────────────────
@@ -375,12 +387,22 @@ export function AppProvider({ children }) {
 
     for (let i = 0; i < deduped.length; i += BATCH_SIZE) {
       batchNum++;
-      const chunk = deduped.slice(i, i + BATCH_SIZE).map((t) => ({
-        name: t.name, cat: t.cat, amt: t.amt, date: t.date, user_id: user.id,
+      const chunk = deduped.slice(i, i + BATCH_SIZE).map((t) => sanitizeTransactionPayload({
+        user_id: user.id,
+        name:    t.name,
+        cat:     t.cat,
+        amt:     t.amt,
+        date:    t.date,
       }));
       const { data, error } = await supabase.from('transactions').insert(chunk).select();
       if (error) {
         console.error(`[fintrack] Bulk insert batch ${batchNum} failed:`, error);
+        console.error('[fintrack] Bulk insert batch payload preview:', {
+          batchNum,
+          firstRow: chunk[0],
+          payloadKeys: Object.keys(chunk[0]),
+          sampleRows: chunk.slice(0, 3),
+        });
         sendNotification(`Import error on batch ${batchNum} — some rows may be missing`, { type: 'error', duration: 6000 });
         // still advance progress so the indicator doesn't stall
         if (onProgress) onProgress(Math.min(i + BATCH_SIZE, deduped.length), deduped.length);
