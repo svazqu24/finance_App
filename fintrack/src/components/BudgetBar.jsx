@@ -16,12 +16,13 @@ export default function BudgetBar({ b }) {
   const [editing, setEditing]       = useState(false);
   const [draftLimit, setDraftLimit] = useState('');
 
-  const pct    = b.budget > 0 ? (b.spent / b.budget) * 100 : 0;
-  const over   = b.spent > b.budget;
-  const near   = pct >= 85 && pct <= 100;
-  const barClr = over ? '#f87171' : near ? '#F59E0B' : '#27AE60';
-  const diff   = Math.abs(b.budget - b.spent);
-  const s      = getCategorySty(b.cat);
+  const hasBudget = b.budget > 0;
+  const pct       = hasBudget ? (b.spent / b.budget) * 100 : 0;
+  const over      = hasBudget && b.spent > b.budget;
+  const near      = hasBudget && pct >= 85 && pct <= 100;
+  const barClr    = over ? '#f87171' : near ? '#F59E0B' : hasBudget ? '#27AE60' : '#888780';
+  const diff      = hasBudget ? Math.abs(b.budget - b.spent) : b.spent;
+  const s         = getCategorySty(b.cat);
 
   function startEdit() {
     setDraftLimit(String(b.budget));
@@ -97,9 +98,9 @@ export default function BudgetBar({ b }) {
 
       <div className="flex justify-between">
         <span className="text-[11px]" style={{ color: over ? '#f87171' : '#888' }}>
-          {over ? `$${diff.toFixed(0)} over budget` : `$${diff.toFixed(0)} remaining`}
+          {hasBudget ? (over ? `$${diff.toFixed(0)} over budget` : `$${diff.toFixed(0)} remaining`) : 'No budget set'}
         </span>
-        <span className="text-[11px] text-gray-400">{pct.toFixed(0)}%</span>
+        <span className="text-[11px] text-gray-400">{hasBudget ? `${pct.toFixed(0)}%` : 'Set budget'}</span>
       </div>
     </div>
   );

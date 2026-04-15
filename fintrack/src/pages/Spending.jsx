@@ -73,9 +73,9 @@ function buildInsight(currExpenses, prevExpenses, income, monthLabel) {
   let text = `${topCat} is your largest expense at ${topPct}% of ${monthLabel} spending.`;
   const prevAmt = prevExpenses[topCat] || 0;
   if (prevAmt > 0) {
-    const change = Math.round(((topAmt - prevAmt) / prevAmt) * 100);
-    if (Math.abs(change) >= 5) {
-      text += ` ${topCat} is ${change > 0 ? 'up' : 'down'} ${Math.abs(change)}% vs last month.`;
+    const changeAmt = Math.round(topAmt - prevAmt);
+    if (Math.abs(changeAmt) >= 10) {
+      text += ` ${topCat} is ${changeAmt > 0 ? 'up' : 'down'} $${Math.abs(changeAmt)} vs last month.`;
     }
   }
   if (sorted.length > 1) {

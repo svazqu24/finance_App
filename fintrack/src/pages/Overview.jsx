@@ -112,7 +112,10 @@ export default function Overview() {
 
     // Warning: over budget (most over first)
     const overBudget = Object.entries(spending)
-      .map(([cat, spent]) => ({ cat, spent, over: spent - (budgetMap[cat] || 0) }))
+      .map(([cat, spent]) => {
+        const limit = budgetMap[cat] ?? 0;
+        return { cat, spent, over: limit > 0 ? spent - limit : 0 };
+      })
       .filter((x) => x.over > 0)
       .sort((a, b) => b.over - a.over);
 
@@ -218,7 +221,7 @@ export default function Overview() {
           <div className="flex justify-between items-center mb-2.5">
             <div>
               <p className="text-[13px] font-medium m-0 text-gray-900 dark:text-white">Recent activity</p>
-              <p className="text-xs text-gray-400 mt-0.5 m-0">10-second fraud check</p>
+              <p className="text-xs text-gray-400 mt-0.5 m-0">Latest transaction updates</p>
             </div>
             <Link to="/transactions" className="text-xs no-underline" style={{ color: '#27AE60' }}>
               All →

@@ -35,12 +35,23 @@ export default function Budget() {
     filterMonth(transactions, currentMonthAbbr())
   );
 
+  const budgetMap = Object.fromEntries(budgets.map((b) => [b.cat, b.budget]));
+  const missingBudgetCats = Object.keys(currExpenses)
+    .filter((cat) => cat !== 'Transfer' && !budgetMap[cat]);
+
   // Merge hardcoded budget limits with user overrides + live spent amounts
-  const liveBudgets = budgets.map((b) => ({
-    ...b,
-    budget: budgetOverrides[b.cat] ?? b.budget,
-    spent:  Math.round((currExpenses[b.cat] || 0) * 100) / 100,
-  }));
+  const liveBudgets = [
+    ...budgets.map((b) => ({
+      ...b,
+      budget: budgetOverrides[b.cat] ?? b.budget,
+      spent:  Math.round((currExpenses[b.cat] || 0) * 100) / 100,
+    })),
+    ...missingBudgetCats.map((cat) => ({
+      cat,
+      budget: budgetOverrides[cat] ?? 0,
+      spent: Math.round((currExpenses[cat] || 0) * 100) / 100,
+    })),
+  ];
 
   // Summary totals
   const totalBudgeted = budgets.reduce((s, b) => s + b.budget, 0);
@@ -137,6 +148,13 @@ export default function Budget() {
               Import CSV
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Budget prompt for categories with no budget set */}
+      {missingBudgetCats.length > 0 && (
+        <div className="mb-5 rounded-xl px-4 py-3 bg-[#f5f5f3] dark:bg-nero-surface text-sm text-gray-800 dark:text-gray-200">
+          You have spending in {missingBudgetCats.join(', ')} with no budget set yet. Set a target to track these categories.
         </div>
       )}
 
