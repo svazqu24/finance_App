@@ -70,9 +70,9 @@ function dbRowToBill(row) {
 const AppContext = createContext(null);
 
 // Map a Supabase row → the shape the rest of the app expects.
-// Table columns: id, name, cat, amt, date, user_id, created_at
+// Table columns: id, name, cat, amt, date, user_id, created_at, account
 function dbRowToTxn(row) {
-  return { id: row.id, name: row.name, cat: row.cat, amt: row.amt, date: row.date };
+  return { id: row.id, name: row.name, cat: row.cat, amt: row.amt, date: row.date, account: row.account };
 }
 
 function dbRowToGoal(row) {
@@ -120,6 +120,11 @@ export function AppProvider({ children }) {
   const [billsData, setBillsData]       = useState([]);
   const [editBill, setEditBill]         = useState(null);
   const [billModalOpen, setBillModalOpen] = useState(false);
+
+  // ── Date range filter (session state — resets on refresh) ─────────────────
+  const [txnDateRange,  setTxnDateRange]  = useState('this-month');
+  const [txnCustomFrom, setTxnCustomFrom] = useState('');
+  const [txnCustomTo,   setTxnCustomTo]   = useState('');
 
   // ── Dark mode — localStorage fallback for logged-out state ──────────────────
   const [darkMode, setDarkMode] = useState(() => {
@@ -369,6 +374,7 @@ export function AppProvider({ children }) {
       cat:     String(txn.cat ?? '').trim(),
       amt:     Number(txn.amt),
       date:    String(txn.date ?? '').trim(),
+      account: txn.account ? String(txn.account).trim() : null,
     };
   }
 
@@ -376,12 +382,12 @@ export function AppProvider({ children }) {
   async function bulkInsertTransactions(txnArray, { onProgress } = {}) {
     if (!user || txnArray.length === 0) return { count: 0, skipped: 0 };
 
-    // Dedup: skip rows that already exist (same date + amount + name)
+    // Dedup: skip rows that already exist (same date + amount + name + account)
     const existingKeys = new Set(
-      transactions.map((t) => `${t.date}|${t.amt}|${t.name}`)
+      transactions.map((t) => `${t.date}|${t.amt}|${t.name}|${t.account || ''}`)
     );
     const deduped = txnArray.filter(
-      (t) => !existingKeys.has(`${t.date}|${t.amt}|${t.name}`)
+      (t) => !existingKeys.has(`${t.date}|${t.amt}|${t.name}|${t.account || ''}`)
     );
     const skipped = txnArray.length - deduped.length;
 
@@ -402,6 +408,7 @@ export function AppProvider({ children }) {
         cat:     t.cat,
         amt:     t.amt,
         date:    t.date,
+        account: t.account ?? null,
       }));
       const { data, error } = await supabase.from('transactions').insert(chunk).select();
       if (error) {
@@ -693,6 +700,10 @@ export function AppProvider({ children }) {
         undismissSubscription,
         prefsLoaded,
         deleteAccount,
+        // date range filter (session state)
+        txnDateRange,  setTxnDateRange,
+        txnCustomFrom, setTxnCustomFrom,
+        txnCustomTo,   setTxnCustomTo,
         // ui
         darkMode,
         toggleDark: () => updatePreference('darkMode', !preferences.darkMode),

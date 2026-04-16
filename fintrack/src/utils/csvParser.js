@@ -622,6 +622,41 @@ export function guessCategory(desc) {
   return 'Shopping';
 }
 
+// ── Account detection ─────────────────────────────────────────────────────────
+
+/**
+ * Detect account name from filename patterns.
+ * Chase debit: filename contains 4-digit account number → "Chase ···XXXX"
+ * Chase credit: filename contains specific patterns → "Chase Credit ···8695"
+ */
+export function detectAccount(filename) {
+  if (!filename) return null;
+
+  const name = filename.toLowerCase();
+
+  // Chase debit account detection - look for 4-digit numbers in filename
+  const chaseDebitMatch = name.match(/(\d{4})/);
+  if (chaseDebitMatch && name.includes('chase')) {
+    // Check if it's likely a debit file (not credit)
+    if (!name.includes('credit') && !name.includes('cc') && !name.includes('card')) {
+      return `Chase ···${chaseDebitMatch[1]}`;
+    }
+  }
+
+  // Chase credit account detection - specific patterns
+  if (name.includes('chase') && (name.includes('credit') || name.includes('cc') || name.includes('card'))) {
+    // Look for 4-digit account ending (common pattern)
+    const creditMatch = name.match(/(\d{4})/);
+    if (creditMatch) {
+      return `Chase Credit ···${creditMatch[1]}`;
+    }
+    // Fallback for credit cards without visible account number
+    return 'Chase Credit';
+  }
+
+  return null;
+}
+
 // ── Row building ──────────────────────────────────────────────────────────────
 
 /**
@@ -630,9 +665,11 @@ export function guessCategory(desc) {
  * @param {object} mapping
  * @param {object|null} categoryMap - optional map of raw category string → app category
  *   (used for Chase CC imports; applied as fallback for unrecognized merchants)
- * @returns {{ name, date, amt, cat, _key }[]}
+ * @param {string|null} filename - optional filename for account detection
+ * @returns {{ name, date, amt, cat, account?, _key }[]}
  */
-export function buildRows(rows, mapping, categoryMap = null) {
+export function buildRows(rows, mapping, categoryMap = null, filename = null) {
+  const account = detectAccount(filename);
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const cells = rows[i];
@@ -666,7 +703,9 @@ export function buildRows(rows, mapping, categoryMap = null) {
       }
     }
 
-    result.push({ _key: i, name, date, amt, cat });
+    const row = { _key: i, name, date, amt, cat };
+    if (account) row.account = account;
+    result.push(row);
   }
   return result;
 }

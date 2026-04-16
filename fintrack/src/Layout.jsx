@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from './AppContext';
 import { useState, useEffect, useRef } from 'react';
-import { currentMonthAbbr, filterMonth, fmtDollars } from './utils';
+import { fmtDollars, filterByDateRange, dateRangeLabel } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
 import CsvImportModal from './components/CsvImportModal';
@@ -197,17 +197,19 @@ export default function Layout() {
     editTxn, setEditTxn,
     addModalOpen, setAddModalOpen,
     csvModalOpen, setCsvModalOpen,
+    txnDateRange, txnCustomFrom, txnCustomTo,
   } = useApp();
   const navigate = useNavigate();
 
   const { navPosition, compactView } = preferences;
   const compact = compactView;
 
-  const monthTxns  = filterMonth(transactions, currentMonthAbbr());
-  const income     = monthTxns.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
-  const spent      = monthTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
+  const rangeTxns  = filterByDateRange(transactions, txnDateRange, txnCustomFrom, txnCustomTo);
+  const rangeLabel = dateRangeLabel(txnDateRange);
+  const income     = rangeTxns.filter((t) => t.amt > 0).reduce((s, t) => s + t.amt, 0);
+  const spent      = rangeTxns.filter((t) => t.amt < 0).reduce((s, t) => s + Math.abs(t.amt), 0);
   // Exclude Transfer from savings rate — transfers aren't real spending
-  const realSpent  = monthTxns.filter((t) => t.amt < 0 && t.cat !== 'Transfer').reduce((s, t) => s + Math.abs(t.amt), 0);
+  const realSpent  = rangeTxns.filter((t) => t.amt < 0 && t.cat !== 'Transfer').reduce((s, t) => s + Math.abs(t.amt), 0);
   const savedPct   = income > 0 ? Math.max(0, Math.round(((income - realSpent) / income) * 100)) : 0;
 
   // Animation state for stat numbers
@@ -284,8 +286,8 @@ export default function Layout() {
 
   const statsRow = (
     <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
-      <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub="this month" />
-      <StatCard label="spent"  value={loading ? '—' : fmtDollars(animSpent)}  sub="this month" />
+      <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub={rangeLabel} />
+      <StatCard label="spent"  value={loading ? '—' : fmtDollars(animSpent)}  sub={rangeLabel} />
       <StatCard label="saved"  value={loading ? '—' : `${Math.round(animSaved)}%`}      sub="of income" valueStyle={savedPct > 5 ? { color: '#27AE60' } : undefined} />
     </div>
   );

@@ -88,6 +88,22 @@ function SummaryRow({ icon, label, value, highlight }) {
   );
 }
 
+// ── Account detection ─────────────────────────────────────────────────────────
+
+/** Extract account label purely from filename, without needing the format. */
+function detectAccountFromFile(filename) {
+  if (!filename) return null;
+  const lower = filename.toLowerCase().replace(/\.(csv)$/i, '');
+  const digits4 = lower.match(/\b(\d{4})\b/);
+  const last4 = digits4 ? digits4[1] : null;
+  if (lower.includes('chase')) {
+    const isCredit = lower.includes('credit') || lower.includes(' cc') || lower.includes('card');
+    if (isCredit) return last4 ? `Chase Credit ···${last4}` : 'Chase Credit';
+    return last4 ? `Chase ···${last4}` : 'Chase Checking';
+  }
+  return null;
+}
+
 // ── Chase format detection ────────────────────────────────────────────────────
 
 function isChaseFormat(hdrs) {
@@ -131,7 +147,8 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
   const [submitting, setSubmitting] = useState(false);
   const [importProgress, setImportProgress] = useState(null); // { current, total } | null
   const [importSummary, setImportSummary]   = useState(null); // { count, skipped, cleaned, subs }
-  const [detectedFormat, setDetectedFormat] = useState(null); // 'chase' | null
+  const [detectedFormat,  setDetectedFormat]  = useState(null); // 'chase' | 'chase-cc' | null
+  const [detectedAccount, setDetectedAccount] = useState(null); // e.g. 'Chase ···1230'
 
   const fileRef = useRef(null);
 
@@ -151,6 +168,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
       setSubmitting(false);
       setImportProgress(null);
       setDetectedFormat(null);
+      setDetectedAccount(null);
     }
   }, [open]);
 
@@ -172,9 +190,13 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
     setFileName(name || '');
     const fmt = isChaseFormat(hdrs) ? 'chase' : isChaseCCFormat(hdrs) ? 'chase-cc' : null;
     setDetectedFormat(fmt);
+    // Account label: filename detection first, then format-based fallback
+    const acctFromFile = detectAccountFromFile(name || '');
+    const acct = acctFromFile ?? (fmt === 'chase-cc' ? 'Chase Credit' : fmt === 'chase' ? 'Chase Checking' : null);
+    setDetectedAccount(acct);
     if (isAutoDetectComplete(detected)) {
       const catMap = fmt === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
-      const built = buildRows(data, detected, catMap);
+      const built = buildRows(data, detected, catMap, name || fileName);
       if (built.length === 0) {
         setParseError('Columns were detected but no valid rows could be parsed. Check that dates and amounts are in expected formats.');
         return;
@@ -212,7 +234,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
 
   function applyMapping() {
     const catMap = detectedFormat === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
-    const built = buildRows(dataRows, mapping, catMap);
+    const built = buildRows(dataRows, mapping, catMap, fileName);
     if (built.length === 0) {
       setParseError('No valid rows found with these column settings. Check your column assignments.');
       return;
@@ -255,7 +277,12 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
       if (rawDesc && rawDesc !== row.name) cleanedCount++;
     }
 
-    const { count, skipped } = await bulkInsertTransactions(activeRows, {
+    // Apply format-based account fallback for rows that buildRows didn't label
+    const rowsToImport = detectedAccount
+      ? activeRows.map((r) => ({ ...r, account: r.account ?? detectedAccount }))
+      : activeRows;
+
+    const { count, skipped } = await bulkInsertTransactions(rowsToImport, {
       onProgress: (current, total) => setImportProgress({ current, total }),
     });
     setImportSummary({ count, skipped, cleaned: cleanedCount, subs: subsCount });
@@ -523,6 +550,13 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
                       style={{ background: '#C8EBB4', color: '#27500A' }}
                     >
                       {detectedFormat === 'chase-cc' ? 'Chase credit card detected' : 'Chase format detected'}
+                    </span>
+                  )}
+                  {detectedAccount && (
+                    <span
+                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-nero-bg text-gray-500 dark:text-gray-400"
+                    >
+                      {detectedAccount}
                     </span>
                   )}
                 </div>

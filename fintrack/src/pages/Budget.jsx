@@ -8,6 +8,7 @@ import SubscriptionEditModal from '../components/SubscriptionEditModal';
 import { budgets, bills } from '../data';
 import {
   currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars, detectSubscriptions,
+  getLastNMonthLabels,
 } from '../utils';
 
 function TrashIcon() {
@@ -44,6 +45,7 @@ export default function Budget() {
   const [editingSubscription, setEditingSubscription] = useState(null);
   const [isEditingAutoDetected, setIsEditingAutoDetected] = useState(false);
   const [autoSubsOverrides, setAutoSubsOverrides] = useState({}); // { name: { name, amt, frequency } }
+  const [historyMonths, setHistoryMonths] = useState(3);
 
   function openEditSubscription(subscription, isAutoDetected = false) {
     setEditingSubscription(subscription);
@@ -128,6 +130,32 @@ export default function Budget() {
 
   const hasAnySubs = autoSubs.length > 0 || manualSubs.length > 0;
 
+  // Budget history calculation
+  const monthLabels = getLastNMonthLabels(historyMonths);
+  const budgetHistory = [];
+  const monthTotals = new Array(historyMonths).fill(0);
+
+  // Get all categories that have budgets or have had spending
+  const allCats = new Set([...budgets.map(b => b.cat), ...Object.keys(currExpenses)]);
+  
+  for (const cat of allCats) {
+    if (cat === 'Transfer') continue;
+    const months = [];
+    for (let i = 0; i < historyMonths; i++) {
+      const monthTxns = filterMonth(transactions, monthLabels[i].abbr);
+      const spent = groupExpensesByCategory(monthTxns)[cat] || 0;
+      months.push({ spent });
+      monthTotals[i] += spent;
+    }
+    // Only include categories with spending in at least one month
+    if (months.some((m) => m.spent > 0)) {
+      budgetHistory.push({ cat, months });
+    }
+  }
+
+  // Sort by current month spending (descending)
+  budgetHistory.sort((a, b) => b.months[historyMonths - 1].spent - a.months[historyMonths - 1].spent);
+
   return (
     <>
       {/* Summary stat cards */}
@@ -201,6 +229,65 @@ export default function Budget() {
       {liveBudgets.map((b) => (
         <BudgetBar key={b.cat} b={b} />
       ))}
+
+      {/* Budget history */}
+      {hasTransactions && (
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[13px] font-medium text-gray-900 dark:text-white">
+              Budget history
+            </p>
+            <button
+              onClick={() => setHistoryMonths(historyMonths === 3 ? 6 : 3)}
+              className="text-xs font-medium px-2.5 py-1 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors"
+            >
+              {historyMonths === 3 ? 'Show 6 months' : 'Show 3 months'}
+            </button>
+          </div>
+          <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-nero-border">
+                    <th className="text-left py-2 font-medium text-gray-700 dark:text-gray-300">Category</th>
+                    {monthLabels.map((month) => (
+                      <th key={month.abbr} className="text-center py-2 font-medium text-gray-700 dark:text-gray-300 min-w-[60px]">
+                        {month.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {budgetHistory.map((row) => (
+                    <tr key={row.cat} className="border-b border-gray-100 dark:border-nero-border/50">
+                      <td className="py-2 text-gray-900 dark:text-white font-medium">{row.cat}</td>
+                      {row.months.map((month, i) => {
+                        const budget = budgetMap[row.cat] || 0;
+                        const isOver = budget > 0 && month.spent > budget;
+                        const isNear = budget > 0 && month.spent > budget * 0.85 && month.spent <= budget;
+                        return (
+                          <td key={i} className="text-center py-2 tabular-nums" style={{ color: isOver ? '#f87171' : isNear ? '#f59e0b' : '#27AE60' }}>
+                            ${month.spent.toFixed(0)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  {/* Summary row */}
+                  <tr>
+                    <td className="py-3 text-gray-900 dark:text-white font-semibold">Total spending</td>
+                    {monthTotals.map((total, i) => (
+                      <td key={i} className="text-center py-3 tabular-nums font-semibold text-gray-900 dark:text-white">
+                        ${total.toFixed(0)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       <p className="text-[13px] font-medium mt-6 mb-2.5 text-gray-900 dark:text-white">
         Upcoming bills

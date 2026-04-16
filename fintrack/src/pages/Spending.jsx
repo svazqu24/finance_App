@@ -4,6 +4,7 @@ import { catClr } from '../data';
 import {
   currentMonthAbbr, prevMonthAbbr,
   filterMonth, groupExpensesByCategory, getLastNMonthLabels,
+  filterByDateRange,
 } from '../utils';
 
 // ── Chart options (static) ────────────────────────────────────────────────────
@@ -88,15 +89,21 @@ function buildInsight(currExpenses, prevExpenses, income, monthLabel) {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Spending() {
-  const { transactions, loading, openAddModal, openCsvModal } = useApp();
+  const {
+    transactions, loading, openAddModal, openCsvModal,
+    txnDateRange, txnCustomFrom, txnCustomTo,
+  } = useApp();
 
   const currAbbr   = currentMonthAbbr();
   const prevAbbr   = prevMonthAbbr();
   const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long' });
 
+  // Use shared date range from context (same as Transactions tab)
+  const filteredTransactions = filterByDateRange(transactions, txnDateRange, txnCustomFrom, txnCustomTo);
+
   // Exclude Transfer from all spending views
-  const currMonthTxns = filterMonth(transactions, currAbbr).filter((t) => t.cat !== 'Transfer');
-  const prevMonthTxns = filterMonth(transactions, prevAbbr).filter((t) => t.cat !== 'Transfer');
+  const currMonthTxns = filterMonth(filteredTransactions, currAbbr).filter((t) => t.cat !== 'Transfer');
+  const prevMonthTxns = filterMonth(filteredTransactions, prevAbbr).filter((t) => t.cat !== 'Transfer');
   const currExpenses  = groupExpensesByCategory(currMonthTxns);
   const prevExpenses  = groupExpensesByCategory(prevMonthTxns);
 
@@ -113,7 +120,7 @@ export default function Spending() {
   const last6      = getLastNMonthLabels(6);
   const barAmounts = last6.map(({ abbr }) =>
     Math.round(
-      filterMonth(transactions, abbr)
+      filterMonth(filteredTransactions, abbr)
         .filter((t) => t.amt < 0 && t.cat !== 'Transfer')
         .reduce((s, t) => s + Math.abs(t.amt), 0)
     )

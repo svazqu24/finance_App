@@ -224,7 +224,14 @@ export default function TransactionRow({ txn }) {
               {txn.name}
             </p>
           )}
-          <p className="m-0 text-xs text-gray-400">{txn.cat} · {txn.date}</p>
+          <p className="m-0 text-xs text-gray-400 flex items-center gap-1.5 flex-wrap">
+            <span>{txn.cat} · {txn.date}</span>
+            {txn.account && (
+              <span className="text-[10px] px-1.5 py-px rounded-full bg-gray-100 dark:bg-nero-bg text-gray-400 leading-tight font-normal">
+                {txn.account}
+              </span>
+            )}
+          </p>
         </div>
 
         {/* ── Amount ── */}

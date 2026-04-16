@@ -1,5 +1,87 @@
 const ABBRS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+const MONTH_IDX = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
+
+/**
+ * Convert a transaction date string ('Apr 15') to a full Date.
+ * Infers the year: if the stored month is > the current month we assume last year
+ * (handles the case where imported transactions from Dec appear in a Jan session).
+ */
+export function txnDateToFullDate(dateStr) {
+  if (!dateStr) return null;
+  const [mon, dayStr] = String(dateStr).split(' ');
+  const month = MONTH_IDX[mon];
+  if (month === undefined) return null;
+  const day  = parseInt(dayStr) || 1;
+  const now  = new Date();
+  const year = month > now.getMonth() ? now.getFullYear() - 1 : now.getFullYear();
+  return new Date(year, month, day);
+}
+
+/**
+ * Return a human-readable label for a date range key.
+ */
+export function dateRangeLabel(range) {
+  const labels = {
+    'this-month':    'this month',
+    'last-month':    'last month',
+    'last-3-months': 'last 3 months',
+    'last-6-months': 'last 6 months',
+    'this-year':     'this year',
+    'all':           'all time',
+    'custom':        'custom range',
+  };
+  return labels[range] ?? 'this month';
+}
+
+/**
+ * Filter transactions by a named date range.
+ * customFrom / customTo are 'YYYY-MM-DD' strings used when range === 'custom'.
+ */
+export function filterByDateRange(transactions, range = 'this-month', customFrom = '', customTo = '') {
+  const now = new Date();
+  const currMonthAbbr = ABBRS[now.getMonth()];
+  const prevMonthAbbr = ABBRS[(now.getMonth() + 11) % 12];
+
+  switch (range) {
+    case 'this-month':
+      return filterMonth(transactions, currMonthAbbr);
+
+    case 'last-month':
+      return filterMonth(transactions, prevMonthAbbr);
+
+    case 'last-3-months': {
+      const months = new Set(getLastNMonthLabels(3).map((m) => m.abbr));
+      return transactions.filter((t) => months.has(txnMonthAbbr(t.date)));
+    }
+
+    case 'last-6-months': {
+      const months = new Set(getLastNMonthLabels(6).map((m) => m.abbr));
+      return transactions.filter((t) => months.has(txnMonthAbbr(t.date)));
+    }
+
+    case 'this-year':
+    case 'all':
+      return transactions;
+
+    case 'custom': {
+      if (!customFrom && !customTo) return transactions;
+      const from = customFrom ? new Date(customFrom)                  : null;
+      const to   = customTo   ? new Date(customTo + 'T23:59:59')     : null;
+      return transactions.filter((t) => {
+        const d = txnDateToFullDate(t.date);
+        if (!d) return true;
+        if (from && d < from) return false;
+        if (to   && d > to)   return false;
+        return true;
+      });
+    }
+
+    default:
+      return filterMonth(transactions, currMonthAbbr);
+  }
+}
+
 export const currentMonthAbbr = () => ABBRS[new Date().getMonth()];
 export const prevMonthAbbr    = () => ABBRS[(new Date().getMonth() + 11) % 12];
 
@@ -48,8 +130,6 @@ export function fmtDollars(n) {
 }
 
 // ── Subscription detection ────────────────────────────────────────────────────
-
-const MONTH_IDX = { Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11 };
 
 /**
  * Scan all transactions and return auto-detected recurring charges.
