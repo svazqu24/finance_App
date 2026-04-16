@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard';
 import BudgetBar from '../components/BudgetBar';
 import BillRow from '../components/BillRow';
 import SubscriptionModal from '../components/SubscriptionModal';
+import SubscriptionEditModal from '../components/SubscriptionEditModal';
 import { budgets, bills } from '../data';
 import {
   currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars, detectSubscriptions,
@@ -21,14 +22,49 @@ function TrashIcon() {
   );
 }
 
+function PencilIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
 export default function Budget() {
   const {
     transactions, loading,
     budgetOverrides, openAddModal, openCsvModal,
-    billsData, deleteBill,
+    billsData, deleteBill, preferences,
   } = useApp();
 
   const [subModalOpen, setSubModalOpen] = useState(false);
+  const [editSubModalOpen, setEditSubModalOpen] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState(null);
+  const [isEditingAutoDetected, setIsEditingAutoDetected] = useState(false);
+  const [autoSubsOverrides, setAutoSubsOverrides] = useState({}); // { name: { name, amt, frequency } }
+
+  function openEditSubscription(subscription, isAutoDetected = false) {
+    setEditingSubscription(subscription);
+    setIsEditingAutoDetected(isAutoDetected);
+    setEditSubModalOpen(true);
+  }
+
+  function handleSaveSubscriptionEdits(updatedSub) {
+    if (isEditingAutoDetected) {
+      // Save to in-memory overrides
+      setAutoSubsOverrides((prev) => ({
+        ...prev,
+        [editingSubscription.name]: {
+          name: updatedSub.name,
+          amt: parseFloat(updatedSub.amount),
+          frequency: updatedSub.frequency,
+        },
+      }));
+    }
+    // Manual subscriptions are saved by the modal itself
+  }
 
   // Compute this month's spending per category from real transactions
   const currExpenses = groupExpensesByCategory(
@@ -67,8 +103,11 @@ export default function Budget() {
   const onTrack = liveBudgets.length - overBudget - approaching;
   const hasTransactions = transactions.length > 0;
 
-  // Auto-detected subscriptions
-  const autoSubs = detectSubscriptions(transactions);
+  // Auto-detected subscriptions (filter out dismissed, apply overrides)
+  const rawAutoSubs = detectSubscriptions(transactions);
+  const autoSubs = rawAutoSubs
+    .filter((s) => !preferences.dismissedSubscriptions?.includes(s.name))
+    .map((s) => autoSubsOverrides[s.name] ? { ...s, ...autoSubsOverrides[s.name] } : s);
 
   // Manual subscriptions from bills table
   const manualSubs = billsData.filter((b) => b.is_subscription);
@@ -197,7 +236,8 @@ export default function Budget() {
           {autoSubs.map((s) => (
             <div
               key={s.name}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
+              onClick={() => openEditSubscription(s, true)}
+              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-nero-border"
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -215,9 +255,38 @@ export default function Budget() {
                   {s.frequency} · last {s.lastCharged}
                 </p>
               </div>
-              <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
-                {fmtDollars(s.amt)}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
+                  {fmtDollars(s.amt)}
+                </span>
+                {/* Edit icon */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditSubscription(s, true);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all"
+                  aria-label="Edit subscription"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                {/* Dismiss icon */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // This will be handled by the edit modal
+                    openEditSubscription(s, true);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
+                  aria-label="Dismiss subscription"
+                >
+                  <TrashIcon />
+                </button>
+              </div>
             </div>
           ))}
 
@@ -225,7 +294,8 @@ export default function Budget() {
           {manualSubs.map((s) => (
             <div
               key={s.id}
-              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors"
+              onClick={() => openEditSubscription(s, false)}
+              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-nero-border"
             >
               <div>
                 <div className="flex items-center gap-2">
@@ -248,8 +318,27 @@ export default function Budget() {
                 <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
                   {fmtDollars(s.amount)}
                 </span>
+                {/* Edit icon */}
                 <button
-                  onClick={() => deleteBill(s.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditSubscription(s, false);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all"
+                  aria-label="Edit subscription"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                {/* Delete icon */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditSubscription(s, false);
+                  }}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
                   aria-label="Delete subscription"
                 >
@@ -266,6 +355,13 @@ export default function Budget() {
       )}
 
       <SubscriptionModal open={subModalOpen} onClose={() => setSubModalOpen(false)} />
+      <SubscriptionEditModal
+        open={editSubModalOpen}
+        onClose={() => setEditSubModalOpen(false)}
+        subscription={editingSubscription}
+        isAutoDetected={isEditingAutoDetected}
+        onSave={handleSaveSubscriptionEdits}
+      />
     </>
   );
 }

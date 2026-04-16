@@ -10,6 +10,7 @@ CREATE TABLE user_preferences (
   layout_style text    DEFAULT 'single',
   nav_position text    DEFAULT 'top',
   currency     text    DEFAULT 'USD',
+  dismissed_subscriptions jsonb DEFAULT '[]'::jsonb,
   updated_at   timestamptz NOT NULL DEFAULT now()
 );
 

@@ -227,6 +227,8 @@ const MERCHANT_ALIASES = {
   "arbys":              "Arby's",
   "hardee's":           "Hardee's",
   "hardees":            "Hardee's",
+  "hbomax.com ny":      "HBO Max",
+  "help.hbomax.com hbomax.com ny": "HBO Max",
   "culver's":           "Culver's",
   "culvers":            "Culver's",
   "whataburger":        'Whataburger',
@@ -239,6 +241,7 @@ const MERCHANT_ALIASES = {
   "chili's":            "Chili's",
   "chilis":             "Chili's",
   "dine brands":        'Dine Brands',
+  "help.hbomax.com hbomax.com ny": "HBO Max",
 };
 
 // Bank transfer descriptions — short-circuit when matched at start of string.

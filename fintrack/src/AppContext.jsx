@@ -5,24 +5,26 @@ import { sendNotification } from './NotificationContext';
 
 // ── Preferences ──────────────────────────────────────────────────────────────
 const PREF_DEFAULTS = {
-  darkMode:           true,
-  compactView:        false,
-  layoutStyle:        'single',
-  navPosition:        'top',
-  currency:           'USD',
-  onboardingComplete: false,
-  categoryColors:     {}, // { categoryName: { bg, fg }, ... }
+  darkMode:             true,
+  compactView:          false,
+  layoutStyle:          'single',
+  navPosition:          'top',
+  currency:             'USD',
+  onboardingComplete:   false,
+  categoryColors:       {}, // { categoryName: { bg, fg }, ... }
+  dismissedSubscriptions: [], // array of subscription names to hide
 };
 
 // DB column → JS key mapping
 const DB_TO_JS = {
-  dark_mode:           'darkMode',
-  compact_view:        'compactView',
-  layout_style:        'layoutStyle',
-  nav_position:        'navPosition',
-  currency:            'currency',
-  onboarding_complete: 'onboardingComplete',
-  category_colors:     'categoryColors',
+  dark_mode:               'darkMode',
+  compact_view:            'compactView',
+  layout_style:            'layoutStyle',
+  nav_position:            'navPosition',
+  currency:                'currency',
+  onboarding_complete:     'onboardingComplete',
+  category_colors:         'categoryColors',
+  dismissed_subscriptions: 'dismissedSubscriptions',
 };
 
 function dbRowToPrefs(row) {
@@ -39,6 +41,13 @@ function dbRowToPrefs(row) {
         ? JSON.parse(row.category_colors)
         : row.category_colors;
     } catch { p.categoryColors = {}; }
+  }
+  if (row.dismissed_subscriptions) {
+    try {
+      p.dismissedSubscriptions = typeof row.dismissed_subscriptions === 'string'
+        ? JSON.parse(row.dismissed_subscriptions)
+        : row.dismissed_subscriptions;
+    } catch { p.dismissedSubscriptions = []; }
   }
   return p;
 }
@@ -506,7 +515,15 @@ export function AppProvider({ children }) {
     if (!user) return;
     const { data, error } = await supabase
       .from('bills')
-      .update({ name: updates.name, amount: updates.amount, due_day: updates.due_day, cat: updates.cat })
+      .update({
+        name:            updates.name,
+        amount:          updates.amount,
+        due_day:         updates.due_day,
+        cat:             updates.cat,
+        is_subscription: updates.is_subscription ?? false,
+        frequency:       updates.frequency ?? null,
+        next_due_date:   updates.next_due_date ?? null,
+      })
       .eq('id', id).eq('user_id', user.id)
       .select().single();
     if (error) { console.error('[fintrack] Bill update failed:', error); return; }
@@ -518,6 +535,19 @@ export function AppProvider({ children }) {
     const { error } = await supabase.from('bills').delete().eq('id', id).eq('user_id', user.id);
     if (error) { console.error('[fintrack] Bill delete failed:', error); return; }
     setBillsData((prev) => prev.filter((b) => b.id !== id));
+  }
+
+  async function dismissSubscription(name) {
+    const currentDismissed = preferences.dismissedSubscriptions || [];
+    if (currentDismissed.includes(name)) return; // Already dismissed
+    const newDismissed = [...currentDismissed, name];
+    await updatePreference('dismissedSubscriptions', newDismissed);
+  }
+
+  async function undismissSubscription(name) {
+    const currentDismissed = preferences.dismissedSubscriptions || [];
+    const newDismissed = currentDismissed.filter((n) => n !== name);
+    await updatePreference('dismissedSubscriptions', newDismissed);
   }
 
   async function loadPreferences(currentUser) {
@@ -569,12 +599,23 @@ export function AppProvider({ children }) {
     if (!user) return;
     // Map JS key → DB column
     const dbKey = Object.entries(DB_TO_JS).find(([, v]) => v === key)?.[0] ?? key;
-    // Serialize JSON for categoryColors
-    const dbValue = key === 'categoryColors' ? JSON.stringify(value) : value;
+    // Serialize JSON for categoryColors and dismissedSubscriptions
+    const dbValue = (key === 'categoryColors' || key === 'dismissedSubscriptions') ? JSON.stringify(value) : value;
     const { error } = await supabase
       .from('user_preferences')
       .upsert({ user_id: user.id, [dbKey]: dbValue }, { onConflict: 'user_id' });
     if (error) console.error('[nero] Pref update failed:', error);
+  }
+
+  // Subscription preference helpers
+  function dismissSubscription(name) {
+    const updated = [...preferences.dismissedSubscriptions, name];
+    updatePreference('dismissedSubscriptions', updated);
+  }
+
+  function undismissSubscription(name) {
+    const updated = preferences.dismissedSubscriptions.filter(n => n !== name);
+    updatePreference('dismissedSubscriptions', updated);
   }
 
   async function markBillPaid(id, monthStr) {
@@ -648,6 +689,8 @@ export function AppProvider({ children }) {
         // preferences
         preferences,
         updatePreference,
+        dismissSubscription,
+        undismissSubscription,
         prefsLoaded,
         deleteAccount,
         // ui
