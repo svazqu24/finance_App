@@ -37,7 +37,7 @@ function arrow(change) {
 }
 
 function fmt(n, decimals = 2) {
-  if (n == null) return '—';
+  if (n == null || isNaN(n)) return '—';
   return Number(n).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
@@ -118,6 +118,7 @@ function IndexCard({ quote, loading }) {
   const price = quote?.price;
   const change = quote?.change;
   const changePct = quote?.changePercent;
+  const validPrice = price != null && !isNaN(price);
 
   return (
     <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
@@ -132,9 +133,11 @@ function IndexCard({ quote, loading }) {
           <p className="text-[18px] font-semibold tabular-nums text-gray-900 dark:text-white leading-tight">
             ${fmt(price)}
           </p>
-          <p className="text-xs tabular-nums mt-0.5" style={{ color: clr(change) }}>
-            {arrow(change)} {fmt(Math.abs(change))} ({fmt(Math.abs(changePct), 2)}%)
-          </p>
+          {validPrice && (
+            <p className="text-xs tabular-nums mt-0.5" style={{ color: clr(change) }}>
+              {arrow(change)} {fmt(Math.abs(change))} ({fmt(Math.abs(changePct), 2)}%)
+            </p>
+          )}
         </>
       )}
     </div>
@@ -555,6 +558,7 @@ export default function Portfolio() {
 
   // Index map for rendering
   const indexMap = Object.fromEntries(indexQuotes.map((q) => [q.symbol, q]));
+  const forexMap = Object.fromEntries(forexRates.map((r) => [r.from, r]));
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -670,10 +674,11 @@ export default function Portfolio() {
             {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} h={18} />)}
           </div>
         ) : (
-          forexRates.map((rate, idx) => {
-            const symbol = rate.from + rate.to;
-            const meta  = FOREX_META[symbol] ?? { base: rate.from, quote: rate.to };
-            const isLast = idx === forexRates.length - 1;
+          ['EUR', 'GBP', 'JPY', 'MXN', 'CAD'].map((from, idx) => {
+            const rate = forexMap[from];
+            const symbol = from + 'USD';
+            const meta = FOREX_META[symbol] ?? { base: from, quote: 'USD' };
+            const isLast = idx === 4;
             return (
               <div
                 key={symbol}
@@ -684,7 +689,7 @@ export default function Portfolio() {
                 </span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm tabular-nums text-gray-900 dark:text-white font-medium">
-                    {fmt(rate.rate, 4)}
+                    {rate ? fmt(rate.rate, 4) : '—'}
                   </span>
                 </div>
               </div>
