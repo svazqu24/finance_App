@@ -117,7 +117,7 @@ function IndexCard({ quote, loading }) {
   const name = INDEX_META[quote?.symbol] ?? quote?.symbol ?? '—';
   const price = quote?.price;
   const change = quote?.change;
-  const changePct = quote?.changesPercentage;
+  const changePct = quote?.changePercent;
 
   return (
     <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
@@ -419,7 +419,7 @@ export default function Portfolio() {
 
   // Initial load + auto-refresh every 5 min
   useEffect(() => {
-    console.log('FMP key loaded:', !!import.meta.env.VITE_FMP_API_KEY);
+    console.log('Alpha Vantage key loaded:', !!import.meta.env.VITE_ALPHA_VANTAGE_KEY);
     fetchMarketData();
     const interval = setInterval(() => fetchMarketData(), REFRESH_INTERVAL);
     return () => clearInterval(interval);
@@ -444,12 +444,10 @@ export default function Portfolio() {
     if (error) { setWatchlistLoading(false); return; }
 
     // Batch fetch quotes for all watchlist symbols
-    const symbols = data.map((w) => w.symbol).join(',');
-    let quotes = [];
-    if (symbols) {
-      try { quotes = await getQuote(symbols); } catch { /* ignore */ }
+    const quoteMap = {};
+    for (const w of data) {
+      try { const q = await getQuote(w.symbol); if (q) quoteMap[w.symbol] = q; } catch { /* ignore */ }
     }
-    const quoteMap = Object.fromEntries(quotes.map((q) => [q.symbol, q]));
     setWatchlist(data.map((w) => ({ ...w, quote: quoteMap[w.symbol] ?? null })));
     setWatchlistLoading(false);
   }, [user, supabase]);
@@ -483,7 +481,7 @@ export default function Portfolio() {
       .single();
     if (error) return;
     let quote = null;
-    try { const q = await getQuote(symbol); quote = q[0] ?? null; } catch { /* ignore */ }
+    try { quote = await getQuote(symbol); } catch { /* ignore */ }
     setWatchlist((prev) => [...prev, { ...data, quote }]);
     setWatchSearch('');
     setWatchResults([]);
@@ -506,12 +504,11 @@ export default function Portfolio() {
       .order('created_at', { ascending: true });
     if (error) { setHoldingsLoading(false); return; }
 
-    const symbols = data.map((h) => h.symbol).join(',');
-    let quotes = [];
-    if (symbols) {
-      try { quotes = await getQuote(symbols); } catch { /* ignore */ }
+    const symbols = data.map((h) => h.symbol);
+    const quoteMap = {};
+    for (const sym of symbols) {
+      try { const q = await getQuote(sym); if (q) quoteMap[sym] = q; } catch { /* ignore */ }
     }
-    const quoteMap = Object.fromEntries(quotes.map((q) => [q.symbol, q]));
     setHoldings(data.map((h) => ({ ...h, quote: quoteMap[h.symbol] ?? null })));
     setHoldingsLoading(false);
   }, [user, supabase]);
@@ -520,7 +517,7 @@ export default function Portfolio() {
 
   async function addHolding({ symbol, shares, avg_buy_price }) {
     if (!user) return;
-    // Get company name from FMP
+    // Get company name from Alpha Vantage
     let companyName = symbol;
     try {
       const results = await searchSymbol(symbol);
@@ -536,7 +533,7 @@ export default function Portfolio() {
     if (error) return;
 
     let quote = null;
-    try { const q = await getQuote(symbol); quote = q[0] ?? null; } catch { /* ignore */ }
+    try { quote = await getQuote(symbol); } catch { /* ignore */ }
     setHoldings((prev) => [...prev, { ...data, quote }]);
     setShowAddHolding(false);
   }
@@ -568,7 +565,7 @@ export default function Portfolio() {
         <div className="flex items-center gap-2">
           {lastRefreshed && (
             <span className="text-[10px] text-gray-400">
-              {lastRefreshed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              Data as of {lastRefreshed.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
             </span>
           )}
           <button
@@ -674,12 +671,12 @@ export default function Portfolio() {
           </div>
         ) : (
           forexRates.map((rate, idx) => {
-            const meta  = FOREX_META[rate.symbol] ?? { base: rate.symbol.slice(0, 3), quote: rate.symbol.slice(3) };
-            const chg   = rate.changesPercentage;
+            const symbol = rate.from + rate.to;
+            const meta  = FOREX_META[symbol] ?? { base: rate.from, quote: rate.to };
             const isLast = idx === forexRates.length - 1;
             return (
               <div
-                key={rate.symbol}
+                key={symbol}
                 className={`flex items-center justify-between px-4 py-2.5 ${!isLast ? 'border-b border-gray-200 dark:border-nero-border' : ''}`}
               >
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -687,10 +684,7 @@ export default function Portfolio() {
                 </span>
                 <div className="flex items-center gap-3">
                   <span className="text-sm tabular-nums text-gray-900 dark:text-white font-medium">
-                    {fmt(rate.price, 4)}
-                  </span>
-                  <span className="text-xs tabular-nums w-16 text-right" style={{ color: clr(chg) }}>
-                    {arrow(chg)} {fmt(Math.abs(chg), 2)}%
+                    {fmt(rate.rate, 4)}
                   </span>
                 </div>
               </div>

@@ -1,15 +1,19 @@
 /**
- * Financial Modeling Prep market data service
- * Base URL: https://financialmodelingprep.com/api/v3
- * All responses cached for 5 minutes in memory.
+ * Alpha Vantage market data service
+ * Base URL: https://www.alphavantage.co/query
+ * All responses cached for 60 minutes in memory.
+ * 25 requests/day limit — cache aggressively and warn at 20 requests.
  */
 
-const BASE_URL = 'https://financialmodelingprep.com/api/v3';
-const API_KEY  = import.meta.env.VITE_FMP_API_KEY;
+const BASE_URL = 'https://www.alphavantage.co/query';
+const API_KEY  = import.meta.env.VITE_ALPHA_VANTAGE_KEY;
 
 // ── In-memory cache ────────────────────────────────────────────────────────────
 const cache = new Map(); // key → { data, expiresAt }
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 60 * 60 * 1000; // 60 minutes
+
+// ── Request counter ────────────────────────────────────────────────────────────
+let requestCount = 0;
 
 function getCached(key) {
   const entry = cache.get(key);
@@ -23,14 +27,19 @@ function setCached(key, data) {
 }
 
 // ── Core fetch wrapper ─────────────────────────────────────────────────────────
-async function apiFetch(path, params = {}) {
-  if (!API_KEY) throw new Error('VITE_FMP_API_KEY is not set');
+async function apiFetch(params = {}) {
+  if (!API_KEY) throw new Error('VITE_ALPHA_VANTAGE_KEY is not set');
 
-  const cacheKey = path + JSON.stringify(params);
+  const cacheKey = JSON.stringify(params);
   const cached = getCached(cacheKey);
   if (cached !== null) return cached;
 
-  const url = new URL(`${BASE_URL}${path}`);
+  requestCount++;
+  if (requestCount >= 20) {
+    console.warn(`Alpha Vantage: ${requestCount} requests made today (25 limit)`);
+  }
+
+  const url = new URL(BASE_URL);
   url.searchParams.set('apikey', API_KEY);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
@@ -41,7 +50,7 @@ async function apiFetch(path, params = {}) {
     err.code = 429;
     throw err;
   }
-  if (!res.ok) throw new Error(`FMP API error ${res.status}`);
+  if (!res.ok) throw new Error(`Alpha Vantage API error ${res.status}`);
 
   const json = await res.json();
   setCached(cacheKey, json);
@@ -51,65 +60,83 @@ async function apiFetch(path, params = {}) {
 // ── Public API ─────────────────────────────────────────────────────────────────
 
 /**
- * Get a real-time quote for one or more symbols (comma-separated).
- * GET /api/v3/quote/AAPL,MSFT?apikey=KEY
- * Returns array of { symbol, name, price, change, changesPercentage, previousClose, ... }
+ * Get a real-time quote for a symbol.
+ * ?function=GLOBAL_QUOTE&symbol=AAPL&apikey=KEY
+ * Returns { symbol, price, change, changePercent, open } or null
  */
 export async function getQuote(symbol) {
-  const data = await apiFetch(`/quote/${symbol}`);
-  return Array.isArray(data) ? data : [];
-}
+  const data = await apiFetch({ function: 'GLOBAL_QUOTE', symbol });
+  const quote = data['Global Quote'];
+  if (!quote) return null;
 
-/**
- * Search by company name or ticker.
- * GET /api/v3/search?query=Apple&limit=10&apikey=KEY
- * Returns array of { symbol, name, exchangeShortName, ... }
- */
-export async function searchSymbol(query) {
-  const data = await apiFetch('/search', { query, limit: 10 });
-  return Array.isArray(data) ? data.slice(0, 10) : [];
-}
-
-/**
- * Full company profile.
- * GET /api/v3/profile/AAPL?apikey=KEY
- */
-export async function getCompanyProfile(symbol) {
-  const data = await apiFetch(`/profile/${symbol}`);
-  return Array.isArray(data) ? data[0] ?? null : null;
-}
-
-/**
- * Market movers — returns { gainers, losers }, each an array of quotes.
- */
-export async function getMarketMovers() {
-  const [gainers, losers] = await Promise.all([
-    apiFetch('/stock_market/gainers').catch(() => []),
-    apiFetch('/stock_market/losers').catch(() => []),
-  ]);
   return {
-    gainers: Array.isArray(gainers) ? gainers.slice(0, 5) : [],
-    losers:  Array.isArray(losers)  ? losers.slice(0, 5)  : [],
+    symbol: quote['01. symbol'],
+    price: parseFloat(quote['05. price']),
+    change: parseFloat(quote['09. change']),
+    changePercent: parseFloat(quote['10. change percent'].replace('%', '')),
+    open: parseFloat(quote['02. open']),
   };
 }
 
 /**
- * Major Forex pairs.
- * GET /api/v3/quote/EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD?apikey=KEY
- * Returns array of { symbol, price, change, changesPercentage, previousClose, ... }
+ * Search by company name or ticker.
+ * ?function=SYMBOL_SEARCH&keywords=apple&apikey=KEY
+ * Returns array of { symbol, name }
  */
-export async function getExchangeRates() {
-  const data = await apiFetch('/quote/EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD');
-  return Array.isArray(data) ? data : [];
+export async function searchSymbol(query) {
+  const data = await apiFetch({ function: 'SYMBOL_SEARCH', keywords: query });
+  const matches = data.bestMatches || [];
+  return matches.slice(0, 10).map(match => ({
+    symbol: match['1. symbol'],
+    name: match['2. name'],
+  }));
 }
 
 /**
- * Quotes for the three major index ETFs used as market overview.
- * GET /api/v3/quote/SPY,QQQ,DIA?apikey=KEY
+ * Forex rates for EUR, GBP, JPY, MXN, CAD to USD.
+ * Makes 5 sequential calls.
+ * Returns array of { from, to, rate, bid }
+ */
+export async function getExchangeRates() {
+  const currencies = ['EUR', 'GBP', 'JPY', 'MXN', 'CAD'];
+  const results = [];
+
+  for (const from of currencies) {
+    const data = await apiFetch({
+      function: 'CURRENCY_EXCHANGE_RATE',
+      from_currency: from,
+      to_currency: 'USD'
+    });
+    const rate = data['Realtime Currency Exchange Rate'];
+    if (rate) {
+      results.push({
+        from,
+        to: 'USD',
+        rate: parseFloat(rate['5. Exchange Rate']),
+        bid: parseFloat(rate['8. Bid Price']),
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Quotes for SPY, QQQ, DIA — market overview.
+ * Makes 3 sequential calls with 500ms delay.
+ * Returns array of quote objects
  */
 export async function getIndexQuotes() {
-  const data = await apiFetch('/quote/SPY,QQQ,DIA');
-  return Array.isArray(data) ? data : [];
+  const symbols = ['SPY', 'QQQ', 'DIA'];
+  const results = [];
+
+  for (const symbol of symbols) {
+    const quote = await getQuote(symbol);
+    if (quote) results.push(quote);
+    await new Promise(resolve => setTimeout(resolve, 500)); // 500ms delay
+  }
+
+  return results;
 }
 
 /** Clear the full cache (e.g. on manual refresh). */
