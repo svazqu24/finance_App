@@ -1,10 +1,10 @@
 /**
  * Financial Modeling Prep market data service
- * Base URL: https://financialmodelingprep.com/stable/
+ * Base URL: https://financialmodelingprep.com/api/v3
  * All responses cached for 5 minutes in memory.
  */
 
-const BASE_URL = 'https://financialmodelingprep.com/stable';
+const BASE_URL = 'https://financialmodelingprep.com/api/v3';
 const API_KEY  = import.meta.env.VITE_FMP_API_KEY;
 
 // ── In-memory cache ────────────────────────────────────────────────────────────
@@ -52,30 +52,30 @@ async function apiFetch(path, params = {}) {
 
 /**
  * Get a real-time quote for one or more symbols (comma-separated).
- * GET /stable/quote?symbol=AAPL,MSFT
+ * GET /api/v3/quote/AAPL,MSFT?apikey=KEY
  * Returns array of { symbol, name, price, change, changesPercentage, previousClose, ... }
  */
 export async function getQuote(symbol) {
-  const data = await apiFetch('/quote', { symbol });
+  const data = await apiFetch(`/quote/${symbol}`);
   return Array.isArray(data) ? data : [];
 }
 
 /**
  * Search by company name or ticker.
- * GET /stable/search-name?query=Apple
+ * GET /api/v3/search?query=Apple&limit=10&apikey=KEY
  * Returns array of { symbol, name, exchangeShortName, ... }
  */
 export async function searchSymbol(query) {
-  const data = await apiFetch('/search-name', { query });
+  const data = await apiFetch('/search', { query, limit: 10 });
   return Array.isArray(data) ? data.slice(0, 10) : [];
 }
 
 /**
  * Full company profile.
- * GET /stable/profile?symbol=AAPL
+ * GET /api/v3/profile/AAPL?apikey=KEY
  */
 export async function getCompanyProfile(symbol) {
-  const data = await apiFetch('/profile', { symbol });
+  const data = await apiFetch(`/profile/${symbol}`);
   return Array.isArray(data) ? data[0] ?? null : null;
 }
 
@@ -94,21 +94,21 @@ export async function getMarketMovers() {
 }
 
 /**
- * Major Forex pairs via the same /stable/quote endpoint.
- * GET /stable/quote?symbol=EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD
+ * Major Forex pairs.
+ * GET /api/v3/quote/EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD?apikey=KEY
  * Returns array of { symbol, price, change, changesPercentage, previousClose, ... }
  */
 export async function getExchangeRates() {
-  const data = await apiFetch('/quote', { symbol: 'EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD' });
+  const data = await apiFetch('/quote/EURUSD,GBPUSD,JPYUSD,MXNUSD,CADUSD');
   return Array.isArray(data) ? data : [];
 }
 
 /**
  * Quotes for the three major index ETFs used as market overview.
- * GET /stable/quote?symbol=SPY,QQQ,DIA
+ * GET /api/v3/quote/SPY,QQQ,DIA?apikey=KEY
  */
 export async function getIndexQuotes() {
-  const data = await apiFetch('/quote', { symbol: 'SPY,QQQ,DIA' });
+  const data = await apiFetch('/quote/SPY,QQQ,DIA');
   return Array.isArray(data) ? data : [];
 }
 

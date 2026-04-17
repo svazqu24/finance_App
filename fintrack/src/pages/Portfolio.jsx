@@ -419,6 +419,7 @@ export default function Portfolio() {
 
   // Initial load + auto-refresh every 5 min
   useEffect(() => {
+    console.log('FMP key loaded:', !!import.meta.env.VITE_FMP_API_KEY);
     fetchMarketData();
     const interval = setInterval(() => fetchMarketData(), REFRESH_INTERVAL);
     return () => clearInterval(interval);
