@@ -627,7 +627,7 @@ export function guessCategory(desc) {
 /**
  * Detect account name from filename patterns.
  * Chase debit: filename contains 4-digit account number → "Chase ···XXXX"
- * Chase credit: filename contains specific patterns → "Chase Credit ···8695"
+ * Chase credit: filename contains specific patterns → { type: 'credit', name: 'Chase', lastFour: '8695' }
  */
 export function detectAccount(filename) {
   if (!filename) return null;
@@ -639,7 +639,7 @@ export function detectAccount(filename) {
   if (chaseDebitMatch && name.includes('chase')) {
     // Check if it's likely a debit file (not credit)
     if (!name.includes('credit') && !name.includes('cc') && !name.includes('card')) {
-      return `Chase ···${chaseDebitMatch[1]}`;
+      return { type: 'checking', name: `Chase ···${chaseDebitMatch[1]}` };
     }
   }
 
@@ -648,10 +648,10 @@ export function detectAccount(filename) {
     // Look for 4-digit account ending (common pattern)
     const creditMatch = name.match(/(\d{4})/);
     if (creditMatch) {
-      return `Chase Credit ···${creditMatch[1]}`;
+      return { type: 'credit', name: 'Chase', lastFour: creditMatch[1] };
     }
     // Fallback for credit cards without visible account number
-    return 'Chase Credit';
+    return { type: 'credit', name: 'Chase Credit' };
   }
 
   return null;
@@ -669,7 +669,8 @@ export function detectAccount(filename) {
  * @returns {{ name, date, amt, cat, account?, _key }[]}
  */
 export function buildRows(rows, mapping, categoryMap = null, filename = null) {
-  const account = detectAccount(filename);
+  const accountInfo = detectAccount(filename);
+  const account = accountInfo?.name || null;
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const cells = rows[i];
@@ -707,5 +708,5 @@ export function buildRows(rows, mapping, categoryMap = null, filename = null) {
     if (account) row.account = account;
     result.push(row);
   }
-  return result;
+  return { rows: result, accountInfo };
 }

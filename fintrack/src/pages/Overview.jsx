@@ -85,7 +85,7 @@ function AttentionPanel({ alerts, onDismiss }) {
 }
 
 export default function Overview() {
-  const { transactions, loading, openAddModal, openCsvModal, preferences, budgetOverrides, billsData } = useApp();
+  const { transactions, loading, openAddModal, openCsvModal, preferences, budgetOverrides, billsData, creditCardsData } = useApp();
   const twoCol = preferences.layoutStyle === 'two-column';
   const isEmpty = !loading && transactions.length === 0;
 
@@ -145,6 +145,24 @@ export default function Overview() {
         id: 'bills-due',
         type: 'info',
         text: `${dueSoon.length} bill${dueSoon.length === 1 ? '' : 's'} due in the next 7 days`,
+      });
+    }
+
+    // Warning: credit cards due in the next 7 days (not yet paid this month)
+    const creditCardsDueSoon = creditCardsData.filter((card) => {
+      if (card.paid_month === currentMonthStr) return false;
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), card.due_day);
+      const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+      return daysUntil <= 7 && daysUntil >= 0;
+    });
+
+    for (const card of creditCardsDueSoon) {
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), card.due_day);
+      const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+      allAlerts.push({
+        id: `cc-${card.id}`,
+        type: 'warning',
+        text: `${card.name} due in ${daysUntil} day${daysUntil === 1 ? '' : 's'} — $${card.minimum_payment} minimum`,
       });
     }
 

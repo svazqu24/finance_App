@@ -132,7 +132,7 @@ function isChaseCCFormat(hdrs) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function CsvImportModal({ open, onClose, onViewTransactions }) {
+export default function CsvImportModal({ open, onClose, onViewTransactions, onCreateCreditCard }) {
   const { bulkInsertTransactions } = useApp();
 
   const [step, setStep]             = useState('upload');
@@ -149,6 +149,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
   const [importSummary, setImportSummary]   = useState(null); // { count, skipped, cleaned, subs }
   const [detectedFormat,  setDetectedFormat]  = useState(null); // 'chase' | 'chase-cc' | null
   const [detectedAccount, setDetectedAccount] = useState(null); // e.g. 'Chase ···1230'
+  const [accountInfo, setAccountInfo] = useState(null); // { type, name, lastFour }
 
   const fileRef = useRef(null);
 
@@ -197,11 +198,12 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
     if (isAutoDetectComplete(detected)) {
       const catMap = fmt === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
       const built = buildRows(data, detected, catMap, name || fileName);
-      if (built.length === 0) {
+      if (built.rows.length === 0) {
         setParseError('Columns were detected but no valid rows could be parsed. Check that dates and amounts are in expected formats.');
         return;
       }
-      setRows(built);
+      setRows(built.rows);
+      setAccountInfo(built.accountInfo);
       setStep('preview');
     } else {
       setStep('mapping');
@@ -235,12 +237,13 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
   function applyMapping() {
     const catMap = detectedFormat === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
     const built = buildRows(dataRows, mapping, catMap, fileName);
-    if (built.length === 0) {
+    if (built.rows.length === 0) {
       setParseError('No valid rows found with these column settings. Check your column assignments.');
       return;
     }
     setParseError('');
-    setRows(built);
+    setRows(built.rows);
+    setAccountInfo(built.accountInfo);
     setStep('preview');
   }
 
@@ -537,115 +540,149 @@ export default function CsvImportModal({ open, onClose, onViewTransactions }) {
 
           {/* ── Step: preview ── */}
           {step === 'preview' && (
-            <div>
-              {/* Detected mapping banner */}
-              <div className="px-5 py-2.5 bg-gray-50 dark:bg-nero-bg/40 border-b border-gray-100 dark:border-nero-border flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-[11px] text-gray-400">
-                    {activeRows.length} of {rows.length} rows selected
-                  </p>
-                  {detectedFormat && (
-                    <span
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                      style={{ background: '#C8EBB4', color: '#27500A' }}
+            <>
+              <div>
+                {/* Detected mapping banner */}
+                <div className="px-5 py-2.5 bg-gray-50 dark:bg-nero-bg/40 border-b border-gray-100 dark:border-nero-border flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-[11px] text-gray-400">
+                      {activeRows.length} of {rows.length} rows selected
+                    </p>
+                    {detectedFormat && (
+                      <span
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                        style={{ background: '#C8EBB4', color: '#27500A' }}
+                      >
+                        {detectedFormat === 'chase-cc' ? 'Chase credit card detected' : 'Chase format detected'}
+                      </span>
+                    )}
+                    {detectedAccount && (
+                      <span
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-nero-bg text-gray-500 dark:text-gray-400"
+                      >
+                        {detectedAccount}
+                      </span>
+                    )}
+                  </div>
+                  {!detectedFormat && (
+                    <button
+                      onClick={() => setStep('mapping')}
+                      className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline transition-colors flex-shrink-0"
                     >
-                      {detectedFormat === 'chase-cc' ? 'Chase credit card detected' : 'Chase format detected'}
-                    </span>
-                  )}
-                  {detectedAccount && (
-                    <span
-                      className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-nero-bg text-gray-500 dark:text-gray-400"
-                    >
-                      {detectedAccount}
-                    </span>
+                      Edit column mapping
+                    </button>
                   )}
                 </div>
-                {!detectedFormat && (
-                  <button
-                    onClick={() => setStep('mapping')}
-                    className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline transition-colors flex-shrink-0"
-                  >
-                    Edit column mapping
-                  </button>
-                )}
+
+                {/* Preview table */}
+                {(() => {
+                  // Columns already represented by the parsed fields
+                  const usedCols = new Set(
+                    [mapping.dateCol, mapping.descCol, mapping.amtCol,
+                     mapping.debitCol, mapping.creditCol, mapping.catCol]
+                      .filter((i) => i >= 0)
+                  );
+                  // Chase CC: only show the 4 primary columns (Date, Description, Amount, Category)
+                  // Chase checking: show all extra raw columns (Type, Balance, etc.)
+                  const extraCols = detectedFormat === 'chase-cc'
+                    ? []
+                    : headers
+                        .map((h, i) => ({ h, i }))
+                        .filter(({ i }) => !usedCols.has(i));
+
+                  return (
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-gray-100 dark:border-nero-border">
+                          <th className="px-3 py-2 text-left text-gray-400 font-medium w-8"></th>
+                          <th className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">Date</th>
+                          <th className="px-3 py-2 text-left text-gray-400 font-medium">Description</th>
+                          <th className="px-3 py-2 text-right text-gray-400 font-medium whitespace-nowrap">Amount</th>
+                          {extraCols.map(({ h, i }) => (
+                            <th key={i} className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">{h}</th>
+                          ))}
+                          <th className="px-3 py-2 text-left text-gray-400 font-medium">Category</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((row) => (
+                          <tr
+                            key={row._key}
+                            className={`border-b border-gray-50 dark:border-nero-border/50 ${row.skip ? 'opacity-40' : ''}`}
+                          >
+                            <td className="px-3 py-1.5">
+                              <input
+                                type="checkbox"
+                                checked={!row.skip}
+                                onChange={() => toggleSkip(row._key)}
+                                className="accent-gray-900 dark:accent-white"
+                              />
+                            </td>
+                            <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                              {row.date}
+                            </td>
+                            <td className="px-3 py-1.5 text-gray-800 dark:text-gray-200 max-w-[180px] truncate" title={row.name}>
+                              {row.name}
+                            </td>
+                            <td className="px-3 py-1.5 text-right tabular-nums font-medium whitespace-nowrap"
+                                style={{ color: row.amt > 0 ? '#27AE60' : '#f87171' }}>
+                              {row.amt > 0 ? '+' : '-'}${Math.abs(row.amt).toFixed(2)}
+                            </td>
+                            {extraCols.map(({ i }) => (
+                              <td key={i} className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                {dataRows[row._key]?.[i] ?? ''}
+                              </td>
+                            ))}
+                            <td className="px-3 py-1.5">
+                              <select
+                                value={row.cat}
+                                onChange={(e) => setRowCat(row._key, e.target.value)}
+                                className="text-xs border border-gray-200 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-bg text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
+                                disabled={row.skip}
+                              >
+                                {ALL_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
+                              </select>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  );
+                })()}
               </div>
 
-              {/* Preview table */}
-              {(() => {
-                // Columns already represented by the parsed fields
-                const usedCols = new Set(
-                  [mapping.dateCol, mapping.descCol, mapping.amtCol,
-                   mapping.debitCol, mapping.creditCol, mapping.catCol]
-                    .filter((i) => i >= 0)
-                );
-                // Chase CC: only show the 4 primary columns (Date, Description, Amount, Category)
-                // Chase checking: show all extra raw columns (Type, Balance, etc.)
-                const extraCols = detectedFormat === 'chase-cc'
-                  ? []
-                  : headers
-                      .map((h, i) => ({ h, i }))
-                      .filter(({ i }) => !usedCols.has(i));
-
-                return (
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="border-b border-gray-100 dark:border-nero-border">
-                        <th className="px-3 py-2 text-left text-gray-400 font-medium w-8"></th>
-                        <th className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">Date</th>
-                        <th className="px-3 py-2 text-left text-gray-400 font-medium">Description</th>
-                        <th className="px-3 py-2 text-right text-gray-400 font-medium whitespace-nowrap">Amount</th>
-                        {extraCols.map(({ h, i }) => (
-                          <th key={i} className="px-3 py-2 text-left text-gray-400 font-medium whitespace-nowrap">{h}</th>
-                        ))}
-                        <th className="px-3 py-2 text-left text-gray-400 font-medium">Category</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((row) => (
-                        <tr
-                          key={row._key}
-                          className={`border-b border-gray-50 dark:border-nero-border/50 ${row.skip ? 'opacity-40' : ''}`}
-                        >
-                          <td className="px-3 py-1.5">
-                            <input
-                              type="checkbox"
-                              checked={!row.skip}
-                              onChange={() => toggleSkip(row._key)}
-                              className="accent-gray-900 dark:accent-white"
-                            />
-                          </td>
-                          <td className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                            {row.date}
-                          </td>
-                          <td className="px-3 py-1.5 text-gray-800 dark:text-gray-200 max-w-[180px] truncate" title={row.name}>
-                            {row.name}
-                          </td>
-                          <td className="px-3 py-1.5 text-right tabular-nums font-medium whitespace-nowrap"
-                              style={{ color: row.amt > 0 ? '#27AE60' : '#f87171' }}>
-                            {row.amt > 0 ? '+' : '-'}${Math.abs(row.amt).toFixed(2)}
-                          </td>
-                          {extraCols.map(({ i }) => (
-                            <td key={i} className="px-3 py-1.5 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                              {dataRows[row._key]?.[i] ?? ''}
-                            </td>
-                          ))}
-                          <td className="px-3 py-1.5">
-                            <select
-                              value={row.cat}
-                              onChange={(e) => setRowCat(row._key, e.target.value)}
-                              className="text-xs border border-gray-200 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-bg text-gray-800 dark:text-gray-200 outline-none focus:border-gray-400 transition-colors"
-                              disabled={row.skip}
-                            >
-                              {ALL_CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                );
-              })()}
-            </div>
+              {/* Credit card suggestion */}
+              {accountInfo?.type === 'credit' && (
+                <div className="mt-6 px-5 py-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center mt-0.5">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                        Credit card detected
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                        This looks like a credit card statement for <strong>{accountInfo.name}</strong> ending in <strong>{accountInfo.lastFour}</strong>.
+                        Would you like to create a credit card entry to track due dates and balances?
+                      </p>
+                      <button
+                        onClick={() => {
+                          onClose();
+                          onCreateCreditCard?.(accountInfo);
+                        }}
+                        className="mt-3 text-xs font-medium px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                      >
+                        Create credit card →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* ── Step: success ── */}

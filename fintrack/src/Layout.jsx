@@ -5,6 +5,7 @@ import { fmtDollars, filterByDateRange, dateRangeLabel } from './utils';
 import StatCard from './components/StatCard';
 import AddTransactionModal from './components/AddTransactionModal';
 import CsvImportModal from './components/CsvImportModal';
+import CreditCardModal from './components/CreditCardModal';
 import OnboardingModal from './components/OnboardingModal';
 import BottomNav from './components/BottomNav';
 import { NAV_ITEMS, GearIcon } from './navItems';
@@ -197,6 +198,8 @@ export default function Layout() {
     editTxn, setEditTxn,
     addModalOpen, setAddModalOpen,
     csvModalOpen, setCsvModalOpen,
+    creditCardModalOpen, setCreditCardModalOpen,
+    editCreditCard, setEditCreditCard,
     txnDateRange, txnCustomFrom, txnCustomTo,
   } = useApp();
   const navigate = useNavigate();
@@ -270,10 +273,26 @@ export default function Layout() {
         open={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
         onViewTransactions={() => navigate('/transactions')}
+        onCreateCreditCard={(accountInfo) => {
+          setEditCreditCard({
+            name: accountInfo.name,
+            last_four: accountInfo.lastFour,
+            credit_limit: '',
+            current_balance: '',
+            minimum_payment: '',
+            due_day: '',
+          });
+          setCreditCardModalOpen(true);
+          navigate('/bills');
+        }}
       />
       <AddTransactionModal
         open={addModalOpen || !!editTxn}
         onClose={() => { setAddModalOpen(false); setEditTxn(null); }}
+      />
+      <CreditCardModal
+        open={creditCardModalOpen}
+        onClose={() => { setCreditCardModalOpen(false); setEditCreditCard(null); }}
       />
       {prefsLoaded && !preferences.onboardingComplete && (
         <>

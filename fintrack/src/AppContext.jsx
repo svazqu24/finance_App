@@ -121,6 +121,11 @@ export function AppProvider({ children }) {
   const [editBill, setEditBill]         = useState(null);
   const [billModalOpen, setBillModalOpen] = useState(false);
 
+  // ── Credit Cards ───────────────────────────────────────────────────────────
+  const [creditCardsData, setCreditCardsData] = useState([]);
+  const [editCreditCard, setEditCreditCard]   = useState(null);
+  const [creditCardModalOpen, setCreditCardModalOpen] = useState(false);
+
   // ── Date range filter (session state — resets on refresh) ─────────────────
   const [txnDateRange,  setTxnDateRange]  = useState('this-month');
   const [txnCustomFrom, setTxnCustomFrom] = useState('');
@@ -167,6 +172,7 @@ export function AppProvider({ children }) {
       setBudgetOverrides({});
       setGoalsData([]);
       setBillsData([]);
+      setCreditCardsData([]);
       setPreferences(PREF_DEFAULTS);
       setPrefsLoaded(false);
       return;
@@ -175,6 +181,7 @@ export function AppProvider({ children }) {
     loadBudgetOverrides(user);
     loadGoals(user);
     loadBills(user);
+    loadCreditCards(user);
     loadPreferences(user);
   }, [user]);
 
@@ -636,6 +643,75 @@ export function AppProvider({ children }) {
     setBillsData((prev) => prev.map((b) => (b.id === id ? dbRowToBill(data) : b)));
   }
 
+  // ── Credit Cards CRUD ──────────────────────────────────────────────────────
+  async function loadCreditCards(currentUser) {
+    const { data, error } = await supabase
+      .from('credit_cards')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: true });
+    if (error) { console.error('[fintrack] Credit cards fetch failed:', error); return; }
+    setCreditCardsData(data);
+  }
+
+  async function addCreditCard(card) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('credit_cards')
+      .insert({
+        user_id: user.id,
+        name: card.name,
+        last_four: card.last_four,
+        credit_limit: card.credit_limit,
+        current_balance: card.current_balance,
+        statement_balance: card.statement_balance,
+        minimum_payment: card.minimum_payment,
+        due_day: card.due_day,
+        paid_month: card.paid_month,
+      })
+      .select().single();
+    if (error) { console.error('[fintrack] Credit card insert failed:', error); return; }
+    setCreditCardsData((prev) => [...prev, data]);
+  }
+
+  async function updateCreditCard(id, updates) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('credit_cards')
+      .update({
+        name: updates.name,
+        last_four: updates.last_four,
+        credit_limit: updates.credit_limit,
+        current_balance: updates.current_balance,
+        statement_balance: updates.statement_balance,
+        minimum_payment: updates.minimum_payment,
+        due_day: updates.due_day,
+        paid_month: updates.paid_month,
+      })
+      .eq('id', id).eq('user_id', user.id)
+      .select().single();
+    if (error) { console.error('[fintrack] Credit card update failed:', error); return; }
+    setCreditCardsData((prev) => prev.map((c) => (c.id === id ? data : c)));
+  }
+
+  async function deleteCreditCard(id) {
+    if (!user) return;
+    const { error } = await supabase.from('credit_cards').delete().eq('id', id).eq('user_id', user.id);
+    if (error) { console.error('[fintrack] Credit card delete failed:', error); return; }
+    setCreditCardsData((prev) => prev.filter((c) => c.id !== id));
+  }
+
+  async function markCreditCardPaid(id, monthStr) {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('credit_cards')
+      .update({ paid_month: monthStr })
+      .eq('id', id).eq('user_id', user.id)
+      .select().single();
+    if (error) { console.error('[fintrack] Credit card paid update failed:', error); return; }
+    setCreditCardsData((prev) => prev.map((c) => (c.id === id ? data : c)));
+  }
+
   // Helper: Get category styles (custom or default)
   function getCategorySty(categoryName) {
     const custom = preferences.categoryColors?.[categoryName];
@@ -693,6 +769,16 @@ export function AppProvider({ children }) {
         setEditBill,
         billModalOpen,
         setBillModalOpen,
+        // credit cards
+        creditCardsData,
+        addCreditCard,
+        updateCreditCard,
+        deleteCreditCard,
+        markCreditCardPaid,
+        editCreditCard,
+        setEditCreditCard,
+        creditCardModalOpen,
+        setCreditCardModalOpen,
         // preferences
         preferences,
         updatePreference,

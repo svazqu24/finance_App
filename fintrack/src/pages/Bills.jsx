@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
 import BillModal from '../components/BillModal';
+import CreditCardModal from '../components/CreditCardModal';
 import { catSty } from '../data';
 import { fmtDollars } from '../utils';
 
@@ -33,6 +34,27 @@ const STATUS_STYLES = {
   overdue:  { dot: '#EF4444', label: 'Overdue',  bg: '#FEE2E2', fg: '#991B1B' },
   upcoming: { dot: '#94A3B8', label: 'Upcoming', bg: '#F1F5F9', fg: '#475569' },
 };
+
+/** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a credit card in current month */
+function creditCardStatus(card) {
+  const today = new Date();
+  const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  if (card.paid_month === monthStr) return 'paid';
+
+  const dueDate = new Date(today.getFullYear(), today.getMonth(), card.due_day);
+  if (dueDate < today) return 'overdue';
+  const daysUntil = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+  if (daysUntil <= 3) return 'overdue'; // Red for due within 3 days
+  if (daysUntil <= 7) return 'soon'; // Amber for due within 7 days
+  return 'upcoming';
+}
+
+/** Get utilization color */
+function getUtilizationColor(utilization) {
+  if (utilization < 0.3) return '#22C55E'; // Green
+  if (utilization < 0.7) return '#F59E0B'; // Amber
+  return '#EF4444'; // Red
+}
 
 function CalendarCell({ day, bills, onBillClick }) {
   if (!day) return <div className="aspect-square" />;
@@ -73,6 +95,10 @@ export default function Bills() {
     markBillPaid,
     editBill, setEditBill,
     billModalOpen, setBillModalOpen,
+    creditCardsData,
+    markCreditCardPaid,
+    editCreditCard, setEditCreditCard,
+    creditCardModalOpen, setCreditCardModalOpen,
   } = useApp();
 
   const today = new Date();
@@ -179,6 +205,118 @@ export default function Bills() {
           </button>
         </div>
       </div>
+
+      {/* Credit Cards Section */}
+      {creditCardsData.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[13px] font-medium text-gray-900 dark:text-white">Credit cards</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Total minimum payments: {fmtDollars(creditCardsData.reduce((sum, c) => {
+                  const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                  return c.paid_month === monthStr ? sum : sum + (c.minimum_payment || 0);
+                }, 0))}
+              </p>
+            </div>
+            <button
+              onClick={() => { setEditCreditCard(null); setCreditCardModalOpen(true); }}
+              className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+              style={{ background: '#27AE60' }}
+            >
+              + Add card
+            </button>
+          </div>
+          <div className="grid gap-3">
+            {creditCardsData.map((card) => {
+              const status = creditCardStatus(card);
+              const utilization = card.credit_limit ? (card.current_balance / card.credit_limit) : 0;
+              const utilizationColor = getUtilizationColor(utilization);
+              const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+              const isPaid = card.paid_month === monthStr;
+
+              return (
+                <div
+                  key={card.id}
+                  className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4 border border-transparent hover:border-gray-200 dark:hover:border-nero-border transition-colors cursor-pointer"
+                  onClick={() => { setEditCreditCard(card); setCreditCardModalOpen(true); }}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {card.name} {card.last_four && `•••• ${card.last_four}`}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Due on {card.due_day}{card.due_day === 1 ? 'st' : card.due_day === 2 ? 'nd' : card.due_day === 3 ? 'rd' : 'th'}
+                        {status === 'overdue' && ' (overdue)'}
+                        {status === 'soon' && ` (in ${Math.ceil((new Date(today.getFullYear(), today.getMonth(), card.due_day) - today) / (1000 * 60 * 60 * 24))} days)`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: STATUS_STYLES[status].dot }}
+                      />
+                      {isPaid && (
+                        <span className="text-xs text-green-600 dark:text-green-400 font-medium">Paid</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Current balance</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {fmtDollars(card.current_balance)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Statement balance</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {fmtDollars(card.statement_balance)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Minimum payment: {fmtDollars(card.minimum_payment)}
+                    </p>
+                    {card.credit_limit && (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-gray-200 dark:bg-nero-border rounded-full h-2">
+                          <div
+                            className="h-2 rounded-full transition-all"
+                            style={{
+                              width: `${Math.min(utilization * 100, 100)}%`,
+                              background: utilizationColor
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {(utilization * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {!isPaid && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        markCreditCardPaid(card.id, monthStr);
+                      }}
+                      className="w-full text-xs font-medium py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
+                    >
+                      Mark as paid
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Calendar */}
       <div className="rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden mb-5">
@@ -297,6 +435,10 @@ export default function Bills() {
       <BillModal
         open={billModalOpen}
         onClose={() => { setBillModalOpen(false); setEditBill(null); }}
+      />
+      <CreditCardModal
+        open={creditCardModalOpen}
+        onClose={() => { setCreditCardModalOpen(false); setEditCreditCard(null); }}
       />
     </>
   );
