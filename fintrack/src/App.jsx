@@ -3,7 +3,11 @@ import { AppProvider, useApp } from './AppContext';
 import { NotificationProvider } from './NotificationContext';
 import Toast from './components/Toast';
 import Layout from './Layout';
-import Auth from './pages/Auth';
+import Splash from './pages/Splash';
+import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import Setup2FA from './pages/Setup2FA';
+import Verify2FA from './pages/Verify2FA';
 import Overview from './pages/Overview';
 import Transactions from './pages/Transactions';
 import Spending from './pages/Spending';
@@ -13,24 +17,44 @@ import Goals from './pages/Goals';
 import Portfolio from './pages/Portfolio';
 import Settings from './pages/Settings';
 
-// Rendered inside AppProvider so it can read auth state from context
 function AppRoutes() {
-  const { user, authLoading, passwordRecovery } = useApp();
+  const { user, authLoading, passwordRecovery, prefsLoaded, preferences, twoFactorVerified } = useApp();
+  const isAuthenticated = Boolean(user);
+  const needsTwoFactor = isAuthenticated && preferences.twoFactorEnabled && !twoFactorVerified;
 
-  // Hold render until the initial Supabase session check resolves —
-  // prevents a flash of the Auth page on refresh when already logged in
-  if (authLoading) {
+  if (authLoading || (isAuthenticated && !prefsLoaded)) {
     return (
-      <div className="min-h-screen bg-white dark:bg-nero-bg flex items-center justify-center transition-colors">
+      <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center transition-colors">
         <p className="text-sm text-gray-400">Loading…</p>
       </div>
     );
   }
 
-  // Show Auth when logged out, OR when arriving via a password-reset link
-  // (passwordRecovery=true means the user has a recovery session but needs
-  // to set a new password before accessing the dashboard)
-  if (!user || passwordRecovery) return <Auth />;
+  if (needsTwoFactor) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/verify-2fa" element={<Verify2FA />} />
+          <Route path="*" element={<Navigate to="/verify-2fa" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
+
+  if (!isAuthenticated || passwordRecovery) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Splash />} />
+          <Route path="/welcome" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/setup-2fa" element={<Setup2FA />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
@@ -46,6 +70,11 @@ function AppRoutes() {
           <Route path="portfolio"    element={<Portfolio />} />
           <Route path="settings"     element={<Settings />} />
         </Route>
+        <Route path="/login" element={<Navigate to="/overview" replace />} />
+        <Route path="/forgot-password" element={<Navigate to="/overview" replace />} />
+        <Route path="/setup-2fa" element={<Navigate to="/overview" replace />} />
+        <Route path="/verify-2fa" element={<Navigate to="/overview" replace />} />
+        <Route path="*" element={<Navigate to="/overview" replace />} />
       </Routes>
     </BrowserRouter>
   );

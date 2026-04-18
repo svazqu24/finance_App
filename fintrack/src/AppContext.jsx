@@ -13,6 +13,8 @@ const PREF_DEFAULTS = {
   onboardingComplete:   false,
   categoryColors:       {}, // { categoryName: { bg, fg }, ... }
   dismissedSubscriptions: [], // array of subscription names to hide
+  twoFactorEnabled:     false,
+  twoFactorSkipped:     false,
 };
 
 // DB column → JS key mapping
@@ -25,6 +27,8 @@ const DB_TO_JS = {
   onboarding_complete:     'onboardingComplete',
   category_colors:         'categoryColors',
   dismissed_subscriptions: 'dismissedSubscriptions',
+  two_factor_enabled:      'twoFactorEnabled',
+  two_factor_skipped:      'twoFactorSkipped',
 };
 
 function dbRowToPrefs(row) {
@@ -48,6 +52,12 @@ function dbRowToPrefs(row) {
         ? JSON.parse(row.dismissed_subscriptions)
         : row.dismissed_subscriptions;
     } catch { p.dismissedSubscriptions = []; }
+  }
+  if (row.two_factor_enabled !== null && row.two_factor_enabled !== undefined) {
+    p.twoFactorEnabled = Boolean(row.two_factor_enabled);
+  }
+  if (row.two_factor_skipped !== null && row.two_factor_skipped !== undefined) {
+    p.twoFactorSkipped = Boolean(row.two_factor_skipped);
   }
   return p;
 }
@@ -126,6 +136,7 @@ export function AppProvider({ children }) {
   // ── Preferences ───────────────────────────────────────────────────────────
   const [preferences, setPreferences] = useState(PREF_DEFAULTS);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const [twoFactorVerified, setTwoFactorVerified] = useState(false);
 
   // ── Bills ─────────────────────────────────────────────────────────────────
   const [billsData, setBillsData]       = useState([]);
@@ -187,8 +198,10 @@ export function AppProvider({ children }) {
       setCreditCardsData([]);
       setPreferences(PREF_DEFAULTS);
       setPrefsLoaded(false);
+      setTwoFactorVerified(false);
       return;
     }
+    setTwoFactorVerified(false);
     loadTransactions(user);
     loadBudgetOverrides(user);
     loadGoals(user);
@@ -293,8 +306,18 @@ export function AppProvider({ children }) {
     if (error) throw error;
   }
 
-  async function signUp(email, password) {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+    if (error) throw error;
+  }
+
+  async function signUp(email, password, name) {
+    const signUpPayload = { email, password };
+    const options = {};
+    if (name?.trim()) {
+      options.data = { full_name: name.trim() };
+    }
+    const { data, error } = await supabase.auth.signUp({ ...signUpPayload, options });
     if (error) throw error;
     // Set onboardingComplete to false for new sign-ups (they should see onboarding)
     if (data.user) {
@@ -712,6 +735,18 @@ export function AppProvider({ children }) {
     setPrefsLoaded(true);
   }
 
+  useEffect(() => {
+    if (!user) {
+      setTwoFactorVerified(false);
+      return;
+    }
+    if (preferences.twoFactorEnabled) {
+      setTwoFactorVerified(false);
+    } else {
+      setTwoFactorVerified(true);
+    }
+  }, [user, preferences.twoFactorEnabled]);
+
   async function updatePreference(key, value) {
     // Optimistic local update
     setPreferences((prev) => ({ ...prev, [key]: value }));
@@ -838,9 +873,12 @@ export function AppProvider({ children }) {
         passwordRecovery,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
         resetPassword,
         updatePassword,
+        twoFactorVerified,
+        setTwoFactorVerified,
         // transactions
         transactions,
         addTransaction,
