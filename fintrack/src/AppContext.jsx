@@ -89,6 +89,16 @@ function dbRowToGoal(row) {
   };
 }
 
+function dbRowToGoalContribution(row) {
+  return {
+    id:     row.id,
+    goalId: row.goal_id,
+    amount: Number(row.amount),
+    note:   row.note,
+    date:   row.date,
+  };
+}
+
 export function AppProvider({ children }) {
   // ── Auth state ──────────────────────────────────────────────────────────────
   const [user, setUser]             = useState(null);
@@ -111,6 +121,7 @@ export function AppProvider({ children }) {
 
   // ── Goals ─────────────────────────────────────────────────────────────────
   const [goalsData, setGoalsData] = useState([]);
+  const [goalContributions, setGoalContributions] = useState([]);
 
   // ── Preferences ───────────────────────────────────────────────────────────
   const [preferences, setPreferences] = useState(PREF_DEFAULTS);
@@ -171,6 +182,7 @@ export function AppProvider({ children }) {
       setTransactions([]);
       setBudgetOverrides({});
       setGoalsData([]);
+      setGoalContributions([]);
       setBillsData([]);
       setCreditCardsData([]);
       setPreferences(PREF_DEFAULTS);
@@ -180,6 +192,7 @@ export function AppProvider({ children }) {
     loadTransactions(user);
     loadBudgetOverrides(user);
     loadGoals(user);
+    loadGoalContributions(user);
     loadBills(user);
     loadCreditCards(user);
     loadPreferences(user);
@@ -220,6 +233,58 @@ export function AppProvider({ children }) {
       .order('created_at', { ascending: true });
     if (error) { console.error('[fintrack] Goals fetch failed:', error); return; }
     setGoalsData(data.map(dbRowToGoal));
+  }
+
+  async function loadGoalContributions(currentUser) {
+    const { data, error } = await supabase
+      .from('goal_contributions')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
+    if (error) { console.error('[fintrack] Goal contributions fetch failed:', error); return; }
+    setGoalContributions(data.map(dbRowToGoalContribution));
+  }
+
+  async function addGoalContribution(goalId, amount, note, date) {
+    if (!user) return;
+    const contributionPayload = {
+      user_id: user.id,
+      goal_id: goalId,
+      amount,
+      note: note?.trim() || null,
+      date: date || new Date().toISOString().slice(0, 10),
+    };
+
+    const { data, error } = await supabase
+      .from('goal_contributions')
+      .insert(contributionPayload)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[fintrack] Goal contribution insert failed:', error);
+      return;
+    }
+
+    const goal = goalsData.find((g) => g.id === goalId);
+    const updatedSaved = Number(goal?.saved ?? 0) + Number(amount);
+
+    const { data: goalData, error: goalError } = await supabase
+      .from('goals')
+      .update({ saved: updatedSaved })
+      .eq('id', goalId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (goalError) {
+      console.error('[fintrack] Goal saved update failed:', goalError);
+      return;
+    }
+
+    setGoalContributions((prev) => [dbRowToGoalContribution(data), ...prev]);
+    setGoalsData((prev) => prev.map((g) => (g.id === goalId ? dbRowToGoal(goalData) : g)));
   }
 
   // ── Auth actions ─────────────────────────────────────────────────────────────
@@ -531,6 +596,7 @@ export function AppProvider({ children }) {
     // Delete all user data, then sign out (client can't delete auth user directly)
     await Promise.all([
       supabase.from('transactions').delete().eq('user_id', user.id),
+      supabase.from('goal_contributions').delete().eq('user_id', user.id),
       supabase.from('goals').delete().eq('user_id', user.id),
       supabase.from('bills').delete().eq('user_id', user.id),
       supabase.from('budgets').delete().eq('user_id', user.id),
@@ -798,6 +864,8 @@ export function AppProvider({ children }) {
         saveBudgetLimit,
         // goals
         goalsData,
+        goalContributions,
+        addGoalContribution,
         addGoal,
         updateGoal,
         deleteGoal,

@@ -3,18 +3,33 @@ import { useApp } from '../AppContext';
 import StatCard from '../components/StatCard';
 import GoalCard from '../components/GoalCard';
 import GoalModal from '../components/GoalModal';
+import GoalContributionModal from '../components/GoalContributionModal';
 import { fmtDollars } from '../utils';
 
 export default function Goals() {
-  const { goalsData, editGoal, setEditGoal } = useApp();
+  const {
+    goalsData,
+    goalContributions,
+    addGoalContribution,
+    editGoal,
+    setEditGoal,
+  } = useApp();
   const [addOpen, setAddOpen] = useState(false);
+  const [contributionOpen, setContributionOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
 
   // Summary stats
-  const totalSaved    = goalsData.reduce((s, g) => s + g.saved, 0);
-  const totalMonthly  = goalsData.reduce((s, g) => s + g.monthly, 0);
+  const totalSaved   = goalsData.reduce((s, g) => s + g.saved, 0);
+  const totalTarget  = goalsData.reduce((s, g) => s + g.target, 0);
 
   const modalOpen = addOpen || !!editGoal;
   function closeModal() { setAddOpen(false); setEditGoal(null); }
+
+  const contributionsByGoal = goalContributions.reduce((map, contribution) => {
+    map[contribution.goalId] = map[contribution.goalId] || [];
+    map[contribution.goalId].push(contribution);
+    return map;
+  }, {});
 
   return (
     <>
@@ -25,14 +40,19 @@ export default function Goals() {
           sub={`across ${goalsData.length} goal${goalsData.length !== 1 ? 's' : ''}`}
         />
         <StatCard
-          label="monthly allocation"
-          value={fmtDollars(totalMonthly)}
-          sub="toward goals"
+          label="total target"
+          value={fmtDollars(totalTarget)}
+          sub="goal lineup"
         />
       </div>
 
       {goalsData.map((g) => (
-        <GoalCard key={g.id} g={g} />
+        <GoalCard
+          key={g.id}
+          g={g}
+          contributions={contributionsByGoal[g.id] ?? []}
+          onContribute={() => { setSelectedGoal(g); setContributionOpen(true); }}
+        />
       ))}
 
       {goalsData.length === 0 && (
@@ -58,6 +78,16 @@ export default function Goals() {
       </button>
 
       <GoalModal open={modalOpen} onClose={closeModal} />
+      <GoalContributionModal
+        open={contributionOpen}
+        goal={selectedGoal}
+        onClose={() => setContributionOpen(false)}
+        onSave={async ({ amount, note, date }) => {
+          if (!selectedGoal) return;
+          await addGoalContribution(selectedGoal.id, amount, note, date);
+          setContributionOpen(false);
+        }}
+      />
     </>
   );
 }

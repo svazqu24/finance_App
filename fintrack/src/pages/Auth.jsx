@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 
 const inputCls =
-  'w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 ' +
-  'outline-none transition-colors';
+  'w-full rounded-xl px-4 py-3 text-sm text-white placeholder:text-gray-500 border outline-none transition-colors';
 
 const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-500 block mb-1.5';
 
@@ -14,7 +13,7 @@ function NeroMark({ size = 56 }) {
       style={{
         width: size, height: size,
         background: '#27AE60',
-        borderRadius: `${Math.round(size * 0.36)}px ${Math.round(size * 0.054)}px ${Math.round(size * 0.36)}px ${Math.round(size * 0.054)}px`,
+        borderRadius: '10px 3px 10px 3px',
         fontSize: size * 0.46,
         letterSpacing: '-0.02em',
         fontFamily: 'Geist, system-ui, sans-serif',
@@ -35,6 +34,11 @@ export default function Auth() {
   const [error, setError]       = useState('');
   const [notice, setNotice]     = useState('');
   const [busy, setBusy]         = useState(false);
+  const [visible, setVisible]   = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
 
   useEffect(() => {
     if (passwordRecovery) setMode('reset');
@@ -84,34 +88,34 @@ export default function Auth() {
   };
 
   const border = '1px solid #2a2a2a';
-  const inputStyle = { background: '#1a1a1a', border };
+  const inputStyle = { background: '#141414', border, color: '#ffffff' };
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4 font-sans"
-      style={{ background: '#141414' }}
+      style={{ background: '#141414', opacity: visible ? 1 : 0, transition: 'opacity 400ms ease' }}
     >
       <div className="w-full max-w-sm">
 
         {/* Logo + headline */}
         <div className="flex flex-col items-center mb-8 text-center">
           <NeroMark size={56} />
-          <h1 className="text-[26px] font-semibold text-white mt-5 mb-1.5 tracking-tight"
+          <h1 className="text-[28px] font-semibold text-white mt-5 mb-2 tracking-tight"
               style={{ fontFamily: 'Geist, system-ui, sans-serif' }}>
-            {mode === 'login'  ? 'Welcome to Nero'    :
-             mode === 'signup' ? 'Create your account' :
-             mode === 'forgot' ? 'Reset password'      :
-                                 'Set new password'}
+            nero
           </h1>
-          {(mode === 'login' || mode === 'signup') && (
-            <p className="text-sm" style={{ color: '#6b7280' }}>
-              From <em>dinero</em> — your money, your way.
+          <p className="text-sm" style={{ color: '#555555' }}>
+            From <em>dinero</em> — your money, your way.
+          </p>
+          {mode === 'signup' && (
+            <p className="text-sm mt-2" style={{ color: '#555555' }}>
+              Join thousands tracking their money with Nero.
             </p>
           )}
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl p-6" style={{ background: '#1f1f1f', border }}>
+        <div className="rounded-[16px] p-6" style={{ background: '#1f1f1f', border }}>
 
           {notice && (
             <div className="text-sm rounded-xl px-4 py-3 mb-4 leading-relaxed"
@@ -181,7 +185,7 @@ export default function Auth() {
             <button
               type="submit"
               disabled={busy}
-              className="w-full text-white text-sm font-semibold py-3 rounded-xl mt-1 transition-opacity disabled:opacity-50"
+              className="w-full text-white text-sm font-semibold py-3 rounded-[20px] mt-1 transition-opacity disabled:opacity-50"
               style={{ background: '#27AE60' }}
             >
               {submitLabel[mode]}
