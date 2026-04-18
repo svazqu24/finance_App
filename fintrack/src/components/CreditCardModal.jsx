@@ -43,6 +43,32 @@ export default function CreditCardModal({ open, onClose }) {
     setConfirmDelete(false);
   }, [open, editCreditCard]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const lockBodyScroll = () => {
+      const count = (window.__neroModalOpenCount ?? 0) + 1;
+      window.__neroModalOpenCount = count;
+      if (count === 1) document.body.style.overflow = 'hidden';
+    };
+    const unlockBodyScroll = () => {
+      const count = Math.max(0, (window.__neroModalOpenCount ?? 1) - 1);
+      window.__neroModalOpenCount = count;
+      if (count === 0) document.body.style.overflow = '';
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    lockBodyScroll();
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      unlockBodyScroll();
+    };
+  }, [open, onClose]);
+
   function setField(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
   }
@@ -88,7 +114,7 @@ export default function CreditCardModal({ open, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="w-full max-w-md bg-white dark:bg-nero-surface rounded-2xl shadow-xl">
+      <div className="w-full max-w-md bg-white dark:bg-nero-surface rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-nero-border">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">

@@ -173,6 +173,32 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const lockBodyScroll = () => {
+      const count = (window.__neroModalOpenCount ?? 0) + 1;
+      window.__neroModalOpenCount = count;
+      if (count === 1) document.body.style.overflow = 'hidden';
+    };
+    const unlockBodyScroll = () => {
+      const count = Math.max(0, (window.__neroModalOpenCount ?? 1) - 1);
+      window.__neroModalOpenCount = count;
+      if (count === 0) document.body.style.overflow = '';
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    lockBodyScroll();
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      unlockBodyScroll();
+    };
+  }, [open, onClose]);
+
   // ── Parsing ───────────────────────────────────────────────────────────────
 
   function processText(text, name) {
@@ -304,7 +330,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Dialog card */}
-      <div className="relative bg-white dark:bg-nero-surface w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col shadow-2xl z-10">
+      <div className="relative bg-white dark:bg-nero-surface w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] flex flex-col overflow-y-auto shadow-2xl z-10">
 
         {/* ── Header ── */}
         <div className="px-5 pt-4 pb-3 border-b border-gray-100 dark:border-nero-border flex-shrink-0">
@@ -572,6 +598,10 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
                       Edit column mapping
                     </button>
                   )}
+                </div>
+
+                <div className="mt-4 px-4 py-3 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-900 dark:text-yellow-100">
+                  Your merchant-cleanup rules have been updated. Re-import your CSVs so the latest merchant names are applied consistently.
                 </div>
 
                 {/* Preview table */}

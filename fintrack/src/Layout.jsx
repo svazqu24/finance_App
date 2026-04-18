@@ -307,7 +307,18 @@ export default function Layout() {
     <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
       <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub={rangeLabel} />
       <StatCard label="spent"  value={loading ? '—' : fmtDollars(animSpent)}  sub={rangeLabel} />
-      <StatCard label="saved"  value={loading ? '—' : `${Math.round(animSaved)}%`}      sub="of income" valueStyle={savedPct > 5 ? { color: '#27AE60' } : undefined} />
+      <StatCard
+        label="saved"
+        value={loading ? '—' : `${Math.round(animSaved)}%`}
+        sub="of income"
+        valueStyle={
+          savedPct > 5
+            ? { color: '#27AE60' }
+            : income > 0 && realSpent > income
+              ? { color: '#d97706' }
+              : undefined
+        }
+      />
     </div>
   );
 

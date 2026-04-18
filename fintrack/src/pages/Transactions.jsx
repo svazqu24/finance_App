@@ -263,11 +263,11 @@ export default function Transactions() {
         groupByDate(filtered).map(({ date, items }, idx) => (
           <div key={date} className={`mb-4 ${idx > 0 ? 'pt-4 border-t border-gray-200 dark:border-nero-border' : ''}`}>
             <p className="text-xs uppercase tracking-[.08em] text-gray-500 dark:text-gray-400 mb-2 px-0.5">{date}</p>
-            {items.map((t, i) => <TransactionRow key={i} txn={t} />)}
+            {items.map((t) => <TransactionRow key={t.id} txn={t} />)}
           </div>
         ))
       ) : (
-        filtered.map((t, i) => <TransactionRow key={i} txn={t} />)
+        filtered.map((t) => <TransactionRow key={t.id} txn={t} />)
       )}
     </>
   );

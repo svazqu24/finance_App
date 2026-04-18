@@ -26,6 +26,32 @@ export default function SubscriptionModal({ open, onClose }) {
     if (!open) { setForm(BLANK); setSaving(false); }
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const lockBodyScroll = () => {
+      const count = (window.__neroModalOpenCount ?? 0) + 1;
+      window.__neroModalOpenCount = count;
+      if (count === 1) document.body.style.overflow = 'hidden';
+    };
+    const unlockBodyScroll = () => {
+      const count = Math.max(0, (window.__neroModalOpenCount ?? 1) - 1);
+      window.__neroModalOpenCount = count;
+      if (count === 0) document.body.style.overflow = '';
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    lockBodyScroll();
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      unlockBodyScroll();
+    };
+  }, [open, onClose]);
+
   function setField(key, val) {
     setForm((f) => ({ ...f, [key]: val }));
   }
@@ -59,7 +85,7 @@ export default function SubscriptionModal({ open, onClose }) {
         className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div
-          className="bg-white dark:bg-nero-surface rounded-t-2xl max-w-[680px] mx-auto px-5 pt-4 shadow-2xl border-t border-transparent dark:border-nero-border"
+          className="bg-white dark:bg-nero-surface rounded-t-2xl max-w-[680px] mx-auto px-5 pt-4 shadow-2xl border-t border-transparent dark:border-nero-border max-h-[90vh] overflow-y-auto"
           style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
         >
           <div className="w-10 h-1 bg-gray-200 dark:bg-nero-border rounded-full mx-auto mb-4" />

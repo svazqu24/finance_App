@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 
 function NeroMark({ size = 52 }) {
@@ -153,6 +153,30 @@ export default function OnboardingModal() {
   const [slide, setSlide] = useState(0);
   const TOTAL = 3;
 
+  useEffect(() => {
+    const lockBodyScroll = () => {
+      const count = (window.__neroModalOpenCount ?? 0) + 1;
+      window.__neroModalOpenCount = count;
+      if (count === 1) document.body.style.overflow = 'hidden';
+    };
+    const unlockBodyScroll = () => {
+      const count = Math.max(0, (window.__neroModalOpenCount ?? 1) - 1);
+      window.__neroModalOpenCount = count;
+      if (count === 0) document.body.style.overflow = '';
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') dismiss();
+    };
+
+    lockBodyScroll();
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      unlockBodyScroll();
+    };
+  }, []);
+
   function dismiss() {
     updatePreference('onboardingComplete', true);
   }
@@ -178,7 +202,7 @@ export default function OnboardingModal() {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
          style={{ background: 'rgba(0,0,0,0.75)' }}>
       <div
-        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-6 flex flex-col"
+        className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl p-6 flex flex-col max-h-[90vh] overflow-y-auto"
         style={{ background: '#141414', border: '1px solid #2a2a2a' }}
       >
         {/* Skip button */}

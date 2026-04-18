@@ -247,13 +247,13 @@ export default function Overview() {
           </div>
           {twoCol ? (
             <div className="grid grid-cols-2 gap-2">
-              {transactions.slice(0, 6).map((t, i) => (
-                <TransactionRow key={i} txn={t} />
+              {transactions.slice(0, 6).map((t) => (
+                <TransactionRow key={t.id} txn={t} />
               ))}
             </div>
           ) : (
-            transactions.slice(0, 5).map((t, i) => (
-              <TransactionRow key={i} txn={t} />
+            transactions.slice(0, 5).map((t) => (
+              <TransactionRow key={t.id} txn={t} />
             ))
           )}
         </>
