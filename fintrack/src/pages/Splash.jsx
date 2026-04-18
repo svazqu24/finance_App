@@ -8,32 +8,83 @@ const cards = [
     description: 'See every merchant, account label, and category pill in one clean feed.',
     content: (
       <div className="space-y-3">
-        <div className="rounded-2xl bg-[#111111] p-4 border border-[#2a2a2a]">
-          <div className="flex justify-between items-center text-xs text-gray-400 mb-3">
-            <span>Checking</span>
-            <span>Today</span>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white">Cafe Lumière</p>
-                <p className="text-xs text-gray-500">Food & Drink</p>
+        <div className="rounded-2xl bg-[#111111] p-4 border border-[#2a2a2a] min-h-[400px]">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-[10px_3px_10px_3px] bg-[#f87171]/15 text-red-400 text-sm font-semibold">
+                  P
+                </div>
+                <div>
+                  <p className="text-sm text-white">Panera Bread</p>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-400">
+                    <span className="rounded-full border border-[#2a2a2a] px-2 py-1">Dining</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-sm text-emerald-400">-$12.30</span>
+              <span className="text-sm font-semibold text-[#f87171]">-$14.18</span>
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white">Walgreens</p>
-                <p className="text-xs text-gray-500">Health</p>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-[10px_3px_10px_3px] bg-[#4ade80]/15 text-emerald-400 text-sm font-semibold">
+                  $
+                </div>
+                <div>
+                  <p className="text-sm text-white">Payroll Deposit</p>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-400">
+                    <span className="rounded-full border border-[#2a2a2a] px-2 py-1">Income</span>
+                  </div>
+                </div>
               </div>
-              <span className="text-sm text-emerald-400">-$24.80</span>
+              <span className="text-sm font-semibold text-[#4ade80]">+$530.50</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-[10px_3px_10px_3px] bg-[#f87171]/15 text-red-400 text-sm font-semibold">
+                  B
+                </div>
+                <div>
+                  <p className="text-sm text-white">Burger King</p>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-400">
+                    <span className="rounded-full border border-[#2a2a2a] px-2 py-1">Dining</span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-[#f87171]">-$12.25</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-[10px_3px_10px_3px] bg-[#f87171]/15 text-red-400 text-sm font-semibold">
+                  S
+                </div>
+                <div>
+                  <p className="text-sm text-white">Spotify</p>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-400">
+                    <span className="rounded-full border border-[#2a2a2a] px-2 py-1">Subscriptions</span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-[#f87171]">-$10.99</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 flex items-center justify-center rounded-[10px_3px_10px_3px] bg-[#4ade80]/15 text-emerald-400 text-sm font-semibold">
+                  J
+                </div>
+                <div>
+                  <p className="text-sm text-white">Jewel Osco</p>
+                  <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-gray-400">
+                    <span className="rounded-full border border-[#2a2a2a] px-2 py-1">Groceries</span>
+                  </div>
+                </div>
+              </div>
+              <span className="text-sm font-semibold text-[#f87171]">-$42.50</span>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2 flex-wrap text-[11px] text-gray-400">
-          <span className="rounded-full border border-gray-700 px-2 py-1">Travel</span>
-          <span className="rounded-full border border-gray-700 px-2 py-1">Food</span>
-          <span className="rounded-full border border-gray-700 px-2 py-1">Utilities</span>
         </div>
       </div>
     ),
@@ -175,33 +226,30 @@ export default function Splash() {
     <div className="min-h-screen bg-[#0d0d0d] text-white px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col items-center text-center gap-4 mb-10">
-          <div
-            className="w-14 h-14 flex items-center justify-center"
-            style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px' }}
-          >
-            <span className="text-2xl font-semibold">N</span>
+            <div
+              className="w-14 h-14 flex items-center justify-center"
+              style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px' }}
+            >
+              <span className="text-2xl font-semibold">N</span>
+            </div>
+            <div className="text-white text-3xl font-semibold">nero</div>
+            <div>
+              <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight">Your money, finally clear</h1>
+              <p className="mt-3 text-sm text-gray-400 max-w-2xl mx-auto">
+                From dinero — the free Mint replacement.
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight">Your money, finally clear</h1>
-            <p className="mt-3 text-sm text-gray-400 max-w-2xl mx-auto">
-              From dinero — the free Mint replacement.
-            </p>
-          </div>
-        </div>
-
         <div className="grid gap-6 lg:grid-cols-[1.35fr_0.95fr]">
           <div className="relative overflow-hidden rounded-[24px] bg-[#111111] border border-[#272727] p-6 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
             <div className="absolute inset-0 bg-gradient-to-br from-[#27ae60]/20 via-transparent to-transparent pointer-events-none" />
             <div className="space-y-5 relative z-10">
-              <div className="text-sm uppercase tracking-[0.3em] text-gray-500">Preview</div>
-              <div className="overflow-hidden rounded-3xl bg-[#141414] p-6 border border-[#232323] min-h-[320px]">
+              <div className="overflow-hidden rounded-3xl bg-[#141414] p-6 border border-[#232323] min-h-[400px]">
                 {cards.map((card, idx) => (
                   <div
                     key={card.title}
                     className={`transform transition-all duration-700 ${idx === active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 absolute inset-x-0 top-0'}`}
                   >
-                    <div className="text-sm uppercase tracking-[0.24em] text-emerald-400 mb-2">{card.title}</div>
-                    <h2 className="text-2xl font-semibold mb-3">{card.title}</h2>
                     <p className="text-gray-400 mb-5">{card.description}</p>
                     {card.content}
                   </div>
