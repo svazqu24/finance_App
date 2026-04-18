@@ -389,13 +389,57 @@ export function AppProvider({ children }) {
   async function bulkInsertTransactions(txnArray, { onProgress } = {}) {
     if (!user || txnArray.length === 0) return { count: 0, skipped: 0 };
 
-    // Dedup: skip rows that already exist (same date + amount + name + account)
-    const existingKeys = new Set(
-      transactions.map((t) => `${t.date}|${t.amt}|${t.name}|${t.account || ''}`)
-    );
-    const deduped = txnArray.filter(
-      (t) => !existingKeys.has(`${t.date}|${t.amt}|${t.name}|${t.account || ''}`)
-    );
+    const normalizeTxnKey = (txn) => `${txn.date}|${txn.amt}|${txn.name}`;
+
+    const existingByKey = new Map();
+    for (const txn of transactions) {
+      const key = normalizeTxnKey(txn);
+      const current = existingByKey.get(key);
+      if (!current || (!current.account && txn.account)) {
+        existingByKey.set(key, txn);
+      }
+    }
+
+    const incomingByKey = new Map();
+    for (const txn of txnArray) {
+      const key = normalizeTxnKey(txn);
+      const current = incomingByKey.get(key);
+      if (!current || (!current.account && txn.account)) {
+        incomingByKey.set(key, txn);
+      }
+    }
+
+    const deduped = [];
+    for (const txn of incomingByKey.values()) {
+      const key = normalizeTxnKey(txn);
+      const existing = existingByKey.get(key);
+
+      if (existing) {
+        if (!existing.account && txn.account) {
+          const { error: updateError } = await supabase
+            .from('transactions')
+            .update({ account: txn.account })
+            .eq('user_id', user.id)
+            .eq('date', txn.date)
+            .eq('amt', txn.amt)
+            .eq('name', txn.name);
+
+          if (!updateError) {
+            setTransactions((prev) =>
+              prev.map((t) =>
+                normalizeTxnKey(t) === key ? { ...t, account: txn.account } : t
+              )
+            );
+          } else {
+            console.error('[fintrack] Account update failed for duplicate transaction:', updateError);
+          }
+        }
+        continue;
+      }
+
+      deduped.push(txn);
+    }
+
     const skipped = txnArray.length - deduped.length;
 
     if (deduped.length === 0) {

@@ -229,6 +229,8 @@ const MERCHANT_ALIASES = {
   "hardees":            "Hardee's",
   "hbomax.com ny":      "HBO Max",
   "help.hbomax.com hbomax.com ny": "HBO Max",
+  "hbomax":             "HBO Max",
+  "help.max.com":       "Max",
   "culver's":           "Culver's",
   "culvers":            "Culver's",
   "whataburger":        'Whataburger',
@@ -269,12 +271,25 @@ const TRANSFER_PATTERNS = [
  */
 export function cleanDescription(raw) {
   if (!raw) return '';
+  if (!cleanDescription.reimportNoteShown) {
+    console.info('[fintrack] Re-import your CSVs to get updated merchant names');
+    cleanDescription.reimportNoteShown = true;
+  }
+
   let s = raw.trim();
+
+  const reversalMatch = s.match(/^reversal:\s*(.+)$/i);
+  if (reversalMatch) {
+    return `Refund — ${cleanDescription(reversalMatch[1])}`;
+  }
 
   // 0a. Strip POS terminal prefixes — must run BEFORE transfer pattern check so
   //     "TST* ONLINE TRANSFER" correctly triggers the transfer short-circuit.
   //     TST* = Toast POS, SQ* = Square, SPK* = Spark
   s = s.replace(/^(?:TST|SQ|SPK)\s*\*\s*/i, '');
+
+  // 0a.1 Strip PP* payment descriptors without leaving the code behind.
+  s = s.replace(/^pp\*\s*/i, '');
 
   // 0b. Strip ACH/PPD entry class descriptors Chase/banks append after merchant name
   //     e.g. "EMPLOYER NAME PPD ID: 123456" → "EMPLOYER NAME"
@@ -313,8 +328,14 @@ export function cleanDescription(raw) {
   // 9. Strip standalone single capital letters (Chase noise codes like "K")
   s = s.replace(/(?:^|\s)\b[A-Z]\b(?=\s|$)/g, ' ');
 
-  // 10. Strip domain/URL fragments (e.g. "AMZN.COM/BI", ".COM")
-  s = s.replace(/\s*\S+\.(com|net|org|io|co)(\S*)?/gi, '');
+  // 9.1 Collapse repeated merchant tokens — e.g. "Max Max" → "Max".
+  s = s.replace(/\b(\w+)(?:\s+\1\b)+/gi, '$1');
+
+  // 10. Strip domain/URL fragments (e.g. "AMZN.COM/BI", ".COM") while preserving base tokens.
+  s = s.replace(/\b([A-Z0-9-]+)(?:\.(?:com|net|org|io|co))(?:[\/\s]\S*)?/gi, '$1');
+
+  // 10.1 Short-circuit known help domain patterns to the base merchant label.
+  s = s.replace(/\bhelp\.(hbomax|max)(?:\.com)?\b/i, '$1');
 
   // 11. Strip trailing punctuation and separator characters left after cleanup
   s = s.replace(/[\s:.,#\-]+$/, '');
