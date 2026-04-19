@@ -300,6 +300,40 @@ export function AppProvider({ children }) {
     setGoalsData((prev) => prev.map((g) => (g.id === goalId ? dbRowToGoal(goalData) : g)));
   }
 
+  async function deleteGoalContribution(id, goalId, amount) {
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('goal_contributions')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('[fintrack] Goal contribution delete failed:', error);
+      return;
+    }
+
+    const goal = goalsData.find((g) => g.id === goalId);
+    const updatedSaved = Math.max(0, Number(goal?.saved ?? 0) - Number(amount));
+
+    const { data: goalData, error: goalError } = await supabase
+      .from('goals')
+      .update({ saved: updatedSaved })
+      .eq('id', goalId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (goalError) {
+      console.error('[fintrack] Goal saved update failed:', goalError);
+      return;
+    }
+
+    setGoalContributions((prev) => prev.filter((entry) => entry.id !== id));
+    setGoalsData((prev) => prev.map((g) => (g.id === goalId ? dbRowToGoal(goalData) : g)));
+  }
+
   // ── Auth actions ─────────────────────────────────────────────────────────────
   async function signIn(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -904,6 +938,7 @@ export function AppProvider({ children }) {
         goalsData,
         goalContributions,
         addGoalContribution,
+        deleteGoalContribution,
         addGoal,
         updateGoal,
         deleteGoal,

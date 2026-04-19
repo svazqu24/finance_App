@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { projectedDate } from '../data';
 import { useApp } from '../AppContext';
 
 function PencilIcon() {
@@ -12,7 +11,7 @@ function PencilIcon() {
   );
 }
 
-export default function GoalCard({ g, contributions = [], onContribute }) {
+export default function GoalCard({ g, contributions = [], onContribute, onDeleteContribution }) {
   const { setEditGoal } = useApp();
   const [showAll, setShowAll] = useState(false);
   const [milestone, setMilestone] = useState('');
@@ -24,16 +23,36 @@ export default function GoalCard({ g, contributions = [], onContribute }) {
   useEffect(() => {
     const thresholds = [25, 50, 75, 100];
     const next = thresholds.slice().reverse().find((threshold) => pct >= threshold) || 0;
-    if (next > previousMilestone.current) {
-      previousMilestone.current = next;
-      setMilestone(next === 0 ? '' : `🎯 ${next}% there!`);
-      const timeout = setTimeout(() => setMilestone(''), 3000);
-      return () => clearTimeout(timeout);
+    if (next > previousMilestone.current && next > 0) {
+      const milestoneKey = `goal-milestone-${g.id}-${next}`;
+      const alreadySeen = window.localStorage.getItem(milestoneKey);
+      if (!alreadySeen) {
+        window.localStorage.setItem(milestoneKey, '1');
+        previousMilestone.current = next;
+        setMilestone(`You're ${next}% of the way to ${g.name}!`);
+        const timeout = setTimeout(() => setMilestone(''), 4000);
+        return () => clearTimeout(timeout);
+      }
     }
     return undefined;
-  }, [pct]);
+  }, [pct, g.id, g.name]);
 
-  const visibleContributions = showAll ? contributions : contributions.slice(0, 5);
+  const visibleContributions = showAll ? contributions : contributions.slice(0, 3);
+
+  const projectionText = (() => {
+    if (contributions.length === 0) return null;
+    const sorted = [...contributions].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const total = sorted.reduce((sum, item) => sum + item.amount, 0);
+    const start = new Date(sorted[0].date);
+    const end = new Date(sorted[sorted.length - 1].date);
+    const monthSpan = Math.max(1, (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() + 1);
+    const average = total / monthSpan;
+    if (average <= 0 || rem <= 0) return null;
+    const monthsToGoal = Math.ceil(rem / average);
+    const projected = new Date();
+    projected.setMonth(projected.getMonth() + monthsToGoal);
+    return projected.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  })();
 
   return (
     <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-4 py-3.5 mb-2.5 transition-colors">
@@ -88,21 +107,40 @@ export default function GoalCard({ g, contributions = [], onContribute }) {
         {contributions.length > 0 && (
           <div className="space-y-2">
             {visibleContributions.map((entry) => (
-              <div key={entry.id} className="rounded-2xl border border-gray-200 dark:border-nero-border bg-white/80 dark:bg-nero-bg p-3">
-                <div className="flex justify-between gap-3 items-center">
-                  <span className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">+${entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div key={entry.id} className="group rounded-2xl border border-gray-200 dark:border-nero-border bg-white/80 dark:bg-nero-bg p-3 relative">
+                <div className="flex justify-between gap-3 items-start">
+                  <div>
+                    <p className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                    {entry.note && <p className="mt-1 text-xs text-gray-400">{entry.note}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">+${entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    {onDeleteContribution && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteContribution(entry.id, entry.amount)}
+                        className="opacity-50 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-colors"
+                        aria-label="Delete contribution"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m5 0V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                          <line x1="10" y1="11" x2="10" y2="17" />
+                          <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
-                {entry.note && <p className="mt-1 text-xs text-gray-400">{entry.note}</p>}
               </div>
             ))}
-            {contributions.length > 5 && (
+            {contributions.length > 3 && (
               <button
                 type="button"
                 onClick={() => setShowAll((prev) => !prev)}
                 className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
               >
-                {showAll ? 'Show less' : `View all (${contributions.length})`}
+                {showAll ? 'Show less' : `View all ${contributions.length} contribution${contributions.length === 1 ? '' : 's'}`}
               </button>
             )}
           </div>
@@ -111,9 +149,13 @@ export default function GoalCard({ g, contributions = [], onContribute }) {
       <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1.5 transition-colors">
         <div className="h-full rounded" style={{ width: `${pct}%`, background: g.clr }} />
       </div>
-      <div className="flex justify-between">
-        <span className="text-xs text-gray-400">${rem.toLocaleString()} to go · +${g.monthly}/mo</span>
-        <span className="text-xs font-medium text-gray-900 dark:text-white">{projectedDate(g)}</span>
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-gray-400">${rem.toLocaleString()} to go</span>
+        {projectionText ? (
+          <span className="text-xs font-medium text-gray-900 dark:text-white">At this rate — on track for {projectionText}</span>
+        ) : (
+          <span className="text-xs text-gray-400">Add contributions to see your projection</span>
+        )}
       </div>
     </div>
   );

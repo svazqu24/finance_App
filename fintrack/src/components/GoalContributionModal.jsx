@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 
 const inputCls =
-  'w-full border border-gray-200 dark:border-nero-border rounded-xl px-4 py-3 text-sm ' +
-  'bg-white dark:bg-nero-bg text-gray-900 dark:text-white placeholder:text-gray-400 ' +
-  'outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors';
+  'w-full border rounded-xl px-4 py-3 text-sm bg-[#1f1f1f] border-[#2a2a2a] text-white placeholder:text-gray-500 ' +
+  'outline-none focus:border-[#27ae60] focus:ring-2 focus:ring-emerald-500/20 transition-colors';
 
 const labelCls = 'text-[11px] uppercase tracking-[.08em] text-gray-400 block mb-1';
 
@@ -63,8 +62,8 @@ export default function GoalContributionModal({ open, goal, onClose, onSave }) {
         className={`fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`}
       >
         <div
-          className="bg-white dark:bg-nero-surface rounded-t-2xl max-w-[680px] mx-auto px-5 pt-4 shadow-2xl border-t border-transparent dark:border-nero-border max-h-[90vh] overflow-y-auto"
-          style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
+          className="rounded-t-2xl max-w-[680px] mx-auto px-5 pt-4 shadow-2xl border-t border-[#2a2a2a] max-h-[90vh] overflow-y-auto"
+          style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))', background: '#1f1f1f' }}
         >
           <div className="w-10 h-1 bg-gray-200 dark:bg-nero-border rounded-full mx-auto mb-4" />
 
@@ -92,16 +91,19 @@ export default function GoalContributionModal({ open, goal, onClose, onSave }) {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
               <label className={labelCls}>Amount</label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="25.00"
-                className={inputCls}
-                required
-              />
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="25.00"
+                  className={`${inputCls} pl-10`}
+                  required
+                />
+              </div>
             </div>
 
             <div>
@@ -121,7 +123,7 @@ export default function GoalContributionModal({ open, goal, onClose, onSave }) {
                 rows={3}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Optional note"
+                placeholder="Tax refund, birthday money, etc."
                 className={inputCls}
               />
             </div>
