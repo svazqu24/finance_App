@@ -723,12 +723,14 @@ export function AppProvider({ children }) {
 
   // ── Bills CRUD ────────────────────────────────────────────────────────────
   async function loadBills(currentUser) {
+    console.log('[fintrack] Loading bills for user:', currentUser.id);
     const { data, error } = await supabase
       .from('bills')
       .select('*')
       .eq('user_id', currentUser.id)
       .order('due_day', { ascending: true });
     if (error) { console.error('[fintrack] Bills fetch failed:', error); return; }
+    console.log('[fintrack] Loaded bills:', data);
     setBillsData(data.map(dbRowToBill));
   }
 

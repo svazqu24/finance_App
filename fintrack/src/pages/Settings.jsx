@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../AppContext';
 import { fmtDollars } from '../utils';
 import { catSty } from '../data';
+import { supabase } from '../supabaseClient';
 
 // ── Toggle switch ──────────────────────────────────────────────────────────────
 function Toggle({ checked, onChange }) {
@@ -214,19 +215,22 @@ function CategoryColorItem({ cat, bgColor, fgColor, onBgChange, onFgChange, onRe
 }
 
 // ── Export helper ──────────────────────────────────────────────────────────────
-function exportCSV(transactions) {
-  const header = 'Date,Description,Category,Amount';
+function exportCSV(transactions, sendNotification) {
+  const header = 'Date,Merchant,Category,Amount,Account';
   const rows = transactions.map((t) =>
-    `"${t.date}","${t.name.replace(/"/g, '""')}","${t.cat}","${t.amt.toFixed(2)}"`
+    `"${t.date}","${t.name.replace(/"/g, '""')}","${t.cat}","${t.amt.toFixed(2)}","${t.account || ''}"`
   );
   const csv = [header, ...rows].join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `nero-transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  a.download = `nero-transactions-${month}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+  sendNotification(`${transactions.length} transactions exported`);
 }
 
 // ── Main Settings page ─────────────────────────────────────────────────────────
@@ -234,6 +238,7 @@ export default function Settings() {
   const {
     preferences, updatePreference,
     transactions, resetPassword, deleteAccount, user,
+    sendNotification,
   } = useApp();
 
   // Change password state
@@ -244,6 +249,12 @@ export default function Settings() {
   // Delete account state
   const [deleteStep,  setDeleteStep]  = useState(0); // 0=idle 1=confirm
   const [deleteBusy,  setDeleteBusy]  = useState(false);
+
+  // Data management state
+  const [resetTxnModal, setResetTxnModal] = useState(false);
+  const [resetAllModal, setResetAllModal] = useState(false);
+  const [resetAllConfirm, setResetAllConfirm] = useState('');
+  const [resetBusy, setResetBusy] = useState(false);
 
   function handleUpdateCategoryColor(cat, field, value) {
     const updated = { ...preferences.categoryColors };
@@ -280,6 +291,50 @@ export default function Settings() {
       await deleteAccount();
     } finally {
       setDeleteBusy(false);
+    }
+  }
+
+  async function handleResetTransactions() {
+    if (!user) return;
+    setResetBusy(true);
+    try {
+      const { error } = await supabase.from('transactions').delete().eq('user_id', user.id);
+      if (error) throw error;
+      sendNotification(`${transactions.length} transactions deleted`);
+      // Reload transactions
+      window.location.reload(); // Simple way to reload data
+    } catch (err) {
+      console.error('Reset transactions failed:', err);
+    } finally {
+      setResetBusy(false);
+      setResetTxnModal(false);
+    }
+  }
+
+  async function handleResetAllData() {
+    if (!user || resetAllConfirm !== 'DELETE') return;
+    setResetBusy(true);
+    try {
+      await Promise.all([
+        supabase.from('transactions').delete().eq('user_id', user.id),
+        supabase.from('goal_contributions').delete().eq('user_id', user.id),
+        supabase.from('goals').delete().eq('user_id', user.id),
+        supabase.from('bills').delete().eq('user_id', user.id),
+        supabase.from('budgets').delete().eq('user_id', user.id),
+        supabase.from('user_preferences').delete().eq('user_id', user.id),
+        supabase.from('credit_cards').delete().eq('user_id', user.id),
+        supabase.from('net_worth_entries').delete().eq('user_id', user.id),
+        supabase.from('watchlist').delete().eq('user_id', user.id),
+        supabase.from('holdings').delete().eq('user_id', user.id),
+      ]);
+      sendNotification('All data deleted');
+      // Sign out
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Reset all data failed:', err);
+    } finally {
+      setResetBusy(false);
+      setResetAllModal(false);
     }
   }
 
@@ -423,6 +478,96 @@ export default function Settings() {
           )}
         </Row>
       </Section>
+
+      {/* ── Data management ── */}
+      <Section title="Data management">
+        <Row label="Export transactions" sub="Download all transactions as CSV">
+          <button
+            onClick={() => exportCSV(transactions, sendNotification)}
+            disabled={transactions.length === 0}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+            style={{ background: '#27AE60' }}
+          >
+            Export
+          </button>
+        </Row>
+        <Row label="Reset transactions" sub="Delete all transactions permanently">
+          <button
+            onClick={() => setResetTxnModal(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+            style={{ background: '#f87171' }}
+          >
+            Reset
+          </button>
+        </Row>
+        <Row label="Reset all data" sub="Delete everything permanently" last>
+          <button
+            onClick={() => setResetAllModal(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors"
+            style={{ background: '#dc2626' }}
+          >
+            Reset all
+          </button>
+        </Row>
+      </Section>
+
+      {/* Confirmation modals */}
+      {resetTxnModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1f1f1f] rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-white mb-2">Delete all transactions?</h3>
+            <p className="text-sm text-gray-400 mb-6">This cannot be undone.</p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setResetTxnModal(false)}
+                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetTransactions}
+                disabled={resetBusy}
+                className="px-4 py-2 text-sm text-white rounded-lg transition-colors"
+                style={{ background: '#f87171' }}
+              >
+                {resetBusy ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {resetAllModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#1f1f1f] rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold text-white mb-2">Permanently delete everything</h3>
+            <p className="text-sm text-gray-400 mb-4">Type "DELETE" to confirm:</p>
+            <input
+              type="text"
+              value={resetAllConfirm}
+              onChange={(e) => setResetAllConfirm(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white mb-6"
+              placeholder="DELETE"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => { setResetAllModal(false); setResetAllConfirm(''); }}
+                className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetAllData}
+                disabled={resetBusy || resetAllConfirm !== 'DELETE'}
+                className="px-4 py-2 text-sm text-white rounded-lg transition-colors"
+                style={{ background: '#dc2626' }}
+              >
+                {resetBusy ? 'Deleting...' : 'Delete everything'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

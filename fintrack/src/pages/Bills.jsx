@@ -106,6 +106,7 @@ export default function Bills() {
     editCreditCard, setEditCreditCard,
     creditCardModalOpen, setCreditCardModalOpen,
   } = useApp();
+  console.log('Bills.jsx billsData:', billsData);
 
   const today = new Date();
   const [viewYear,  setViewYear]  = useState(today.getFullYear());
