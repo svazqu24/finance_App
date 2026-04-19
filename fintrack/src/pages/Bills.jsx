@@ -6,6 +6,7 @@ import { catSty } from '../data';
 import { fmtDollars } from '../utils';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const SHORT_DAYS  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a bill in a given view month */
 function billStatus(bill, viewYear, viewMonth) {

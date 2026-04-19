@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
+import { sendNotification } from '../NotificationContext';
 import { fmtDollars } from '../utils';
 import { catSty } from '../data';
 import { supabase } from '../supabaseClient';
@@ -238,7 +239,6 @@ export default function Settings() {
   const {
     preferences, updatePreference,
     transactions, resetPassword, deleteAccount, user,
-    sendNotification,
   } = useApp();
 
   // Change password state
@@ -440,7 +440,7 @@ export default function Settings() {
 
         <Row label="Export my data" sub={`${transactions.length} transactions`}>
           <button
-            onClick={() => exportCSV(transactions)}
+            onClick={() => exportCSV(transactions, sendNotification)}
             disabled={transactions.length === 0}
             className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 disabled:opacity-40 transition-colors"
           >
