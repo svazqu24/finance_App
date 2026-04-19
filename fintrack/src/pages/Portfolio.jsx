@@ -4,6 +4,27 @@ import { supabase } from '../supabaseClient';
 import {
   getIndexQuotes, getExchangeRates, searchSymbol, getQuote, clearCache,
 } from '../services/marketService';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
@@ -375,7 +396,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function Portfolio() {
-  const { user } = useApp();
+  const { user, netWorthEntries, getNetWorthHistory } = useApp();
 
   // ── Market data state ──────────────────────────────────────────────────────
   const [indexQuotes,   setIndexQuotes]   = useState([]);
@@ -563,6 +584,51 @@ export default function Portfolio() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
+      {/* ── Net Worth History ────────────────────────────────────────────── */}
+      <div className="mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface p-4 transition-colors">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Net Worth History</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              ${currentNetWorth.toLocaleString()}
+            </p>
+          </div>
+        </div>
+        {netWorthHistory.length > 0 ? (
+          <div className="h-32 mb-4">
+            <Line data={netWorthChartData} options={netWorthChartOptions} />
+          </div>
+        ) : (
+          <div className="h-32 flex items-center justify-center mb-4">
+            <p className="text-xs text-gray-400 text-center">
+              Add net worth entries to see your history
+            </p>
+          </div>
+        )}
+        <div className="text-xs text-gray-500 space-y-1">
+          <div className="flex justify-between">
+            <span>Checking:</span>
+            <span>${assetBreakdown.checking.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Savings:</span>
+            <span>${assetBreakdown.savings.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Investments:</span>
+            <span>${assetBreakdown.investments.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Other Assets:</span>
+            <span>${assetBreakdown.otherAssets.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between border-t border-gray-200 dark:border-nero-border pt-1 mt-1">
+            <span>Liabilities:</span>
+            <span className="text-red-600">-${assetBreakdown.liabilities.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── Section 1: Market overview ───────────────────────────────────── */}
       <div className="flex items-center justify-between mb-2.5">
         <p className="text-[13px] font-medium text-gray-900 dark:text-white">Market overview</p>

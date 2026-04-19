@@ -133,6 +133,9 @@ export function AppProvider({ children }) {
   const [goalsData, setGoalsData] = useState([]);
   const [goalContributions, setGoalContributions] = useState([]);
 
+  // ── Net Worth ─────────────────────────────────────────────────────────────
+  const [netWorthEntries, setNetWorthEntries] = useState([]);
+
   // ── Preferences ───────────────────────────────────────────────────────────
   const [preferences, setPreferences] = useState(PREF_DEFAULTS);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
@@ -206,6 +209,7 @@ export function AppProvider({ children }) {
     loadBudgetOverrides(user);
     loadGoals(user);
     loadGoalContributions(user);
+    loadNetWorthEntries(user);
     loadBills(user);
     loadCreditCards(user);
     loadPreferences(user);
@@ -257,6 +261,16 @@ export function AppProvider({ children }) {
       .order('created_at', { ascending: false });
     if (error) { console.error('[fintrack] Goal contributions fetch failed:', error); return; }
     setGoalContributions(data.map(dbRowToGoalContribution));
+  }
+
+  async function loadNetWorthEntries(currentUser) {
+    const { data, error } = await supabase
+      .from('net_worth_entries')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('month', { ascending: false });
+    if (error) { console.error('[fintrack] Net worth entries fetch failed:', error); return; }
+    setNetWorthEntries(data);
   }
 
   async function addGoalContribution(goalId, amount, note, date) {
@@ -332,6 +346,51 @@ export function AppProvider({ children }) {
 
     setGoalContributions((prev) => prev.filter((entry) => entry.id !== id));
     setGoalsData((prev) => prev.map((g) => (g.id === goalId ? dbRowToGoal(goalData) : g)));
+  }
+
+  async function saveNetWorthEntry(month, accounts) {
+    if (!user) return;
+    const assets = accounts.filter(acc => acc.type === 'asset').reduce((sum, acc) => sum + Number(acc.balance), 0);
+    const liabilities = accounts.filter(acc => acc.type === 'liability').reduce((sum, acc) => sum + Number(acc.balance), 0);
+    const netWorth = assets - liabilities;
+
+    const payload = {
+      user_id: user.id,
+      month,
+      accounts,
+      total_assets: assets,
+      total_liabilities: liabilities,
+      net_worth: netWorth,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('net_worth_entries')
+      .upsert(payload, { onConflict: 'user_id,month' })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[fintrack] Net worth entry save failed:', error);
+      return;
+    }
+
+    setNetWorthEntries((prev) => {
+      const existingIndex = prev.findIndex(entry => entry.month === month);
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = data;
+        return updated;
+      } else {
+        return [data, ...prev];
+      }
+    });
+  }
+
+  function getNetWorthHistory() {
+    return netWorthEntries
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .slice(-12);
   }
 
   // ── Auth actions ─────────────────────────────────────────────────────────────
@@ -939,6 +998,10 @@ export function AppProvider({ children }) {
         goalContributions,
         addGoalContribution,
         deleteGoalContribution,
+        // net worth
+        netWorthEntries,
+        saveNetWorthEntry,
+        getNetWorthHistory,
         addGoal,
         updateGoal,
         deleteGoal,

@@ -4,6 +4,28 @@ import TransactionRow from '../components/TransactionRow';
 import { useApp } from '../AppContext';
 import { filterMonth, currentMonthAbbr } from '../utils';
 import { budgets as DEFAULT_BUDGETS } from '../data';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import NetWorthModal from '../components/NetWorthModal';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // Build a { cat: defaultBudget } lookup from the static data
 const DEFAULT_BUDGET_MAP = Object.fromEntries(DEFAULT_BUDGETS.map((b) => [b.cat, b.budget]));
@@ -85,9 +107,13 @@ function AttentionPanel({ alerts, onDismiss }) {
 }
 
 export default function Overview() {
-  const { transactions, loading, openAddModal, openCsvModal, preferences, budgetOverrides, billsData, creditCardsData } = useApp();
+  const { transactions, loading, openAddModal, openCsvModal, preferences, budgetOverrides, billsData, creditCardsData, netWorthEntries, getNetWorthHistory } = useApp();
   const twoCol = preferences.layoutStyle === 'two-column';
   const isEmpty = !loading && transactions.length === 0;
+
+  // Net worth modal state
+  const [netWorthModalOpen, setNetWorthModalOpen] = useState(false);
+  const [netWorthMilestone, setNetWorthMilestone] = useState('');
 
   // ── Session-dismissed alert IDs ──────────────────────────────────────────
   const [dismissed, setDismissed] = useState(new Set());
@@ -189,13 +215,113 @@ export default function Overview() {
       .slice(0, 3);
   }, [transactions, budgetOverrides, billsData, dismissed]);
 
+  // ── Net worth data ───────────────────────────────────────────────────────
+  const netWorthHistory = useMemo(() => getNetWorthHistory(), [netWorthEntries]);
+  const currentNetWorth = netWorthHistory.length > 0 ? netWorthHistory[netWorthHistory.length - 1].net_worth : 0;
+  const previousNetWorth = netWorthHistory.length > 1 ? netWorthHistory[netWorthHistory.length - 2].net_worth : 0;
+  const monthOverMonthChange = currentNetWorth - previousNetWorth;
+
+  // Net worth milestones
+  useEffect(() => {
+    if (currentNetWorth <= 0) return;
+    const milestones = [1000, 5000, 10000, 25000, 50000, 100000];
+    const crossedMilestone = milestones.find(m => currentNetWorth >= m && previousNetWorth < m);
+    if (crossedMilestone) {
+      const milestoneKey = `net-worth-milestone-${crossedMilestone}`;
+      const alreadySeen = localStorage.getItem(milestoneKey);
+      if (!alreadySeen) {
+        localStorage.setItem(milestoneKey, '1');
+        setNetWorthMilestone(`You hit $${crossedMilestone.toLocaleString()} net worth! Keep going.`);
+        const timeout = setTimeout(() => setNetWorthMilestone(''), 5000);
+        return () => clearTimeout(timeout);
+      }
+    }
+    return undefined;
+  }, [currentNetWorth, previousNetWorth]);
+
+  const chartData = useMemo(() => ({
+    labels: netWorthHistory.map(entry => {
+      const [year, month] = entry.month.split('-');
+      return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short' });
+    }),
+    datasets: [{
+      label: 'Net Worth',
+      data: netWorthHistory.map(entry => entry.net_worth),
+      borderColor: '#27AE60',
+      backgroundColor: 'rgba(39, 174, 96, 0.1)',
+      tension: 0.4,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }],
+  }), [netWorthHistory]);
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => `$${context.parsed.y.toLocaleString()}`,
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: '#9CA3AF' },
+      },
+      y: {
+        grid: { color: '#374151', lineWidth: 0.5 },
+        ticks: {
+          color: '#9CA3AF',
+          callback: (value) => `$${value.toLocaleString()}`,
+        },
+      },
+    },
+  };
+
   return (
     <>
-      {/* Net worth placeholder */}
-      <div className="h-32 mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface flex items-center justify-center transition-colors">
-        <p className="text-xs text-gray-400 text-center leading-relaxed px-4">
-          Net worth history will appear here once you start tracking your accounts.
-        </p>
+      {/* Net Worth Section */}
+      <div className="mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface p-4 transition-colors">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Net Worth</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+              ${currentNetWorth.toLocaleString()}
+            </p>
+            {monthOverMonthChange !== 0 && (
+              <p className={`text-sm font-medium ${monthOverMonthChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {monthOverMonthChange > 0 ? '+' : ''}${monthOverMonthChange.toLocaleString()} this month
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => setNetWorthModalOpen(true)}
+            className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors rounded-full px-4 py-2"
+          >
+            + Update this month
+          </button>
+        </div>
+
+        {netWorthMilestone && (
+          <div className="rounded-full px-3 py-2 mb-3 text-sm font-medium text-emerald-800 bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-200">
+            {netWorthMilestone}
+          </div>
+        )}
+
+        {netWorthHistory.length > 0 ? (
+          <div className="h-32">
+            <Line data={chartData} options={chartOptions} />
+          </div>
+        ) : (
+          <div className="h-32 flex items-center justify-center">
+            <p className="text-xs text-gray-400 text-center">
+              Add your first net worth entry to see the chart
+            </p>
+          </div>
+        )}
       </div>
 
       {isEmpty ? (
@@ -258,6 +384,7 @@ export default function Overview() {
           )}
         </>
       )}
+      <NetWorthModal open={netWorthModalOpen} onClose={() => setNetWorthModalOpen(false)} />
     </>
   );
 }
