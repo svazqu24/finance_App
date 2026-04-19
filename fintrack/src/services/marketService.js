@@ -43,6 +43,8 @@ async function apiFetch(params = {}) {
   url.searchParams.set('apikey', API_KEY);
   for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
 
+  console.log(`Alpha Vantage API call: ${url.toString()}`);
+
   const res = await fetch(url.toString());
 
   if (res.status === 429) {

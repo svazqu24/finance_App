@@ -229,7 +229,7 @@ export default function Layout() {
     if (!isFirstPopulation) {
       // Already animated or was already populated, just show final values
       setAnimIncome(income);
-      setAnimSpent(spent);
+      setAnimSpent(realSpent);
       setAnimSaved(savedPct);
       return;
     }
@@ -246,7 +246,7 @@ export default function Layout() {
       const easeProgress = 1 - Math.pow(1 - progress, 3);
 
       setAnimIncome(income * easeProgress);
-      setAnimSpent(spent * easeProgress);
+      setAnimSpent(realSpent * easeProgress);
       setAnimSaved(savedPct * easeProgress);
 
       if (progress < 1) {
@@ -256,7 +256,7 @@ export default function Layout() {
 
     requestAnimationFrame(animate);
     animInitialRef.current.prevTxnCount = transactions.length;
-  }, [transactions, loading, income, spent, savedPct]);
+  }, [transactions, loading, income, realSpent, savedPct]);
 
   // Update displayed values when final values change (not animating)
   useEffect(() => {
@@ -265,7 +265,7 @@ export default function Layout() {
       setAnimSpent(spent);
       setAnimSaved(savedPct);
     }
-  }, [income, spent, savedPct]);
+  }, [income, realSpent, savedPct]);
 
   const modals = (
     <>
@@ -306,7 +306,7 @@ export default function Layout() {
   const statsRow = (
     <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
       <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub={rangeLabel} />
-      <StatCard label="spent"  value={loading ? '—' : fmtDollars(animSpent)}  sub={rangeLabel} />
+      <StatCard label="spent"  value={loading ? '—' : fmtDollars(realSpent)}  sub={rangeLabel} />
       <StatCard
         label="saved"
         value={loading ? '—' : `${Math.round(animSaved)}%`}

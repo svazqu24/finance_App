@@ -5,10 +5,6 @@ import CreditCardModal from '../components/CreditCardModal';
 import { catSty } from '../data';
 import { fmtDollars } from '../utils';
 
-const MONTH_NAMES = ['January','February','March','April','May','June',
-                     'July','August','September','October','November','December'];
-const SHORT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a bill in a given view month */
 function billStatus(bill, viewYear, viewMonth) {
   const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
@@ -54,6 +50,16 @@ function getUtilizationColor(utilization) {
   if (utilization < 0.3) return '#22C55E'; // Green
   if (utilization < 0.7) return '#F59E0B'; // Amber
   return '#EF4444'; // Red
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
 }
 
 function CalendarCell({ day, bills, onBillClick }) {
@@ -318,46 +324,55 @@ export default function Bills() {
         </div>
       )}
 
-      {/* Calendar */}
-      <div className="rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden mb-5">
-        {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-100 dark:border-nero-border">
-          {SHORT_DAYS.map((d) => (
-            <div key={d} className="py-2 text-center text-[10px] font-medium text-gray-400 uppercase tracking-wide">
-              {d}
-            </div>
-          ))}
-        </div>
-        {/* Cells */}
-        <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-nero-border">
-          {cells.map((day, i) => (
-            <div key={i} className="bg-white dark:bg-nero-surface">
-              <CalendarCell
-                day={day}
-                bills={day ? (byDay[day] || []) : []}
-                onBillClick={handleBillClick}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bill list */}
-      {annotated.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-sm font-medium text-gray-900 dark:text-white mb-1.5">No bills yet</p>
-          <p className="text-xs text-gray-400 mb-5 leading-relaxed">
-            Add your recurring bills to track due dates and mark them paid.
-          </p>
-          <button
-            onClick={() => { setEditBill(null); setBillModalOpen(true); }}
-            className="text-xs font-medium px-4 py-2 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
+      {billsData.length === 0 ? (
+        <div className="text-center py-12">
+          <div
+            className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
+            style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontFamily: 'Geist, system-ui, sans-serif' }}
           >
-            + Add bill
-          </button>
+            B
+          </div>
+          <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">Track your bills</p>
+          <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[260px] mx-auto">
+            Add recurring bills like rent, utilities, and subscriptions to stay on top of due dates.
+          </p>
+          <div className="flex gap-2.5 justify-center flex-wrap">
+            <button
+              onClick={() => { setEditBill(null); setBillModalOpen(true); }}
+              className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-[20px] text-white transition-colors" style={{ background: '#27AE60' }}
+            >
+              <PlusIcon />
+              Add bill
+            </button>
+          </div>
         </div>
       ) : (
         <>
+          {/* Calendar */}
+          <div className="rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden mb-5">
+            {/* Day headers */}
+            <div className="grid grid-cols-7 border-b border-gray-100 dark:border-nero-border">
+              {SHORT_DAYS.map((d) => (
+                <div key={d} className="py-2 text-center text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+                  {d}
+                </div>
+              ))}
+            </div>
+            {/* Cells */}
+            <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-nero-border">
+              {cells.map((day, i) => (
+                <div key={i} className="bg-white dark:bg-nero-surface">
+                  <CalendarCell
+                    day={day}
+                    bills={day ? (byDay[day] || []) : []}
+                    onBillClick={handleBillClick}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bill list */}
           <p className="text-[13px] font-medium mb-2.5 text-gray-900 dark:text-white">
             {MONTH_NAMES[viewMonth]} bills
           </p>

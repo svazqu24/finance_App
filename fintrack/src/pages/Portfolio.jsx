@@ -118,7 +118,7 @@ function Skeleton({ w = '100%', h = 16, rounded = 6 }) {
 function UnavailableNote({ rateLimited }) {
   return (
     <p className="text-xs text-gray-400 italic">
-      {rateLimited ? 'Refreshing soon…' : 'Market data unavailable'}
+      Market data unavailable — resets daily
     </p>
   );
 }
