@@ -5,6 +5,8 @@ import CreditCardModal from '../components/CreditCardModal';
 import { catSty } from '../data';
 import { fmtDollars } from '../utils';
 
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a bill in a given view month */
 function billStatus(bill, viewYear, viewMonth) {
   const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
