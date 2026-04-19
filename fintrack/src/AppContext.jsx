@@ -736,36 +736,38 @@ export function AppProvider({ children }) {
 
   async function addBill(bill) {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('bills')
-      .insert({
-        user_id:         user.id,
-        name:            bill.name,
-        amount:          bill.amount,
-        due_day:         bill.due_day,
-        cat:             bill.cat,
-        is_subscription: bill.is_subscription ?? false,
-        frequency:       bill.frequency ?? null,
-        next_due_date:   bill.next_due_date ?? null,
-      })
-      .select().single();
+    const row = {
+      user_id: user.id,
+      name:    bill.name,
+      amount:  bill.amount,
+      due_day: bill.due_day,
+      cat:     bill.cat,
+    };
+    // Only include optional subscription columns when explicitly provided
+    // (they may not exist if supabase-subscriptions.sql hasn't been run)
+    if (bill.is_subscription != null) row.is_subscription = bill.is_subscription;
+    if (bill.frequency       != null) row.frequency        = bill.frequency;
+    if (bill.next_due_date   != null) row.next_due_date    = bill.next_due_date;
+
+    const { data, error } = await supabase.from('bills').insert(row).select().single();
     if (error) { console.error('[fintrack] Bill insert failed:', error); return; }
     setBillsData((prev) => [...prev, dbRowToBill(data)].sort((a, b) => a.due_day - b.due_day));
   }
 
   async function updateBill(id, updates) {
     if (!user) return;
+    const row = {
+      name:    updates.name,
+      amount:  updates.amount,
+      due_day: updates.due_day,
+      cat:     updates.cat,
+    };
+    if (updates.is_subscription != null) row.is_subscription = updates.is_subscription;
+    if (updates.frequency       != null) row.frequency        = updates.frequency;
+    if (updates.next_due_date   != null) row.next_due_date    = updates.next_due_date;
+
     const { data, error } = await supabase
-      .from('bills')
-      .update({
-        name:            updates.name,
-        amount:          updates.amount,
-        due_day:         updates.due_day,
-        cat:             updates.cat,
-        is_subscription: updates.is_subscription ?? false,
-        frequency:       updates.frequency ?? null,
-        next_due_date:   updates.next_due_date ?? null,
-      })
+      .from('bills').update(row)
       .eq('id', id).eq('user_id', user.id)
       .select().single();
     if (error) { console.error('[fintrack] Bill update failed:', error); return; }
