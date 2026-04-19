@@ -399,9 +399,52 @@ export default function Portfolio() {
   const { user, netWorthEntries, getNetWorthHistory } = useApp();
 
   const netWorthHistory = useMemo(() => getNetWorthHistory(), [netWorthEntries]);
-  const currentNetWorth = netWorthHistory.length > 0
-    ? netWorthHistory[netWorthHistory.length - 1].net_worth
-    : (netWorthEntries?.[netWorthEntries.length - 1]?.net_worth ?? 0);
+  const latestEntry     = netWorthHistory.length > 0 ? netWorthHistory[netWorthHistory.length - 1] : null;
+  const currentNetWorth = latestEntry?.net_worth ?? 0;
+
+  const assetBreakdown = useMemo(() => {
+    const accs = latestEntry?.accounts ?? [];
+    return {
+      checking:    accs.filter(a => a.category === 'checking').reduce((s, a) => s + Number(a.balance), 0),
+      savings:     accs.filter(a => a.category === 'savings').reduce((s, a) => s + Number(a.balance), 0),
+      investments: accs.filter(a => a.category === 'investments').reduce((s, a) => s + Number(a.balance), 0),
+      otherAssets: accs.filter(a => a.type === 'asset' && !['checking', 'savings', 'investments'].includes(a.category))
+                       .reduce((s, a) => s + Number(a.balance), 0),
+      liabilities: accs.filter(a => a.type === 'liability').reduce((s, a) => s + Number(a.balance), 0),
+    };
+  }, [latestEntry]);
+
+  const netWorthChartData = useMemo(() => ({
+    labels: netWorthHistory.map(entry => {
+      const [year, month] = entry.month.split('-');
+      return new Date(Number(year), Number(month) - 1).toLocaleDateString('en-US', { month: 'short' });
+    }),
+    datasets: [{
+      label: 'Net Worth',
+      data: netWorthHistory.map(entry => entry.net_worth),
+      borderColor: '#27AE60',
+      backgroundColor: 'rgba(39, 174, 96, 0.1)',
+      tension: 0.4,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+    }],
+  }), [netWorthHistory]);
+
+  const netWorthChartOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: (ctx) => `$${ctx.parsed.y.toLocaleString()}` } },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#9CA3AF' } },
+      y: {
+        grid: { color: '#374151', lineWidth: 0.5 },
+        ticks: { color: '#9CA3AF', callback: (v) => `$${Number(v).toLocaleString()}` },
+      },
+    },
+  }), []);
 
   // ── Market data state ──────────────────────────────────────────────────────
   const [indexQuotes,   setIndexQuotes]   = useState([]);
