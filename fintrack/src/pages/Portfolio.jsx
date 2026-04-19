@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useApp } from '../AppContext';
 import { supabase } from '../supabaseClient';
 import {
@@ -397,6 +397,11 @@ function AddHoldingForm({ onAdd, onCancel }) {
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function Portfolio() {
   const { user, netWorthEntries, getNetWorthHistory } = useApp();
+
+  const netWorthHistory = useMemo(() => getNetWorthHistory(), [netWorthEntries]);
+  const currentNetWorth = netWorthHistory.length > 0
+    ? netWorthHistory[netWorthHistory.length - 1].net_worth
+    : (netWorthEntries?.[netWorthEntries.length - 1]?.net_worth ?? 0);
 
   // ── Market data state ──────────────────────────────────────────────────────
   const [indexQuotes,   setIndexQuotes]   = useState([]);
