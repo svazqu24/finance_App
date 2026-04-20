@@ -79,8 +79,8 @@ function SortPill({ label, active, onClick }) {
       onClick={onClick}
       className={`text-[11px] px-2.5 py-1 rounded-full transition-colors ${
         active
-          ? 'bg-gray-200 dark:bg-nero-border text-gray-900 dark:text-white font-medium'
-          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+          ? 'bg-[#111827] text-[#27AE60] border border-[#27AE60]'
+          : 'text-[#6b7280] hover:text-[#9ca3af] border border-[#1f2937]'
       }`}
     >
       {label}

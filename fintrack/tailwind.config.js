@@ -6,9 +6,9 @@ export default {
     extend: {
       colors: {
         nero: {
-          bg:      '#141414',
-          surface: '#1f1f1f',
-          border:  '#2a2a2a',
+          bg:      '#0a0e1a',
+          surface: '#111827',
+          border:  '#1f2937',
           green:   '#27AE60',
           'green-light': '#4ade80',
         },

@@ -336,11 +336,11 @@ function AddHoldingForm({ onAdd, onCancel }) {
           placeholder="Ticker symbol (e.g. AAPL)"
           value={query}
           onChange={handleSymbolChange}
-          className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
+          className="w-full text-sm px-3 py-2 rounded-lg border border-[#1f2937] bg-[#111827] text-white placeholder:text-[#6b7280] outline-none focus:border-[#27AE60] transition-colors"
           autoFocus
         />
         {results.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-[#111827] border border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
             {results.map((r) => (
               <button
                 key={r.symbol}
@@ -362,7 +362,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
           value={shares}
           onChange={(e) => setShares(e.target.value)}
           min="0" step="any"
-          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
+          className="text-sm px-3 py-2 rounded-lg border border-[#1f2937] bg-[#111827] text-white placeholder:text-[#6b7280] outline-none focus:border-[#27AE60] transition-colors"
         />
         <input
           type="number"
@@ -370,7 +370,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
           value={avgPrice}
           onChange={(e) => setAvgPrice(e.target.value)}
           min="0" step="any"
-          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
+          className="text-sm px-3 py-2 rounded-lg border border-[#1f2937] bg-[#111827] text-white placeholder:text-[#6b7280] outline-none focus:border-[#27AE60] transition-colors"
         />
       </div>
       <div className="flex gap-2">
@@ -726,7 +726,7 @@ export default function Portfolio() {
           placeholder="Search stocks to add…"
           value={watchSearch}
           onChange={handleWatchSearch}
-          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
+          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-[#1f2937] bg-[#111827] text-white placeholder:text-[#6b7280] outline-none focus:border-[#27AE60] transition-colors"
         />
         {watchSearch && (
           <button
@@ -740,7 +740,7 @@ export default function Portfolio() {
         )}
         {/* Search results dropdown */}
         {watchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-[#111827] border border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
             {watchResults.map((r) => (
               <button
                 key={r.symbol}
@@ -756,7 +756,7 @@ export default function Portfolio() {
           </div>
         )}
         {watchSearching && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl px-3 py-2.5 shadow-xl">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-[#111827] border border-[#1f2937] rounded-xl px-3 py-2.5 shadow-xl">
             <p className="text-xs text-gray-400">Searching…</p>
           </div>
         )}
