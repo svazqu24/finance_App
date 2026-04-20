@@ -226,6 +226,41 @@ function BudgetStylePreview({ type }) {
   return null;
 }
 
+// ── Account style preview ──────────────────────────────────────────────────────
+function AccountStylePreview({ type }) {
+  const bar = (w, h = 5) => (
+    <div className="rounded-sm bg-gray-300 dark:bg-gray-600" style={{ width: `${w}%`, height: h }} />
+  );
+  if (type === 'cards') {
+    return (
+      <div className="grid grid-cols-2 gap-1 w-full">
+        {[0, 1].map((i) => (
+          <div key={i} className="rounded-md border border-gray-200 dark:border-gray-600 p-1.5 flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              <div className="rounded bg-gray-200 dark:bg-gray-600" style={{ width: 10, height: 10 }} />
+              {bar(60)}
+            </div>
+            {bar(80)} {bar(50)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === 'list') {
+    return (
+      <div className="flex flex-col gap-1 w-full">
+        {[85, 70, 60].map((w, i) => (
+          <div key={i} className="flex items-center gap-1.5 py-0.5 border-b border-gray-100 dark:border-gray-700 last:border-b-0">
+            <div className="rounded bg-gray-300 dark:bg-gray-600 flex-shrink-0" style={{ width: 8, height: 8 }} />
+            {bar(w)}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
+
 // ── Category color picker ──────────────────────────────────────────────────────
 function CategoryColorItem({ cat, bgColor, fgColor, onBgChange, onFgChange, onReset }) {
   return (
@@ -384,7 +419,7 @@ export default function Settings() {
     }
   }
 
-  const { layoutStyle, navPosition, budgetStyle } = preferences;
+  const { layoutStyle, navPosition, budgetStyle, accountStyle } = preferences;
 
   return (
     <>
@@ -459,6 +494,25 @@ export default function Settings() {
               onClick={() => updatePreference('budgetStyle', key)}
             >
               <BudgetStylePreview type={key} />
+            </PickerCard>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Account display style ── */}
+      <Section title="Account display style">
+        <div className="p-4 grid grid-cols-2 gap-3">
+          {[
+            { key: 'cards', label: 'Cards' },
+            { key: 'list',  label: 'List'  },
+          ].map(({ key, label }) => (
+            <PickerCard
+              key={key}
+              label={label}
+              active={accountStyle === key}
+              onClick={() => updatePreference('accountStyle', key)}
+            >
+              <AccountStylePreview type={key} />
             </PickerCard>
           ))}
         </div>

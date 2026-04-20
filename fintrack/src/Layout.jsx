@@ -11,7 +11,7 @@ import BottomNav from './components/BottomNav';
 import { NAV_ITEMS, GearIcon } from './navItems';
 
 const TOP_TABS = [
-  'overview','transactions','spending','budget','bills','goals','portfolio',
+  'overview','transactions','spending','budget','bills','goals','accounts','portfolio',
 ];
 
 const monthLabel = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });

@@ -15,6 +15,7 @@ import Budget from './pages/Budget';
 import Bills from './pages/Bills';
 import Goals from './pages/Goals';
 import Portfolio from './pages/Portfolio';
+import Accounts from './pages/Accounts';
 import Settings from './pages/Settings';
 
 function AppRoutes() {
@@ -67,6 +68,7 @@ function AppRoutes() {
           <Route path="budget"       element={<Budget />} />
           <Route path="bills"        element={<Bills />} />
           <Route path="goals"        element={<Goals />} />
+          <Route path="accounts"     element={<Accounts />} />
           <Route path="portfolio"    element={<Portfolio />} />
           <Route path="settings"     element={<Settings />} />
         </Route>
