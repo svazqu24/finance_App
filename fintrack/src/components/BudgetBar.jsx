@@ -54,13 +54,13 @@ export default function BudgetBar({ b }) {
               {b.cat.slice(0, 2).toUpperCase()}
             </span>
           </div>
-          <span className="text-sm font-medium text-gray-900 dark:text-white">{b.cat}</span>
+          <span className="text-sm font-medium text-[#f9fafb]">{b.cat}</span>
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[13px] tabular-nums text-gray-900 dark:text-white">
+          <span className="text-[13px] tabular-nums text-[#f9fafb]">
             ${b.spent.toFixed(0)}
-            <span className="text-gray-400"> / </span>
+            <span className="text-[#6b7280]"> / </span>
           </span>
           {editing ? (
             <input
@@ -72,7 +72,8 @@ export default function BudgetBar({ b }) {
               onBlur={commitEdit}
               onKeyDown={handleKeyDown}
               autoFocus
-              className="w-20 text-[13px] tabular-nums border border-gray-300 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-surface text-gray-900 dark:text-white outline-none focus:border-gray-500"
+              className="w-20 text-[13px] tabular-nums rounded px-1.5 py-0.5 bg-[#111827] text-[#f9fafb] outline-none"
+              style={{ border: '1px solid #1f2937' }}
             />
           ) : (
             <button
@@ -80,8 +81,8 @@ export default function BudgetBar({ b }) {
               className="flex items-center gap-1 group"
               aria-label={`Edit ${b.cat} budget limit`}
             >
-              <span className="text-[13px] tabular-nums text-gray-400">${b.budget.toFixed(0)}</span>
-              <span className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors">
+              <span className="text-[13px] tabular-nums text-[#6b7280]">${b.budget.toFixed(0)}</span>
+              <span className="text-[#6b7280] group-hover:text-[#f9fafb] transition-colors">
                 <PencilIcon />
               </span>
             </button>
@@ -89,7 +90,7 @@ export default function BudgetBar({ b }) {
         </div>
       </div>
 
-      <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1 transition-colors">
+      <div className="h-[7px] rounded overflow-hidden mb-1 transition-colors" style={{ background: '#1f2937' }}>
         <div
           className="h-full rounded transition-all duration-300"
           style={{ width: `${Math.min(pct, 100)}%`, background: barClr }}
@@ -97,10 +98,10 @@ export default function BudgetBar({ b }) {
       </div>
 
       <div className="flex justify-between">
-        <span className="text-[11px]" style={{ color: over ? '#f87171' : '#888' }}>
+        <span className="text-[11px]" style={{ color: over ? '#f87171' : '#6b7280' }}>
           {hasBudget ? (over ? `$${diff.toFixed(0)} over budget` : `$${diff.toFixed(0)} remaining`) : 'No budget set'}
         </span>
-        <span className="text-[11px] text-gray-400">{hasBudget ? `${pct.toFixed(0)}%` : 'Set budget'}</span>
+        <span className="text-[11px] text-[#6b7280]">{hasBudget ? `${pct.toFixed(0)}%` : 'Set budget'}</span>
       </div>
     </div>
   );

@@ -48,9 +48,9 @@ function getAccountType(accountName, transactions, creditCardsData) {
 }
 
 const TYPE_META = {
-  credit:   { label: 'Credit',   badge: 'bg-amber-100 text-amber-700  dark:bg-amber-900/30 dark:text-amber-400' },
-  savings:  { label: 'Savings',  badge: 'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400'  },
-  checking: { label: 'Checking', badge: 'bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400'   },
+  credit:   { label: 'Credit',   badge: 'bg-[#451a03] text-[#fbbf24]' },
+  savings:  { label: 'Savings',  badge: 'bg-[#064e3b] text-[#34d399]' },
+  checking: { label: 'Checking', badge: 'bg-[#0c1a2e] text-[#60a5fa]' },
 };
 
 const ACCOUNT_ICONS = {
@@ -74,29 +74,34 @@ function topCategory(txns) {
 }
 
 // ── Account Card ──────────────────────────────────────────────────────────────
-function AccountCard({ account, onClick }) {
+function AccountCard({ account, onClick, selected }) {
   const { name, type, spentThisMonth, txnCount, allTimeTxns, totalSpent } = account;
   const meta = TYPE_META[type];
   const icon = ACCOUNT_ICONS[type];
   const digits = last4(name);
-  const maxSpend = spentThisMonth; // bar is always 100% for now (relative to self)
+  const cardStyle = {
+    background: selected ? '#0d1f14' : '#111827',
+    borderColor: selected ? '#27AE60' : '#1f2937',
+  };
+  const iconStyle = { background: '#0d1117' };
 
   return (
     <button
       onClick={onClick}
-      className="text-left w-full rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface p-4 hover:border-gray-300 dark:hover:border-gray-500 transition-all hover:shadow-sm"
+      className="text-left w-full rounded-2xl border p-4 transition-all hover:shadow-sm"
+      style={cardStyle}
     >
       {/* Header row */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-gray-50 dark:bg-nero-bg">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style={iconStyle}>
             {icon}
           </div>
           <div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight truncate max-w-[130px]">
+            <p className="text-sm font-semibold text-[#f9fafb] leading-tight truncate max-w-[130px]">
               {name}
             </p>
-            {digits && <p className="text-[11px] text-gray-400 mt-0.5">{digits}</p>}
+            {digits && <p className="text-[11px] text-[#6b7280] mt-0.5">{digits}</p>}
           </div>
         </div>
         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.badge}`}>
@@ -107,23 +112,23 @@ function AccountCard({ account, onClick }) {
       {/* Stats */}
       <div className="flex justify-between items-end mb-2.5">
         <div>
-          <p className="text-[11px] text-gray-400">Spent this month</p>
-          <p className="text-base font-bold text-gray-900 dark:text-white">
+          <p className="text-[11px] text-[#6b7280]">Spent this month</p>
+          <p className="text-base font-semibold text-[#f9fafb]" style={{ letterSpacing: '-0.5px' }}>
             {fmtDollars(spentThisMonth)}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[11px] text-gray-400">{txnCount} transactions</p>
+          <p className="text-[11px] text-[#6b7280]">{txnCount} transactions</p>
         </div>
       </div>
 
       {/* Mini spend bar */}
-      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-nero-bg overflow-hidden">
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#1f2937' }}>
         <div
           className="h-full rounded-full"
           style={{
             width: totalSpent > 0 ? `${Math.min((spentThisMonth / totalSpent) * 100, 100)}%` : '0%',
-            background: '#27AE60',
+            background: '#34d399',
           }}
         />
       </div>
@@ -141,20 +146,21 @@ function AccountListRow({ account, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-nero-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors text-left"
+      className="w-full flex items-center gap-3 px-4 py-3.5 border last:border-b-0 transition-colors text-left"
+      style={{ background: '#111827', border: '0.5px solid #1f2937' }}
     >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-gray-50 dark:bg-nero-bg flex-shrink-0">
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: '#0d1117' }}>
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{name}</p>
-          {digits && <p className="text-[11px] text-gray-400 flex-shrink-0">{digits}</p>}
+          <p className="text-sm font-medium text-[#f9fafb] truncate">{name}</p>
+          {digits && <p className="text-[11px] text-[#6b7280] flex-shrink-0">{digits}</p>}
         </div>
-        <p className="text-xs text-gray-400">{txnCount} transactions</p>
+        <p className="text-xs text-[#6b7280]">{txnCount} transactions</p>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmtDollars(spentThisMonth)}</p>
+        <p className="text-sm font-semibold text-[#f9fafb]">{fmtDollars(spentThisMonth)}</p>
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${meta.badge}`}>
           {meta.label}
         </span>
@@ -180,25 +186,26 @@ function AccountDetail({ account, onClose }) {
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
          onClick={onClose}>
       <div
-        className="w-full sm:max-w-md bg-white dark:bg-nero-surface rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
+        style={{ background: '#111827', border: '0.5px solid #1f2937' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-nero-border">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b" style={{ borderColor: '#1f2937' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-gray-50 dark:bg-nero-bg">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0d1117' }}>
               {ACCOUNT_ICONS[type]}
             </div>
             <div>
-              <p className="text-[15px] font-semibold text-gray-900 dark:text-white">{name}</p>
-              {digits && <p className="text-xs text-gray-400">{digits}</p>}
+              <p className="text-[15px] font-semibold text-[#f9fafb]">{name}</p>
+              {digits && <p className="text-xs text-[#6b7280]">{digits}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.badge}`}>
               {meta.label}
             </span>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+            <button onClick={onClose} className="text-[#6b7280] hover:text-[#f9fafb] p-1">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                    strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -208,42 +215,43 @@ function AccountDetail({ account, onClose }) {
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-0 border-b border-gray-100 dark:border-nero-border">
+        <div className="grid grid-cols-3 gap-3 mb-3">
           {[
             { label: 'Spent', value: fmtDollars(spentThisMonth) },
             { label: 'Income', value: fmtDollars(incomeThisMonth) },
             { label: 'Top cat', value: topCat ? `${CAT_EMOJI[topCat] || '📦'} ${topCat}` : '—' },
           ].map(({ label, value }, i) => (
-            <div key={i} className={`px-4 py-3.5 ${i < 2 ? 'border-r border-gray-100 dark:border-nero-border' : ''}`}>
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{value}</p>
+            <div key={i} className="px-4 py-3.5 rounded-[8px]" style={{ background: '#0d1117' }}>
+              <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0.5">{label}</p>
+              <p className="text-sm font-semibold text-[#f9fafb] truncate" style={{ letterSpacing: '-0.5px' }}>{value}</p>
             </div>
           ))}
         </div>
 
         {/* Last 5 transactions */}
         <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
-          <p className="text-[11px] uppercase tracking-wide text-gray-400 px-5 pt-4 pb-2">Recent transactions</p>
-          {last5.length === 0 ? (
-            <p className="text-sm text-gray-400 px-5 pb-4">No transactions</p>
-          ) : last5.map((t) => (
-            <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b border-gray-50 dark:border-nero-border last:border-b-0">
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{t.name}</p>
-                <p className="text-[11px] text-gray-400">{t.date} · {CAT_EMOJI[t.cat] || '📦'} {t.cat}</p>
+            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] px-5 pt-4 pb-2">Recent transactions</p>
+            {last5.length === 0 ? (
+              <p className="text-sm text-[#6b7280] px-5 pb-4">No transactions</p>
+            ) : last5.map((t) => (
+              <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
+                <div>
+                  <p className="text-sm font-medium text-[#f9fafb] truncate max-w-[200px]">{t.name}</p>
+                  <p className="text-[11px] text-[#6b7280]">{t.date} · {CAT_EMOJI[t.cat] || '📦'} {t.cat}</p>
+                </div>
+                <p className={`text-sm font-semibold flex-shrink-0 ${t.amt >= 0 ? 'text-[#34d399]' : 'text-[#f9fafb]'}`}>
+                  {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
+                </p>
               </div>
-              <p className={`text-sm font-semibold ${t.amt >= 0 ? 'text-green-500' : 'text-gray-900 dark:text-white'}`}>
-                {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
-              </p>
-            </div>
           ))}
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-gray-100 dark:border-nero-border">
+        <div className="px-5 py-4" style={{ borderTop: '0.5px solid #1f2937' }}>
           <button
             onClick={() => { onClose(); navigate('/transactions'); }}
-            className="w-full text-sm font-medium py-2.5 rounded-xl border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors"
+            className="w-full text-sm font-medium py-2.5 rounded-xl text-[#f9fafb] transition-colors"
+            style={{ background: '#1f2937', border: '1px solid #374151' }}
           >
             View all transactions →
           </button>
@@ -304,30 +312,32 @@ export default function Accounts() {
     : null;
 
   return (
-    <div>
-      {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
+    <div className="min-h-screen text-[#f9fafb]" style={{ background: '#0a0e1a' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
+        {/* Summary bar */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
         {[
           { label: 'Accounts',     value: activeAccounts },
           { label: 'Spent (mo)',   value: fmtDollars(totalSpent) },
           { label: 'Income (mo)',  value: fmtDollars(totalIncome) },
         ].map(({ label, value }) => (
           <div key={label}
-               className="rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface px-3 py-3 text-center">
-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
-            <p className="text-base font-bold text-gray-900 dark:text-white">{value}</p>
+               className="rounded-2xl px-3 py-3 text-center"
+               style={{ background: '#0d1f14', border: '0.5px solid #27AE60' }}>
+            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0.5">{label}</p>
+            <p className="text-base font-semibold" style={{ color: '#34d399', letterSpacing: '-0.5px' }}>{value}</p>
           </div>
         ))}
       </div>
 
       {accounts.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16" style={{ color: '#6b7280' }}>
           <p className="text-4xl mb-3">💳</p>
           <p className="text-sm">No accounts found.</p>
           <p className="text-xs mt-1">Import transactions to see your accounts.</p>
         </div>
       ) : accountStyle === 'list' ? (
-        <div className="rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface overflow-hidden">
+        <div className="rounded-2xl overflow-hidden" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
           {accounts.map((acct) => (
             <AccountListRow
               key={acct.name}
@@ -342,6 +352,7 @@ export default function Accounts() {
             <AccountCard
               key={acct.name}
               account={acct}
+              selected={selectedAccount === acct.name}
               onClick={() => setSelectedAccount(acct.name)}
             />
           ))}
@@ -354,6 +365,7 @@ export default function Accounts() {
           onClose={() => setSelectedAccount(null)}
         />
       )}
+      </div>
     </div>
   );
 }

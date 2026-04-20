@@ -8,12 +8,20 @@ export default function StatCard({ label, value, sub, valueStyle = {} }) {
   const accent = ACCENT[label] || '#27AE60';
   return (
     <div
-      className="bg-[#f5f5f3] dark:bg-nero-surface rounded-lg px-3.5 py-3 transition-colors"
-      style={{ borderLeft: `3px solid ${accent}` }}
+      className="rounded-lg px-3.5 py-3 transition-colors"
+      style={{
+        borderLeft: `3px solid ${accent}`,
+        background: '#111827',
+      }}
     >
-      <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1.5">{label}</p>
-      <p className="text-[21px] font-medium tabular-nums m-0 text-gray-900 dark:text-white" style={valueStyle}>{value}</p>
-      <p className="text-[11px] text-gray-500 mt-1 m-0">{sub}</p>
+      <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] m-0 mb-1.5">{label}</p>
+      <p
+        className="text-[21px] font-semibold tabular-nums m-0"
+        style={{ color: '#f9fafb', letterSpacing: '-0.5px', ...valueStyle }}
+      >
+        {value}
+      </p>
+      <p className="text-[11px] text-[#6b7280] mt-1 m-0">{sub}</p>
     </div>
   );
 }
