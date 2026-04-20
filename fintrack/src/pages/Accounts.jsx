@@ -4,16 +4,16 @@ import { useApp } from '../AppContext';
 import { fmtDollars } from '../utils';
 
 const CAT_EMOJI = {
-  Dining:        '🍽',
+  Dining:        '🍽️',
   Groceries:     '🛒',
-  Shopping:      '🛍',
+  Shopping:      '🛍️',
   Transport:     '🚗',
   Health:        '💊',
   Subscriptions: '🎵',
   Housing:       '🏠',
   Utilities:     '⚡',
-  Insurance:     '🛡',
-  Travel:        '✈',
+  Insurance:     '🛡️',
+  Travel:        '✈️',
   Entertainment: '🎬',
   Income:        '💵',
   Transfer:      '🔄',
@@ -233,24 +233,57 @@ function AccountDetail({ account, onClose }) {
             <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] px-5 pt-4 pb-2">Recent transactions</p>
             {last5.length === 0 ? (
               <p className="text-sm text-[#6b7280] px-5 pb-4">No transactions</p>
-            ) : last5.map((t) => (
-              <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
-                <div>
-                  <p className="text-sm font-medium text-[#f9fafb] truncate max-w-[200px]">{t.name}</p>
-                  <p className="text-[11px] text-[#6b7280]">{t.date} · {CAT_EMOJI[t.cat] || '📦'} {t.cat}</p>
+            ) : last5.map((t) => {
+              const style = {
+                Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽️' },
+                Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
+                Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍️' },
+                Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
+                Health:        { bg: '#1a001a', color: '#f472b6', emoji: '💊' },
+                Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
+                Housing:       { bg: '#0a001a', color: '#818cf8', emoji: '🏠' },
+                Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
+                Insurance:     { bg: '#001020', color: '#60a5fa', emoji: '🛡️' },
+                Travel:        { bg: '#00101a', color: '#38bdf8', emoji: '✈️' },
+                Entertainment: { bg: '#1a0010', color: '#e879f9', emoji: '🎬' },
+                Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
+                Transfer:      { bg: '#111827', color: '#6b7280', emoji: '🔄' },
+                Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
+              }[t.cat] || { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' };
+              return (
+                <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
+                  <div className="flex items-center gap-3">
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '8px 2px 8px 2px',
+                      background: style.bg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 14,
+                      flexShrink: 0,
+                      userSelect: 'none',
+                    }}>
+                      {style.emoji}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-[#f9fafb] truncate max-w-[160px]">{t.name}</p>
+                      <p className="text-[11px] text-[#6b7280]">{t.date} · {t.cat}</p>
+                    </div>
+                  </div>
+                  <p className={`text-sm font-semibold flex-shrink-0 ${t.amt >= 0 ? 'text-[#34d399]' : 'text-[#f9fafb]'}`}>
+                    {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
+                  </p>
                 </div>
-                <p className={`text-sm font-semibold flex-shrink-0 ${t.amt >= 0 ? 'text-[#34d399]' : 'text-[#f9fafb]'}`}>
-                  {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
-                </p>
-              </div>
-          ))}
+              );
+            })}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-4" style={{ borderTop: '0.5px solid #1f2937' }}>
           <button
             onClick={() => { onClose(); navigate('/transactions'); }}
-            className="w-full text-sm font-medium py-2.5 rounded-xl text-[#f9fafb] transition-colors"
             style={{ background: '#1f2937', border: '1px solid #374151' }}
           >
             View all transactions →
