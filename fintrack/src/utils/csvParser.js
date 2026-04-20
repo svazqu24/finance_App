@@ -244,6 +244,9 @@ const MERCHANT_ALIASES = {
   "chilis":             "Chili's",
   "dine brands":        'Dine Brands',
   "help.hbomax.com hbomax.com ny": "HBO Max",
+  "sezzle inc sezzle": "Sezzle",
+  "sezzle inc":        "Sezzle",
+  "sezzle":            "Sezzle",
 };
 
 // Bank transfer descriptions — short-circuit when matched at start of string.

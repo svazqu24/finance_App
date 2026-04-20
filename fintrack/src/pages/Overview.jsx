@@ -284,45 +284,53 @@ export default function Overview() {
   return (
     <>
       {/* Net Worth Section */}
-      <div className="mb-6 rounded-xl p-4 transition-colors" style={{ background: '#111827', border: '1px solid #1f2937' }}>
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Net Worth</p>
-            <p className="text-2xl font-bold text-gray-100 tabular-nums">
-              ${currentNetWorth.toLocaleString()}
-            </p>
-            {monthOverMonthChange !== 0 && (
-              <p className={`text-sm font-medium ${monthOverMonthChange > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {monthOverMonthChange > 0 ? '+' : ''}${monthOverMonthChange.toLocaleString()} this month
+      {netWorthHistory.length > 0 ? (
+        <div className="mb-6 rounded-xl p-4" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Net Worth</p>
+              <p className="text-2xl font-bold text-gray-100 tabular-nums">
+                ${currentNetWorth.toLocaleString()}
               </p>
-            )}
+              {monthOverMonthChange !== 0 && (
+                <p className="text-sm font-medium" style={{ color: monthOverMonthChange > 0 ? '#27AE60' : '#f87171' }}>
+                  {monthOverMonthChange > 0 ? '+' : ''}${monthOverMonthChange.toLocaleString()} this month
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setNetWorthModalOpen(true)}
+              className="text-sm font-semibold text-white rounded-full px-4 py-2"
+              style={{ background: '#27AE60' }}
+            >
+              + Update this month
+            </button>
           </div>
+
+          {netWorthMilestone && (
+            <div className="rounded-full px-3 py-2 mb-3 text-sm font-medium" style={{ background: 'rgba(39,174,96,0.12)', color: '#34d399' }}>
+              {netWorthMilestone}
+            </div>
+          )}
+
+          <div className="h-32">
+            <Line data={chartData} options={chartOptions} />
+          </div>
+        </div>
+      ) : (
+        <div className="mb-4 flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
+          <span className="text-xs uppercase tracking-wide text-gray-500 font-medium">Net Worth</span>
+          <span className="text-xs text-gray-400">·</span>
+          <span className="text-sm font-semibold text-white tabular-nums">$0</span>
           <button
             onClick={() => setNetWorthModalOpen(true)}
-            className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors rounded-full px-4 py-2"
+            className="ml-auto text-xs font-medium px-3 py-1 rounded-full"
+            style={{ background: 'rgba(39,174,96,0.12)', color: '#27AE60' }}
           >
             + Update this month
           </button>
         </div>
-
-        {netWorthMilestone && (
-          <div className="rounded-full px-3 py-2 mb-3 text-sm font-medium text-emerald-800 bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-200">
-            {netWorthMilestone}
-          </div>
-        )}
-
-        {netWorthHistory.length > 0 ? (
-          <div className="h-32">
-            <Line data={chartData} options={chartOptions} />
-          </div>
-        ) : (
-          <div className="h-32 flex items-center justify-center">
-            <p className="text-xs text-gray-400 text-center">
-              Add your first net worth entry to see the chart
-            </p>
-          </div>
-        )}
-      </div>
+      )}
 
       {isEmpty ? (
         /* ── Empty state ── */
