@@ -2,6 +2,99 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../AppContext';
 import StatCard from '../components/StatCard';
 import BudgetBar from '../components/BudgetBar';
+
+// ── Category emoji map ────────────────────────────────────────────────────────
+const CAT_EMOJI = {
+  Dining:        '🍽',
+  Groceries:     '🛒',
+  Shopping:      '🛍',
+  Transport:     '🚗',
+  Health:        '💊',
+  Subscriptions: '🎵',
+  Housing:       '🏠',
+  Utilities:     '⚡',
+  Insurance:     '🛡',
+  Travel:        '✈',
+  Entertainment: '🎬',
+  Income:        '💵',
+  Transfer:      '🔄',
+  Other:         '📦',
+};
+
+// ── Circle/donut ring bubble ──────────────────────────────────────────────────
+function BudgetCircle({ b }) {
+  const SIZE   = 64;
+  const SW     = 5;
+  const R      = (SIZE - SW) / 2;
+  const C      = SIZE / 2;
+  const circumference = 2 * Math.PI * R;
+  const pct    = b.budget > 0 ? b.spent / b.budget : 0;
+  const filled = Math.min(pct, 1);
+  const clr    = pct >= 1 ? '#f87171' : pct >= 0.7 ? '#fbbf24' : '#34d399';
+  const isOver = pct >= 1;
+  const emoji  = CAT_EMOJI[b.cat] ?? '📦';
+
+  return (
+    <div className="flex flex-col items-center gap-1 flex-shrink-0" style={{ minWidth: 80 }}>
+      <div
+        className="rounded-2xl p-1.5 transition-all"
+        style={isOver ? { boxShadow: '0 0 0 2px #f87171' } : {}}
+      >
+        <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+          {/* Track */}
+          <circle cx={C} cy={C} r={R} fill="none" stroke="#1f2937" strokeWidth={SW} />
+          {/* Fill */}
+          <circle
+            cx={C} cy={C} r={R} fill="none"
+            stroke={clr} strokeWidth={SW}
+            strokeDasharray={`${circumference * filled} ${circumference}`}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${C} ${C})`}
+            style={{ transition: 'stroke-dasharray 0.4s ease' }}
+          />
+          {/* Center: amount */}
+          <text
+            x={C} y={C - 2}
+            textAnchor="middle" dominantBaseline="middle"
+            fontSize="9" fontWeight="700"
+            fill="currentColor"
+            className="fill-gray-900 dark:fill-white"
+          >
+            ${b.spent >= 1000 ? (b.spent / 1000).toFixed(1) + 'k' : Math.round(b.spent)}
+          </text>
+          <text
+            x={C} y={C + 9}
+            textAnchor="middle" dominantBaseline="middle"
+            fontSize="7"
+            fill="#9ca3af"
+          >
+            /{b.budget >= 1000 ? (b.budget / 1000).toFixed(1) + 'k' : b.budget}
+          </text>
+        </svg>
+      </div>
+      <span style={{ fontSize: 16 }}>{emoji}</span>
+      <p className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight max-w-[72px] truncate">
+        {b.cat}
+      </p>
+    </div>
+  );
+}
+
+// ── Circles row ───────────────────────────────────────────────────────────────
+function BudgetCirclesRow({ liveBudgets }) {
+  return (
+    <div
+      className="overflow-x-auto -mx-4 px-4"
+      style={{ scrollbarWidth: 'none' }}
+    >
+      <div className="flex gap-3 pb-2" style={{ width: 'max-content' }}>
+        {liveBudgets.map((b) => (
+          <BudgetCircle key={b.cat} b={b} />
+        ))}
+      </div>
+    </div>
+  );
+}
 import SubscriptionModal from '../components/SubscriptionModal';
 import SubscriptionEditModal from '../components/SubscriptionEditModal';
 import { budgets } from '../data';
@@ -381,20 +474,24 @@ export default function Budget() {
         </p>
       )}
 
-      {/* Budget progress bars */}
-      {liveBudgets.map((b) => {
-        const incomePct = incomeThisMonth > 0 ? Math.round((b.spent / incomeThisMonth) * 100) : null;
-        return (
-          <div key={b.cat}>
-            <BudgetBar b={b} />
-            {incomePct !== null && incomePct > 0 && (
-              <p className="text-[10px] text-gray-400 mb-2 -mt-1 pl-0.5">
-                {fmtDollars(b.spent)} = {incomePct}% of income
-              </p>
-            )}
-          </div>
-        );
-      })}
+      {/* Budget display — circles or bars */}
+      {preferences.budgetStyle === 'circles' ? (
+        <BudgetCirclesRow liveBudgets={liveBudgets} />
+      ) : (
+        liveBudgets.map((b) => {
+          const incomePct = incomeThisMonth > 0 ? Math.round((b.spent / incomeThisMonth) * 100) : null;
+          return (
+            <div key={b.cat}>
+              <BudgetBar b={b} />
+              {incomePct !== null && incomePct > 0 && (
+                <p className="text-[10px] text-gray-400 mb-2 -mt-1 pl-0.5">
+                  {fmtDollars(b.spent)} = {incomePct}% of income
+                </p>
+              )}
+            </div>
+          );
+        })
+      )}
 
       {/* Budget history */}
       {hasTransactions && (

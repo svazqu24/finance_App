@@ -9,6 +9,7 @@ const PREF_DEFAULTS = {
   compactView:          false,
   layoutStyle:          'single',
   navPosition:          'top',
+  budgetStyle:          'bars',
   currency:             'USD',
   onboardingComplete:   false,
   categoryColors:       {}, // { categoryName: { bg, fg }, ... }
@@ -23,6 +24,7 @@ const DB_TO_JS = {
   compact_view:            'compactView',
   layout_style:            'layoutStyle',
   nav_position:            'navPosition',
+  budget_style:            'budgetStyle',
   currency:                'currency',
   onboarding_complete:     'onboardingComplete',
   category_colors:         'categoryColors',
@@ -35,8 +37,9 @@ function dbRowToPrefs(row) {
   const p = { ...PREF_DEFAULTS };
   if (row.dark_mode    !== null && row.dark_mode    !== undefined) p.darkMode    = row.dark_mode;
   if (row.compact_view !== null && row.compact_view !== undefined) p.compactView = row.compact_view;
-  if (row.layout_style) p.layoutStyle = row.layout_style;
-  if (row.nav_position) p.navPosition = row.nav_position;
+  if (row.layout_style) p.layoutStyle  = row.layout_style;
+  if (row.nav_position) p.navPosition  = row.nav_position;
+  if (row.budget_style) p.budgetStyle  = row.budget_style;
   if (row.currency)     p.currency    = row.currency;
   if (row.onboarding_complete !== null && row.onboarding_complete !== undefined) p.onboardingComplete = row.onboarding_complete;
   if (row.category_colors) {

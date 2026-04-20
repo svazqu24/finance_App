@@ -180,6 +180,52 @@ function PickerCard({ label, active, onClick, children }) {
   );
 }
 
+// ── Budget style preview ───────────────────────────────────────────────────────
+function BudgetStylePreview({ type }) {
+  if (type === 'bars') {
+    return (
+      <div className="flex flex-col gap-1.5 w-full py-0.5">
+        {[70, 90, 45].map((pct, i) => (
+          <div key={i} className="flex flex-col gap-0.5">
+            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-full rounded-full bg-nero-green" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  if (type === 'circles') {
+    const rings = [
+      { pct: 60, clr: '#34d399' },
+      { pct: 88, clr: '#fbbf24' },
+      { pct: 110, clr: '#f87171' },
+    ];
+    const R = 12, SW = 3, C = R + SW;
+    const circumference = 2 * Math.PI * R;
+    return (
+      <div className="flex gap-2 justify-center items-center py-0.5">
+        {rings.map(({ pct, clr }, i) => {
+          const filled = Math.min(pct / 100, 1);
+          return (
+            <svg key={i} width={C * 2} height={C * 2} viewBox={`0 0 ${C * 2} ${C * 2}`}>
+              <circle cx={C} cy={C} r={R} fill="none" stroke="#374151" strokeWidth={SW} />
+              <circle
+                cx={C} cy={C} r={R} fill="none"
+                stroke={clr} strokeWidth={SW}
+                strokeDasharray={`${circumference * filled} ${circumference}`}
+                strokeLinecap="round"
+                transform={`rotate(-90 ${C} ${C})`}
+              />
+            </svg>
+          );
+        })}
+      </div>
+    );
+  }
+  return null;
+}
+
 // ── Category color picker ──────────────────────────────────────────────────────
 function CategoryColorItem({ cat, bgColor, fgColor, onBgChange, onFgChange, onReset }) {
   return (
@@ -338,7 +384,7 @@ export default function Settings() {
     }
   }
 
-  const { layoutStyle, navPosition } = preferences;
+  const { layoutStyle, navPosition, budgetStyle } = preferences;
 
   return (
     <>
@@ -394,6 +440,25 @@ export default function Settings() {
               onClick={() => updatePreference('navPosition', key)}
             >
               <NavPreview type={key} />
+            </PickerCard>
+          ))}
+        </div>
+      </Section>
+
+      {/* ── Budget display style ── */}
+      <Section title="Budget display style">
+        <div className="p-4 grid grid-cols-2 gap-3">
+          {[
+            { key: 'bars',    label: 'Bars'    },
+            { key: 'circles', label: 'Circles' },
+          ].map(({ key, label }) => (
+            <PickerCard
+              key={key}
+              label={label}
+              active={budgetStyle === key}
+              onClick={() => updatePreference('budgetStyle', key)}
+            >
+              <BudgetStylePreview type={key} />
             </PickerCard>
           ))}
         </div>
