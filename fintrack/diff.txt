@@ -1,0 +1,870 @@
+diff --git a/fintrack/README.md b/fintrack/README.md
+index 6283e94..faba4c5 100644
+--- a/fintrack/README.md
++++ b/fintrack/README.md
+@@ -4,11 +4,25 @@ A personal finance dashboard built with Vite, React, Tailwind CSS, and Supabase.
+ 
+ ## Features
+ 
+-- Transaction import from CSV
+-- Budget tracking and history
+-- Spending breakdown and charts
+-- Account labels and filters
+-- Supabase backend with row-level security
++### Core Finance Management
++- **Transaction Tracking**: Import and manage financial transactions with CSV support
++- **Budget Management**: Create, track, and monitor budgets with historical data and visual progress indicators
++- **Spending Analysis**: Detailed spending breakdown and categorization with interactive charts
++- **Account Management**: Support for multiple accounts with custom labels and filtering options
++
++### Advanced Features
++- **Bills & Subscriptions**: Track recurring bills and subscriptions with payment schedules and notifications
++- **Financial Goals**: Set and monitor savings goals with contribution tracking
++- **Investment Portfolio**: Manage investment holdings and track market performance
++- **Credit Card Management**: Keep track of multiple credit cards and credit utilization
++- **Net Worth Tracking**: Monitor overall net worth across all accounts and assets
++- **Onboarding Flow**: Guided setup process for new users
++
++### Security & User Experience
++- **Two-Factor Authentication (2FA)**: Enhanced account security with setup and verification
++- **Row-Level Security**: Supabase backend with database-level access control
++- **Responsive Design**: Mobile-friendly interface with bottom navigation for easy navigation
++- **User Preferences**: Customizable settings and preferences storage
+ 
+ ## Setup
+ 
+diff --git a/fintrack/src/components/BudgetBar.jsx b/fintrack/src/components/BudgetBar.jsx
+index f1696ff..6c167d2 100644
+--- a/fintrack/src/components/BudgetBar.jsx
++++ b/fintrack/src/components/BudgetBar.jsx
+@@ -54,13 +54,13 @@ export default function BudgetBar({ b }) {
+               {b.cat.slice(0, 2).toUpperCase()}
+             </span>
+           </div>
+-          <span className="text-sm font-medium text-gray-900 dark:text-white">{b.cat}</span>
++          <span className="text-sm font-medium text-[#f9fafb]">{b.cat}</span>
+         </div>
+ 
+         <div className="flex items-center gap-1.5">
+-          <span className="text-[13px] tabular-nums text-gray-900 dark:text-white">
++          <span className="text-[13px] tabular-nums text-[#f9fafb]">
+             ${b.spent.toFixed(0)}
+-            <span className="text-gray-400"> / </span>
++            <span className="text-[#6b7280]"> / </span>
+           </span>
+           {editing ? (
+             <input
+@@ -72,7 +72,8 @@ export default function BudgetBar({ b }) {
+               onBlur={commitEdit}
+               onKeyDown={handleKeyDown}
+               autoFocus
+-              className="w-20 text-[13px] tabular-nums border border-gray-300 dark:border-nero-border rounded px-1.5 py-0.5 bg-white dark:bg-nero-surface text-gray-900 dark:text-white outline-none focus:border-gray-500"
++              className="w-20 text-[13px] tabular-nums rounded px-1.5 py-0.5 bg-[#111827] text-[#f9fafb] outline-none"
++              style={{ border: '1px solid #1f2937' }}
+             />
+           ) : (
+             <button
+@@ -80,8 +81,8 @@ export default function BudgetBar({ b }) {
+               className="flex items-center gap-1 group"
+               aria-label={`Edit ${b.cat} budget limit`}
+             >
+-              <span className="text-[13px] tabular-nums text-gray-400">${b.budget.toFixed(0)}</span>
+-              <span className="text-gray-300 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400 transition-colors">
++              <span className="text-[13px] tabular-nums text-[#6b7280]">${b.budget.toFixed(0)}</span>
++              <span className="text-[#6b7280] group-hover:text-[#f9fafb] transition-colors">
+                 <PencilIcon />
+               </span>
+             </button>
+@@ -89,7 +90,7 @@ export default function BudgetBar({ b }) {
+         </div>
+       </div>
+ 
+-      <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1 transition-colors">
++      <div className="h-[7px] rounded overflow-hidden mb-1 transition-colors" style={{ background: '#1f2937' }}>
+         <div
+           className="h-full rounded transition-all duration-300"
+           style={{ width: `${Math.min(pct, 100)}%`, background: barClr }}
+@@ -97,10 +98,10 @@ export default function BudgetBar({ b }) {
+       </div>
+ 
+       <div className="flex justify-between">
+-        <span className="text-[11px]" style={{ color: over ? '#f87171' : '#888' }}>
++        <span className="text-[11px]" style={{ color: over ? '#f87171' : '#6b7280' }}>
+           {hasBudget ? (over ? `$${diff.toFixed(0)} over budget` : `$${diff.toFixed(0)} remaining`) : 'No budget set'}
+         </span>
+-        <span className="text-[11px] text-gray-400">{hasBudget ? `${pct.toFixed(0)}%` : 'Set budget'}</span>
++        <span className="text-[11px] text-[#6b7280]">{hasBudget ? `${pct.toFixed(0)}%` : 'Set budget'}</span>
+       </div>
+     </div>
+   );
+diff --git a/fintrack/src/components/StatCard.jsx b/fintrack/src/components/StatCard.jsx
+index b593c48..b0b94f9 100644
+--- a/fintrack/src/components/StatCard.jsx
++++ b/fintrack/src/components/StatCard.jsx
+@@ -8,12 +8,20 @@ export default function StatCard({ label, value, sub, valueStyle = {} }) {
+   const accent = ACCENT[label] || '#27AE60';
+   return (
+     <div
+-      className="bg-[#f5f5f3] dark:bg-nero-surface rounded-lg px-3.5 py-3 transition-colors"
+-      style={{ borderLeft: `3px solid ${accent}` }}
++      className="rounded-lg px-3.5 py-3 transition-colors"
++      style={{
++        borderLeft: `3px solid ${accent}`,
++        background: '#111827',
++      }}
+     >
+-      <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 m-0 mb-1.5">{label}</p>
+-      <p className="text-[21px] font-medium tabular-nums m-0 text-gray-900 dark:text-white" style={valueStyle}>{value}</p>
+-      <p className="text-[11px] text-gray-500 mt-1 m-0">{sub}</p>
++      <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] m-0 mb-1.5">{label}</p>
++      <p
++        className="text-[21px] font-semibold tabular-nums m-0"
++        style={{ color: '#f9fafb', letterSpacing: '-0.5px', ...valueStyle }}
++      >
++        {value}
++      </p>
++      <p className="text-[11px] text-[#6b7280] mt-1 m-0">{sub}</p>
+     </div>
+   );
+ }
+diff --git a/fintrack/src/pages/Accounts.jsx b/fintrack/src/pages/Accounts.jsx
+index 45a68df..aa00b7c 100644
+--- a/fintrack/src/pages/Accounts.jsx
++++ b/fintrack/src/pages/Accounts.jsx
+@@ -48,9 +48,9 @@ function getAccountType(accountName, transactions, creditCardsData) {
+ }
+ 
+ const TYPE_META = {
+-  credit:   { label: 'Credit',   badge: 'bg-amber-100 text-amber-700  dark:bg-amber-900/30 dark:text-amber-400' },
+-  savings:  { label: 'Savings',  badge: 'bg-green-100  text-green-700  dark:bg-green-900/30  dark:text-green-400'  },
+-  checking: { label: 'Checking', badge: 'bg-blue-100   text-blue-700   dark:bg-blue-900/30   dark:text-blue-400'   },
++  credit:   { label: 'Credit',   badge: 'bg-[#451a03] text-[#fbbf24]' },
++  savings:  { label: 'Savings',  badge: 'bg-[#064e3b] text-[#34d399]' },
++  checking: { label: 'Checking', badge: 'bg-[#0c1a2e] text-[#60a5fa]' },
+ };
+ 
+ const ACCOUNT_ICONS = {
+@@ -74,29 +74,34 @@ function topCategory(txns) {
+ }
+ 
+ // ── Account Card ──────────────────────────────────────────────────────────────
+-function AccountCard({ account, onClick }) {
++function AccountCard({ account, onClick, selected }) {
+   const { name, type, spentThisMonth, txnCount, allTimeTxns, totalSpent } = account;
+   const meta = TYPE_META[type];
+   const icon = ACCOUNT_ICONS[type];
+   const digits = last4(name);
+-  const maxSpend = spentThisMonth; // bar is always 100% for now (relative to self)
++  const cardStyle = {
++    background: selected ? '#0d1f14' : '#111827',
++    borderColor: selected ? '#27AE60' : '#1f2937',
++  };
++  const iconStyle = { background: '#0d1117' };
+ 
+   return (
+     <button
+       onClick={onClick}
+-      className="text-left w-full rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface p-4 hover:border-gray-300 dark:hover:border-gray-500 transition-all hover:shadow-sm"
++      className="text-left w-full rounded-2xl border p-4 transition-all hover:shadow-sm"
++      style={cardStyle}
+     >
+       {/* Header row */}
+       <div className="flex items-start justify-between mb-3">
+         <div className="flex items-center gap-2.5">
+-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-gray-50 dark:bg-nero-bg">
++          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg" style={iconStyle}>
+             {icon}
+           </div>
+           <div>
+-            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight truncate max-w-[130px]">
++            <p className="text-sm font-semibold text-[#f9fafb] leading-tight truncate max-w-[130px]">
+               {name}
+             </p>
+-            {digits && <p className="text-[11px] text-gray-400 mt-0.5">{digits}</p>}
++            {digits && <p className="text-[11px] text-[#6b7280] mt-0.5">{digits}</p>}
+           </div>
+         </div>
+         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.badge}`}>
+@@ -107,23 +112,23 @@ function AccountCard({ account, onClick }) {
+       {/* Stats */}
+       <div className="flex justify-between items-end mb-2.5">
+         <div>
+-          <p className="text-[11px] text-gray-400">Spent this month</p>
+-          <p className="text-base font-bold text-gray-900 dark:text-white">
++          <p className="text-[11px] text-[#6b7280]">Spent this month</p>
++          <p className="text-base font-semibold text-[#f9fafb]" style={{ letterSpacing: '-0.5px' }}>
+             {fmtDollars(spentThisMonth)}
+           </p>
+         </div>
+         <div className="text-right">
+-          <p className="text-[11px] text-gray-400">{txnCount} transactions</p>
++          <p className="text-[11px] text-[#6b7280]">{txnCount} transactions</p>
+         </div>
+       </div>
+ 
+       {/* Mini spend bar */}
+-      <div className="h-1.5 rounded-full bg-gray-100 dark:bg-nero-bg overflow-hidden">
++      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#1f2937' }}>
+         <div
+           className="h-full rounded-full"
+           style={{
+             width: totalSpent > 0 ? `${Math.min((spentThisMonth / totalSpent) * 100, 100)}%` : '0%',
+-            background: '#27AE60',
++            background: '#34d399',
+           }}
+         />
+       </div>
+@@ -141,20 +146,21 @@ function AccountListRow({ account, onClick }) {
+   return (
+     <button
+       onClick={onClick}
+-      className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-nero-border last:border-b-0 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors text-left"
++      className="w-full flex items-center gap-3 px-4 py-3.5 border last:border-b-0 transition-colors text-left"
++      style={{ background: '#111827', border: '0.5px solid #1f2937' }}
+     >
+-      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg bg-gray-50 dark:bg-nero-bg flex-shrink-0">
++      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: '#0d1117' }}>
+         {icon}
+       </div>
+       <div className="flex-1 min-w-0">
+         <div className="flex items-center gap-2">
+-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{name}</p>
+-          {digits && <p className="text-[11px] text-gray-400 flex-shrink-0">{digits}</p>}
++          <p className="text-sm font-medium text-[#f9fafb] truncate">{name}</p>
++          {digits && <p className="text-[11px] text-[#6b7280] flex-shrink-0">{digits}</p>}
+         </div>
+-        <p className="text-xs text-gray-400">{txnCount} transactions</p>
++        <p className="text-xs text-[#6b7280]">{txnCount} transactions</p>
+       </div>
+       <div className="text-right flex-shrink-0">
+-        <p className="text-sm font-semibold text-gray-900 dark:text-white">{fmtDollars(spentThisMonth)}</p>
++        <p className="text-sm font-semibold text-[#f9fafb]">{fmtDollars(spentThisMonth)}</p>
+         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${meta.badge}`}>
+           {meta.label}
+         </span>
+@@ -180,25 +186,26 @@ function AccountDetail({ account, onClose }) {
+     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={onClose}>
+       <div
+-        className="w-full sm:max-w-md bg-white dark:bg-nero-surface rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
++        className="w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+         onClick={(e) => e.stopPropagation()}
++        style={{ background: '#111827', border: '0.5px solid #1f2937' }}
+       >
+         {/* Header */}
+-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-nero-border">
++        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b" style={{ borderColor: '#1f2937' }}>
+           <div className="flex items-center gap-3">
+-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-gray-50 dark:bg-nero-bg">
++            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0d1117' }}>
+               {ACCOUNT_ICONS[type]}
+             </div>
+             <div>
+-              <p className="text-[15px] font-semibold text-gray-900 dark:text-white">{name}</p>
+-              {digits && <p className="text-xs text-gray-400">{digits}</p>}
++              <p className="text-[15px] font-semibold text-[#f9fafb]">{name}</p>
++              {digits && <p className="text-xs text-[#6b7280]">{digits}</p>}
+             </div>
+           </div>
+           <div className="flex items-center gap-2">
+             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${meta.badge}`}>
+               {meta.label}
+             </span>
+-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
++            <button onClick={onClose} className="text-[#6b7280] hover:text-[#f9fafb] p-1">
+               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round">
+                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+@@ -208,42 +215,43 @@ function AccountDetail({ account, onClose }) {
+         </div>
+ 
+         {/* Stats row */}
+-        <div className="grid grid-cols-3 gap-0 border-b border-gray-100 dark:border-nero-border">
++        <div className="grid grid-cols-3 gap-3 mb-3">
+           {[
+             { label: 'Spent', value: fmtDollars(spentThisMonth) },
+             { label: 'Income', value: fmtDollars(incomeThisMonth) },
+             { label: 'Top cat', value: topCat ? `${CAT_EMOJI[topCat] || '📦'} ${topCat}` : '—' },
+           ].map(({ label, value }, i) => (
+-            <div key={i} className={`px-4 py-3.5 ${i < 2 ? 'border-r border-gray-100 dark:border-nero-border' : ''}`}>
+-              <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
+-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{value}</p>
++            <div key={i} className="px-4 py-3.5 rounded-[8px]" style={{ background: '#0d1117' }}>
++              <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0.5">{label}</p>
++              <p className="text-sm font-semibold text-[#f9fafb] truncate" style={{ letterSpacing: '-0.5px' }}>{value}</p>
+             </div>
+           ))}
+         </div>
+ 
+         {/* Last 5 transactions */}
+         <div className="overflow-y-auto" style={{ maxHeight: 280 }}>
+-          <p className="text-[11px] uppercase tracking-wide text-gray-400 px-5 pt-4 pb-2">Recent transactions</p>
+-          {last5.length === 0 ? (
+-            <p className="text-sm text-gray-400 px-5 pb-4">No transactions</p>
+-          ) : last5.map((t) => (
+-            <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b border-gray-50 dark:border-nero-border last:border-b-0">
+-              <div>
+-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{t.name}</p>
+-                <p className="text-[11px] text-gray-400">{t.date} · {CAT_EMOJI[t.cat] || '📦'} {t.cat}</p>
++            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] px-5 pt-4 pb-2">Recent transactions</p>
++            {last5.length === 0 ? (
++              <p className="text-sm text-[#6b7280] px-5 pb-4">No transactions</p>
++            ) : last5.map((t) => (
++              <div key={t.id} className="flex items-center justify-between px-5 py-2.5 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
++                <div>
++                  <p className="text-sm font-medium text-[#f9fafb] truncate max-w-[200px]">{t.name}</p>
++                  <p className="text-[11px] text-[#6b7280]">{t.date} · {CAT_EMOJI[t.cat] || '📦'} {t.cat}</p>
++                </div>
++                <p className={`text-sm font-semibold flex-shrink-0 ${t.amt >= 0 ? 'text-[#34d399]' : 'text-[#f9fafb]'}`}>
++                  {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
++                </p>
+               </div>
+-              <p className={`text-sm font-semibold ${t.amt >= 0 ? 'text-green-500' : 'text-gray-900 dark:text-white'}`}>
+-                {t.amt >= 0 ? '+' : ''}{fmtDollars(Math.abs(t.amt))}
+-              </p>
+-            </div>
+           ))}
+         </div>
+ 
+         {/* Footer */}
+-        <div className="px-5 py-4 border-t border-gray-100 dark:border-nero-border">
++        <div className="px-5 py-4" style={{ borderTop: '0.5px solid #1f2937' }}>
+           <button
+             onClick={() => { onClose(); navigate('/transactions'); }}
+-            className="w-full text-sm font-medium py-2.5 rounded-xl border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors"
++            className="w-full text-sm font-medium py-2.5 rounded-xl text-[#f9fafb] transition-colors"
++            style={{ background: '#1f2937', border: '1px solid #374151' }}
+           >
+             View all transactions →
+           </button>
+@@ -304,30 +312,32 @@ export default function Accounts() {
+     : null;
+ 
+   return (
+-    <div>
+-      {/* Summary bar */}
+-      <div className="grid grid-cols-3 gap-2 mb-6">
++    <div className="min-h-screen text-[#f9fafb]" style={{ background: '#0a0e1a' }}>
++      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
++        {/* Summary bar */}
++        <div className="grid grid-cols-3 gap-2 mb-6">
+         {[
+           { label: 'Accounts',     value: activeAccounts },
+           { label: 'Spent (mo)',   value: fmtDollars(totalSpent) },
+           { label: 'Income (mo)',  value: fmtDollars(totalIncome) },
+         ].map(({ label, value }) => (
+           <div key={label}
+-               className="rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface px-3 py-3 text-center">
+-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-0.5">{label}</p>
+-            <p className="text-base font-bold text-gray-900 dark:text-white">{value}</p>
++               className="rounded-2xl px-3 py-3 text-center"
++               style={{ background: '#0d1f14', border: '0.5px solid #27AE60' }}>
++            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0.5">{label}</p>
++            <p className="text-base font-semibold" style={{ color: '#34d399', letterSpacing: '-0.5px' }}>{value}</p>
+           </div>
+         ))}
+       </div>
+ 
+       {accounts.length === 0 ? (
+-        <div className="text-center py-16 text-gray-400">
++        <div className="text-center py-16" style={{ color: '#6b7280' }}>
+           <p className="text-4xl mb-3">💳</p>
+           <p className="text-sm">No accounts found.</p>
+           <p className="text-xs mt-1">Import transactions to see your accounts.</p>
+         </div>
+       ) : accountStyle === 'list' ? (
+-        <div className="rounded-2xl border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface overflow-hidden">
++        <div className="rounded-2xl overflow-hidden" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
+           {accounts.map((acct) => (
+             <AccountListRow
+               key={acct.name}
+@@ -342,6 +352,7 @@ export default function Accounts() {
+             <AccountCard
+               key={acct.name}
+               account={acct}
++              selected={selectedAccount === acct.name}
+               onClick={() => setSelectedAccount(acct.name)}
+             />
+           ))}
+diff --git a/fintrack/src/pages/Budget.jsx b/fintrack/src/pages/Budget.jsx
+index b1c6e4a..8b07b1c 100644
+--- a/fintrack/src/pages/Budget.jsx
++++ b/fintrack/src/pages/Budget.jsx
+@@ -38,7 +38,11 @@ function BudgetCircle({ b }) {
+     <div className="flex flex-col items-center gap-1 flex-shrink-0" style={{ minWidth: 80 }}>
+       <div
+         className="rounded-2xl p-1.5 transition-all"
+-        style={isOver ? { boxShadow: '0 0 0 2px #f87171' } : {}}
++        style={{
++          background: '#111827',
++          border: '0.5px solid #1f2937',
++          boxShadow: isOver ? '0 0 0 2px #f87171' : undefined,
++        }}
+       >
+         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
+           {/* Track */}
+@@ -57,8 +61,7 @@ function BudgetCircle({ b }) {
+             x={C} y={C - 2}
+             textAnchor="middle" dominantBaseline="middle"
+             fontSize="9" fontWeight="700"
+-            fill="currentColor"
+-            className="fill-gray-900 dark:fill-white"
++            fill="#f9fafb"
+           >
+             ${b.spent >= 1000 ? (b.spent / 1000).toFixed(1) + 'k' : Math.round(b.spent)}
+           </text>
+@@ -66,14 +69,14 @@ function BudgetCircle({ b }) {
+             x={C} y={C + 9}
+             textAnchor="middle" dominantBaseline="middle"
+             fontSize="7"
+-            fill="#9ca3af"
++            fill="#6b7280"
+           >
+             /{b.budget >= 1000 ? (b.budget / 1000).toFixed(1) + 'k' : b.budget}
+           </text>
+         </svg>
+       </div>
+       <span style={{ fontSize: 16 }}>{emoji}</span>
+-      <p className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight max-w-[72px] truncate">
++      <p className="text-[10px] text-[#9ca3af] text-center leading-tight max-w-[72px] truncate uppercase">
+         {b.cat}
+       </p>
+     </div>
+@@ -125,29 +128,31 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
+         onClick={onClose}
+       />
+       <div
+-        className="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out bg-white dark:bg-nero-surface rounded-t-2xl max-w-[680px] mx-auto shadow-2xl border-t border-transparent dark:border-nero-border"
++        className="fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out rounded-t-2xl max-w-[680px] mx-auto shadow-2xl"
+         style={{
+           transform: open ? 'translateY(0)' : 'translateY(100%)',
+           maxHeight: '88vh',
+           display: 'flex',
+           flexDirection: 'column',
++          background: '#111827',
++          borderTop: '0.5px solid #1f2937',
+         }}
+       >
+         {/* Header */}
+         <div className="px-5 pt-4 pb-3 flex-shrink-0">
+-          <div className="w-10 h-1 bg-gray-200 dark:bg-nero-border rounded-full mx-auto mb-4" />
++          <div className="w-10 h-1 bg-[#1f2937] rounded-full mx-auto mb-4" />
+           <div className="flex items-center justify-between">
+             <div>
+-              <p className="text-[15px] font-semibold text-gray-900 dark:text-white">
++              <p className="text-[15px] font-semibold text-[#f9fafb]">
+                 ✨ Auto-budget
+               </p>
+-              <p className="text-xs text-gray-400 mt-0.5">
++              <p className="text-xs text-[#6b7280] mt-0.5">
+                 Based on your average spending over the last 3 months + 10% buffer
+               </p>
+             </div>
+             <button
+               onClick={onClose}
+-              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
++              className="w-8 h-8 flex items-center justify-center rounded-full text-[#6b7280] hover:text-[#f9fafb] transition-colors"
+             >
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+@@ -159,7 +164,7 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
+         {/* Scrollable rows */}
+         <div className="overflow-y-auto flex-1 px-5">
+           {suggestions.length === 0 ? (
+-            <p className="text-sm text-gray-400 py-6 text-center">
++            <p className="text-sm text-[#6b7280] py-6 text-center">
+               No spending data yet — add transactions first.
+             </p>
+           ) : (
+@@ -167,18 +172,18 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
+               {suggestions.map((s) => (
+                 <div key={s.cat} className="flex items-center gap-3">
+                   <div className="flex-1 min-w-0">
+-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{s.cat}</p>
+-                    <p className="text-[11px] text-gray-400">Avg spent: {fmtDollars(s.avg)}/mo</p>
++                    <p className="text-sm font-medium text-[#f9fafb]">{s.cat}</p>
++                    <p className="text-[11px] text-[#6b7280]">Avg spent: {fmtDollars(s.avg)}/mo</p>
+                   </div>
+                   <div className="relative w-28 flex-shrink-0">
+-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">$</span>
++                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#6b7280] pointer-events-none">$</span>
+                     <input
+                       type="number"
+                       min="0"
+                       step="1"
+                       value={values[s.cat] ?? ''}
+                       onChange={(e) => onChange(s.cat, e.target.value)}
+-                      className="w-full border border-gray-200 dark:border-nero-border rounded-xl pl-6 pr-3 py-2.5 text-sm bg-white dark:bg-nero-bg text-gray-900 dark:text-white outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
++                      className="w-full border border-[#1f2937] rounded-xl pl-6 pr-3 py-2.5 text-sm bg-[#111827] text-[#f9fafb] outline-none focus:border-[#374151] transition-colors"
+                     />
+                   </div>
+                 </div>
+@@ -188,20 +193,21 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
+         </div>
+ 
+         {/* Footer */}
+-        <div className="px-5 pt-3 pb-5 flex-shrink-0 border-t border-gray-100 dark:border-nero-border"
+-             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))' }}>
++        <div className="px-5 pt-3 pb-5 flex-shrink-0"
++             style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))', borderTop: '0.5px solid #1f2937' }}>
+           <div className="flex gap-2.5">
+             <button
+               onClick={onApply}
+               disabled={saving || suggestions.length === 0}
+               className="flex-1 text-white text-sm font-medium py-3 rounded-[20px] transition-colors disabled:opacity-40"
+-              style={{ background: '#27AE60' }}
++              style={{ background: '#27AE60', border: '1px solid rgba(39, 174, 96, 0.24)' }}
+             >
+               {saving ? 'Saving…' : 'Apply all budgets'}
+             </button>
+             <button
+               onClick={onClose}
+-              className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-3 rounded-[20px] text-gray-700 dark:text-gray-300 transition-colors"
++              className="flex-1 border text-sm font-medium py-3 rounded-[20px] text-[#f9fafb] transition-colors"
++              style={{ borderColor: '#374151', background: '#111827' }}
+             >
+               Cancel
+             </button>
+@@ -387,9 +393,10 @@ export default function Budget() {
+ 
+   // ── Render ────────────────────────────────────────────────────────────────
+   return (
+-    <>
+-      {/* Summary stat cards */}
+-      <div className="grid grid-cols-3 gap-2 mb-4">
++    <div className="min-h-screen pb-8 text-[#f9fafb]" style={{ background: '#0a0e1a' }}>
++      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
++        {/* Summary stat cards */}
++        <div className="grid grid-cols-3 gap-2 mb-4">
+         <StatCard label="budgeted"  value={fmtDollars(totalBudgeted)} sub="this month" />
+         <StatCard label="spent"     value={fmtDollars(totalSpent)}    sub="this month" />
+         <StatCard
+@@ -403,20 +410,20 @@ export default function Budget() {
+       {/* Status badges */}
+       <div className="flex gap-2 mb-5 flex-wrap">
+         {onTrack > 0 && (
+-          <span className="text-xs font-medium px-2.5 py-[3px] rounded-full"
+-                style={{ color: '#27500A', background: '#C8EBB4' }}>
++          <span className="text-[10px] font-semibold px-2.5 py-[4px] rounded-full uppercase"
++                style={{ color: '#34d399', background: '#064e3b' }}>
+             {onTrack} on track
+           </span>
+         )}
+         {approaching > 0 && (
+-          <span className="text-xs font-medium px-2.5 py-[3px] rounded-full"
+-                style={{ color: '#633806', background: '#F5DEB0' }}>
++          <span className="text-[10px] font-semibold px-2.5 py-[4px] rounded-full uppercase"
++                style={{ color: '#f9fafb', background: '#1f2937' }}>
+             {approaching} approaching
+           </span>
+         )}
+         {overBudget > 0 && (
+-          <span className="text-xs font-medium px-2.5 py-[3px] rounded-full"
+-                style={{ color: '#991B1B', background: '#FEE2E2' }}>
++          <span className="text-[10px] font-semibold px-2.5 py-[4px] rounded-full uppercase"
++                style={{ color: '#f87171', background: '#450a0a' }}>
+             {overBudget} over budget
+           </span>
+         )}
+@@ -424,25 +431,26 @@ export default function Budget() {
+ 
+       {/* No-transactions hint */}
+       {!loading && !hasTransactions && (
+-        <div className="text-center py-8 mb-5">
++        <div className="text-center py-8 mb-5 rounded-3xl border border-[#1f2937] bg-[#111827] shadow-sm">
+           <div
+             className="w-10 h-10 flex items-center justify-center text-white font-semibold mx-auto mb-3"
+             style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px', fontSize: 18 }}
+           >
+             N
+           </div>
+-          <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Set your first budget limit</p>
+-          <p className="text-xs text-gray-400 mb-4 leading-relaxed max-w-[240px] mx-auto">
++          <p className="text-sm font-semibold text-[#f9fafb] mb-1">Set your first budget limit</p>
++          <p className="text-xs text-[#6b7280] mb-4 leading-relaxed max-w-[240px] mx-auto">
+             Add transactions to see live spending vs. your budget limits.
+           </p>
+           <div className="flex gap-2 justify-center">
+             <button onClick={openAddModal}
+               className="text-xs font-medium px-3 py-2 rounded-[20px] text-white transition-colors"
+-              style={{ background: '#27AE60' }}>
++              style={{ background: '#1f2937', border: '1px solid #374151' }}>
+               + Add transaction
+             </button>
+             <button onClick={openCsvModal}
+-              className="text-xs font-medium px-3 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 transition-colors">
++              className="text-xs font-medium px-3 py-2 rounded-[20px] border text-white transition-colors"
++              style={{ borderColor: '#374151', background: '#111827' }}>
+               Import CSV
+             </button>
+           </div>
+@@ -451,17 +459,20 @@ export default function Budget() {
+ 
+       {/* Budget prompt for categories with no budget set */}
+       {missingBudgetCats.length > 0 && (
+-        <div className="mb-5 rounded-xl px-4 py-3 bg-[#f5f5f3] dark:bg-nero-surface text-sm text-gray-800 dark:text-gray-200">
+-          You have spending in {missingBudgetCats.join(', ')} with no budget set yet.
++        <div className="mb-5 rounded-xl px-4 py-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
++          <p className="text-sm text-[#f9fafb]">
++            You have spending in {missingBudgetCats.join(', ')} with no budget set yet.
++          </p>
+         </div>
+       )}
+ 
+       {/* ── Budget limits header + auto-budget button ── */}
+       <div className="flex items-center justify-between mb-1">
+-        <p className="text-[13px] font-medium text-gray-900 dark:text-white">Budget limits</p>
++        <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0">Budget limits</p>
+         <button
+           onClick={openAutoBudget}
+-          className="text-xs font-medium px-2.5 py-1 rounded-[20px] border border-gray-200 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors"
++          className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
++          style={{ background: '#1f2937', border: '1px solid #374151' }}
+         >
+           ✨ Auto-budget
+         </button>
+@@ -469,7 +480,7 @@ export default function Budget() {
+ 
+       {/* Income context line */}
+       {incomeThisMonth > 0 && (
+-        <p className="text-[11px] text-gray-400 mb-3">
++        <p className="text-[10px] text-[#6b7280] mb-3 uppercase tracking-[0.1em]">
+           Based on {fmtDollars(incomeThisMonth)} income this month
+         </p>
+       )}
+@@ -484,7 +495,7 @@ export default function Budget() {
+             <div key={b.cat}>
+               <BudgetBar b={b} />
+               {incomePct !== null && incomePct > 0 && (
+-                <p className="text-[10px] text-gray-400 mb-2 -mt-1 pl-0.5">
++                <p className="text-[10px] text-[#6b7280] mb-2 -mt-1 pl-0.5">
+                   {fmtDollars(b.spent)} = {incomePct}% of income
+                 </p>
+               )}
+@@ -497,22 +508,23 @@ export default function Budget() {
+       {hasTransactions && (
+         <div className="mt-6">
+           <div className="flex items-center justify-between mb-3">
+-            <p className="text-[13px] font-medium text-gray-900 dark:text-white">Budget history</p>
++            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0">Budget history</p>
+             <button
+               onClick={() => setHistoryMonths(historyMonths === 3 ? 6 : 3)}
+-              className="text-xs font-medium px-2.5 py-1 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 transition-colors"
++              className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
++              style={{ background: '#1f2937', border: '1px solid #374151' }}
+             >
+               {historyMonths === 3 ? 'Show 6 months' : 'Show 3 months'}
+             </button>
+           </div>
+-          <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4">
++          <div style={{ background: '#111827', border: '0.5px solid #1f2937' }} className="rounded-xl p-4">
+             <div className="overflow-x-auto">
+               <table className="w-full text-xs">
+                 <thead>
+-                  <tr className="border-b border-gray-200 dark:border-nero-border">
+-                    <th className="text-left py-2 font-medium text-gray-700 dark:text-gray-300">Category</th>
++                  <tr className="border-b" style={{ borderColor: '#1f2937' }}>
++                    <th className="text-left py-2 font-medium text-[#4b5563] uppercase tracking-[0.1em]">Category</th>
+                     {monthLabels.map((month) => (
+-                      <th key={month.abbr} className="text-center py-2 font-medium text-gray-700 dark:text-gray-300 min-w-[60px]">
++                      <th key={month.abbr} className="text-center py-2 font-medium text-[#4b5563] uppercase tracking-[0.1em] min-w-[60px]">
+                         {month.label}
+                       </th>
+                     ))}
+@@ -520,15 +532,15 @@ export default function Budget() {
+                 </thead>
+                 <tbody>
+                   {budgetHistory.map((row) => (
+-                    <tr key={row.cat} className="border-b border-gray-100 dark:border-nero-border/50">
+-                      <td className="py-2 text-gray-900 dark:text-white font-medium">{row.cat}</td>
++                    <tr key={row.cat} className="border-b" style={{ borderColor: '#1f2937' }}>
++                      <td className="py-2 text-[#f9fafb] font-medium">{row.cat}</td>
+                       {row.months.map((month, i) => {
+                         const budget  = budgetMap[row.cat] || 0;
+                         const isOver  = budget > 0 && month.spent > budget;
+                         const isNear  = budget > 0 && month.spent > budget * 0.85 && month.spent <= budget;
+                         return (
+                           <td key={i} className="text-center py-2 tabular-nums"
+-                              style={{ color: isOver ? '#f87171' : isNear ? '#f59e0b' : '#27AE60' }}>
++                              style={{ color: isOver ? '#f87171' : isNear ? '#f59e0b' : '#34d399' }}>
+                             ${month.spent.toFixed(0)}
+                           </td>
+                         );
+@@ -536,9 +548,9 @@ export default function Budget() {
+                     </tr>
+                   ))}
+                   <tr>
+-                    <td className="py-3 text-gray-900 dark:text-white font-semibold">Total spending</td>
++                    <td className="py-3 text-[#f9fafb] font-semibold">Total spending</td>
+                     {monthTotals.map((total, i) => (
+-                      <td key={i} className="text-center py-3 tabular-nums font-semibold text-gray-900 dark:text-white">
++                      <td key={i} className="text-center py-3 tabular-nums font-semibold text-[#f9fafb]">
+                         ${total.toFixed(0)}
+                       </td>
+                     ))}
+@@ -551,33 +563,33 @@ export default function Budget() {
+       )}
+ 
+       {/* ── Upcoming bills (real data) ── */}
+-      <p className="text-[13px] font-medium mt-6 mb-2.5 text-gray-900 dark:text-white">
++      <p className="text-[10px] uppercase tracking-[0.1em] mt-6 mb-2.5 text-[#4b5563]">
+         Upcoming bills
+       </p>
+       {upcomingBills.length === 0 ? (
+-        <p className="text-xs text-gray-400 leading-relaxed">
++        <p className="text-xs text-[#6b7280] leading-relaxed">
+           No bills added yet — add them in the Bills tab.
+         </p>
+       ) : (
+-        <div className="flex flex-col">
++        <div className="flex flex-col gap-2">
+           {upcomingBills.map((b) => (
+             <div
+               key={b.id}
+-              className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-nero-border last:border-0 transition-colors"
++              className="flex items-center gap-2.5 py-2.5 rounded-2xl border border-[#1f2937] bg-[#111827] transition-colors"
+             >
+               <div
+                 className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-[11px] font-semibold text-white"
+-                style={{ background: '#27AE60', borderRadius: '8px 2px 8px 2px' }}
++                style={{ background: '#0d1f14', borderRadius: '8px 2px 8px 2px' }}
+               >
+                 {(b.cat || 'B').slice(0, 2).toUpperCase()}
+               </div>
+               <div className="flex-1 min-w-0">
+-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
++                <p className="text-sm font-medium text-[#f9fafb] truncate leading-tight">
+                   {b.name}
+                 </p>
+-                <p className="text-xs text-gray-400">Due the {b.due_day}{ordinal(b.due_day)}</p>
++                <p className="text-xs text-[#6b7280]">Due the {b.due_day}{ordinal(b.due_day)}</p>
+               </div>
+-              <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white flex-shrink-0">
++              <p className="text-sm font-semibold tabular-nums text-[#f9fafb] flex-shrink-0">
+                 {fmtDollars(b.amount)}
+               </p>
+             </div>
+@@ -588,11 +600,11 @@ export default function Budget() {
+       {/* ── Subscriptions ── */}
+       <div className="flex items-center justify-between mt-6 mb-2.5">
+         <div className="flex items-center gap-2">
+-          <p className="text-[13px] font-medium text-gray-900 dark:text-white">
++          <p className="text-[13px] font-medium text-[#f9fafb]">
+             Detected subscriptions
+           </p>
+           {hasAnySubs && (
+-            <span className="text-[11px] text-gray-400">
++            <span className="text-[11px] text-[#6b7280]">
+               ~{fmtDollars(totalMonthlySubCost)}/mo
+             </span>
+           )}
+@@ -612,31 +624,31 @@ export default function Budget() {
+             <div
+               key={s.name}
+               onClick={() => openEditSubscription(s, true)}
+-              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-nero-border"
++              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#111827] border border-[#1f2937] transition-colors cursor-pointer hover:bg-[#0d1117]"
+             >
+               <div>
+                 <div className="flex items-center gap-2">
+-                  <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
++                  <p className="text-[13px] font-medium text-[#f9fafb] leading-tight">
+                     {s.name}
+                   </p>
+                   {s.possibleCancelled && (
+                     <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+-                          style={{ background: '#FEF3C7', color: '#92400E' }}>
++                          style={{ background: '#450a0a', color: '#f87171' }}>
+                       possibly cancelled
+                     </span>
+                   )}
+                 </div>
+-                <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
++                <p className="text-[11px] text-[#6b7280] mt-0.5 capitalize">
+                   {s.frequency} · last {s.lastCharged}
+                 </p>
+               </div>
+               <div className="flex items-center gap-2">
+-                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
++                <span className="text-[13px] font-semibold tabular-nums text-[#f9fafb]">
+                   {fmtDollars(s.amt)}
+                 </span>
+                 <button
+                   onClick={(e) => { e.stopPropagation(); openEditSubscription(s, true); }}
+-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all"
++                  className="opacity-0 group-hover:opacity-100 text-[#9ca3af] hover:text-[#f9fafb] transition-all"
+                   aria-label="Edit"
+                 >
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+@@ -646,7 +658,7 @@ export default function Budget() {
+                 </button>
+                 <button
+                   onClick={(e) => { e.stopPropagation(); openEditSubscription(s, true); }}
+-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
++                  className="opacity-0 group-hover:opacity-100 text-[#9ca3af] hover:text-[#f87171] transition-all"
+                   aria-label="Dismiss"
+                 >
+                   <TrashIcon />
+@@ -659,28 +671,28 @@ export default function Budget() {
+             <div
+               key={s.id}
+               onClick={() => openEditSubscription(s, false)}
+-              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-nero-border"
++              className="group flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#111827] border border-[#1f2937] transition-colors cursor-pointer hover:bg-[#0d1117]"
+             >
+               <div>
+                 <div className="flex items-center gap-2">
+-                  <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">{s.name}</p>
++                  <p className="text-[13px] font-medium text-[#f9fafb] leading-tight">{s.name}</p>
+                   <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full"
+-                        style={{ background: '#C8EBB4', color: '#27500A' }}>
++                        style={{ background: '#064e3b', color: '#34d399' }}>
+                     manual
+                   </span>
+                 </div>
+-                <p className="text-[11px] text-gray-400 mt-0.5 capitalize">
++                <p className="text-[11px] text-[#6b7280] mt-0.5 capitalize">
+                   {s.frequency ?? 'monthly'}
+                   {s.next_due_date && ` · due ${new Date(s.next_due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                 </p>
+               </div>
+               <div className="flex items-center gap-2">
+-                <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
++                <span className="text-[13px] font-semibold tabular-nums text-[#f9fafb]">
+                   {fmtDollars(s.amount)}
+                 </span>
+                 <button
+                   onClick={(e) => { e.stopPropagation(); openEditSubscription(s, false); }}
+-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-all"
++                  className="opacity-0 group-hover:opacity-100 text-[#9ca3af] hover:text-[#f9fafb] transition-all"
+                   aria-label="Edit"
+                 >
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+@@ -690,7 +702,7 @@ export default function Budget() {
+                 </button>
+                 <button
+                   onClick={(e) => { e.stopPropagation(); openEditSubscription(s, false); }}
+-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-400 transition-all"
++                  className="opacity-0 group-hover:opacity-100 text-[#9ca3af] hover:text-[#f87171] transition-all"
+                   aria-label="Delete"
+                 >
+                   <TrashIcon />
+@@ -700,7 +712,7 @@ export default function Budget() {
+           ))}
+         </div>
+       ) : (
+-        <p className="text-xs text-gray-400 leading-relaxed">
++        <p className="text-xs text-[#6b7280] leading-relaxed">
+           Recurring charges with 3+ consistent payments will appear here automatically.
+         </p>
+       )}
+@@ -722,7 +734,8 @@ export default function Budget() {
+         onApply={applyAutoBudgets}
+         saving={autoBudgetSaving}
+       />
+-    </>
++    </div>
++  </div>
+   );
+ }
+ 
