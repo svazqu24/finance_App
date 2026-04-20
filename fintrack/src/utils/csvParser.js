@@ -244,9 +244,15 @@ const MERCHANT_ALIASES = {
   "chilis":             "Chili's",
   "dine brands":        'Dine Brands',
   "help.hbomax.com hbomax.com ny": "HBO Max",
-  "sezzle inc sezzle": "Sezzle",
-  "sezzle inc":        "Sezzle",
-  "sezzle":            "Sezzle",
+  "sezzle inc sezzle":        "Sezzle",
+  "sezzle inc":               "Sezzle",
+  "sezzle":                   "Sezzle",
+  "monthly subscription":     "Monthly Subscription",
+  "monthly subscriptions":    "Monthly Subscription",
+  "monthly service fee":      "Monthly Service Fee",
+  "monthly service charge":   "Monthly Service Fee",
+  "monthly maintenance fee":  "Monthly Maintenance Fee",
+  "monthly fee":              "Monthly Fee",
 };
 
 // Bank transfer descriptions — short-circuit when matched at start of string.

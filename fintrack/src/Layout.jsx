@@ -68,7 +68,7 @@ function Sidebar({ side }) {
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-100 dark:border-nero-border">
+      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-100 dark:border-[#1f2937]">
         <NeroMark size={28} />
         <span className="text-[18px] font-semibold text-gray-900 dark:text-white tracking-tight">Nero</span>
       </div>
@@ -101,7 +101,7 @@ function Sidebar({ side }) {
       </nav>
 
       {/* Bottom: dark toggle + user */}
-      <div className="px-4 py-4 border-t border-gray-100 dark:border-nero-border">
+      <div className="px-4 py-4 border-t border-gray-100 dark:border-[#1f2937]">
         <div className="flex items-center justify-between">
           <button
             onClick={toggleDark}
@@ -171,16 +171,16 @@ function Header({ compact }) {
             {user.email}
           </span>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setCsvModalOpen(true)}
-            className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+            className="flex-1 sm:flex-none text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
           >
             Import CSV
           </button>
           <button
             onClick={() => setAddModalOpen(true)}
-            className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+            className="flex-1 sm:flex-none text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
             style={{ background: '#27AE60' }}
           >
             + Add Transaction
@@ -304,7 +304,7 @@ export default function Layout() {
   );
 
   const statsRow = (
-    <div className={`grid grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
+    <div className={`grid grid-cols-1 sm:grid-cols-3 gap-2 ${compact ? 'mb-3' : 'mb-6'}`}>
       <StatCard label="income" value={loading ? '—' : fmtDollars(animIncome)} sub={rangeLabel} />
       <StatCard label="spent"  value={loading ? '—' : fmtDollars(realSpent)}  sub={rangeLabel} />
       <StatCard
@@ -323,7 +323,7 @@ export default function Layout() {
   );
 
   const topTabs = (
-    <div className={`hidden sm:flex border-b border-gray-200 dark:border-nero-border ${compact ? 'mb-3' : 'mb-6'} overflow-x-auto transition-colors`}>
+    <div className={`hidden sm:flex border-b border-gray-200 dark:border-[#1f2937] ${compact ? 'mb-3' : 'mb-6'} overflow-x-auto transition-colors`}>
       {TOP_TABS.map((path) => (
         <NavLink
           key={path}
@@ -331,7 +331,7 @@ export default function Layout() {
           className={({ isActive }) =>
             `no-underline flex-shrink-0 px-3 pt-2 pb-[9px] text-[13px] border-b-2 whitespace-nowrap -mb-px transition-colors capitalize ${
               isActive
-                ? 'border-gray-900 dark:border-nero-green text-gray-900 dark:text-nero-green font-medium'
+                ? 'border-gray-900 dark:border-[#27AE60] text-gray-900 dark:text-[#27AE60] font-medium'
                 : 'border-transparent text-gray-400 font-normal'
             }`
           }
@@ -345,7 +345,7 @@ export default function Layout() {
   // ── Sidebar layouts ──────────────────────────────────────────────────────────
   if (navPosition === 'left' || navPosition === 'right') {
     return (
-      <div className="flex min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
+      <div className="flex min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200">
         {navPosition === 'left' && <Sidebar side="left" />}
 
         <div className="flex-1 min-w-0 py-6 px-5 overflow-y-auto">
@@ -353,7 +353,7 @@ export default function Layout() {
           <div className="flex justify-end items-center gap-2 mb-4">
             <button
               onClick={() => setCsvModalOpen(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+              className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
             >
               Import CSV
             </button>
@@ -379,7 +379,7 @@ export default function Layout() {
 
   // ── Top / Bottom layouts (centered, max-width) ───────────────────────────────
   return (
-    <div className="min-h-screen bg-white dark:bg-nero-bg transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200">
       <div className={`${compact ? 'py-3' : 'py-6'} px-4 font-sans max-w-[680px] mx-auto`}>
 
         <Header compact={compact} />

@@ -3,7 +3,6 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 import { useApp } from '../AppContext';
 import { catClr } from '../data';
 import { filterMonth, groupExpensesByCategory } from '../utils';
-import { sendNotification } from '../NotificationContext';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ABBRS       = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -49,15 +48,15 @@ const CAT_AVATAR = {
   Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
   Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
   Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
-  Health:        { bg: '#1a0010', color: '#f472b6', emoji: '💊' },
+  Health:        { bg: '#1a001a', color: '#f472b6', emoji: '💊' },
   Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
-  Housing:       { bg: '#001020', color: '#60a5fa', emoji: '🏠' },
+  Housing:       { bg: '#0a001a', color: '#818cf8', emoji: '🏠' },
   Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
-  Insurance:     { bg: '#1a1000', color: '#fbbf24', emoji: '🛡' },
-  Travel:        { bg: '#001020', color: '#38bdf8', emoji: '✈' },
-  Entertainment: { bg: '#1a0a00', color: '#fb923c', emoji: '🎬' },
+  Insurance:     { bg: '#001020', color: '#60a5fa', emoji: '🛡' },
+  Travel:        { bg: '#00101a', color: '#38bdf8', emoji: '✈' },
+  Entertainment: { bg: '#1a0010', color: '#e879f9', emoji: '🎬' },
   Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
-  Transfer:      { bg: '#1a1a1a', color: '#6b7280', emoji: '🔄' },
+  Transfer:      { bg: '#111827', color: '#6b7280', emoji: '🔄' },
   Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
 };
 
@@ -421,33 +420,38 @@ export default function Spending() {
         {/* Category list */}
         <div className="flex flex-col justify-center overflow-hidden">
           {categoryRows.length > 0 ? (
-            categoryRows.map((r) => (
-              <div
-                key={r.cat}
-                className="flex items-center gap-2 py-[5px] border-b border-gray-100 dark:border-[#1f2937] transition-colors last:border-0"
-              >
-                <span
-                  className="w-2 h-2 rounded-[2px] flex-shrink-0"
-                  style={{ background: r.clr }}
-                />
-                <span className="text-xs text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate">
-                  {r.cat}
-                </span>
-                <div className="text-right flex-shrink-0 min-w-[60px]">
-                  <p className="text-xs font-medium tabular-nums text-gray-900 dark:text-white">
-                    {fmt(r.amt)}
-                  </p>
-                  {r.prev > 0 && (
-                    <p
-                      className="text-[10px] tabular-nums leading-tight"
-                      style={{ color: r.diff > 0 ? '#f87171' : '#22c55e' }}
-                    >
-                      {r.diff > 0 ? '▲' : '▼'} {fmt(Math.abs(r.diff))}
+            categoryRows.map((r) => {
+              const av = CAT_AVATAR[r.cat] ?? CAT_AVATAR.Other;
+              return (
+                <div
+                  key={r.cat}
+                  className="flex items-center gap-1.5 py-[5px] border-b border-gray-100 dark:border-[#1f2937] last:border-0"
+                >
+                  <div
+                    className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs"
+                    style={{ background: av.bg, borderRadius: '6px 2px 6px 2px' }}
+                  >
+                    {av.emoji}
+                  </div>
+                  <span className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate">
+                    {r.cat}
+                  </span>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[11px] font-semibold tabular-nums text-gray-900 dark:text-white leading-tight">
+                      {fmt(r.amt)}
                     </p>
-                  )}
+                    <p className="text-[10px] tabular-nums text-gray-400 leading-tight">
+                      {Math.round(r.pct)}%
+                      {r.prev > 0 && (
+                        <span style={{ color: r.diff > 0 ? '#f87171' : '#22c55e' }}>
+                          {' '}{r.diff > 0 ? '▲' : '▼'}{fmt(Math.abs(r.diff))}
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <p className="text-xs text-gray-400">No expenses this month.</p>
           )}
@@ -470,15 +474,9 @@ export default function Spending() {
           </p>
           <div className="flex flex-col">
             {topMerchants.map((m) => (
-              <button
+              <div
                 key={m.name}
-                onClick={() =>
-                  sendNotification(`Showing transactions for ${m.name}`, {
-                    type: 'success',
-                    duration: 2000,
-                  })
-                }
-                className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-[#1f2937] last:border-0 transition-colors text-left"
+                className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-[#1f2937] last:border-0"
               >
                 <MerchantAvatar cat={m.cat} />
                 <div className="flex-1 min-w-0">
@@ -486,13 +484,10 @@ export default function Spending() {
                     {m.name}
                   </p>
                   <p className="text-xs text-gray-400">
-                    {m.count} visit{m.count > 1 ? 's' : ''}
+                    {fmt(m.total)} · {m.count} visit{m.count > 1 ? 's' : ''}
                   </p>
                 </div>
-                <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white flex-shrink-0">
-                  {fmt(m.total)}
-                </p>
-              </button>
+              </div>
             ))}
           </div>
         </div>

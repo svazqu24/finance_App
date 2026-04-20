@@ -141,7 +141,7 @@ export default function TransactionRow({ txn }) {
   return (
     <>
       <div
-        className="relative flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-[#1f2937] transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-[#111827] rounded-sm"
+        className="relative flex items-center gap-2.5 py-2.5 min-h-[44px] border-b border-gray-200 dark:border-[#1f2937] transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-[#111827] rounded-sm"
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
