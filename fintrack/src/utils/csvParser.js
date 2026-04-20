@@ -79,30 +79,41 @@ function matchIdx(headers, patterns) {
 
 /**
  * Returns a partial mapping object.
- * Caller can tell auto-detect succeeded when dateCol, descCol, and either
- * amtCol != -1 (single mode) or both debitCol+creditCol != -1 (debitcredit mode).
+ * Pass bankInfo (from detectBank) to get bank-specific sign convention and
+ * positional overrides (Wells Fargo).
  */
-export function detectColumns(headers) {
-  const dateCol  = matchIdx(headers, DATE_PATTERNS);
-  const descCol  = matchIdx(headers, DESC_PATTERNS);
-  const amtCol   = matchIdx(headers, AMT_PATTERNS);
-  const debitCol = matchIdx(headers, DEBIT_PATTERNS);
-  const creditCol= matchIdx(headers, CREDIT_PATTERNS);
-  const catCol   = matchIdx(headers, CAT_PATTERNS);
+export function detectColumns(headers, bankInfo = null) {
+  // Wells Fargo positional: Date(0) Amount(1) *(2) *(3) Description(4)
+  if (bankInfo?.positional) {
+    return {
+      dateCol: 0, descCol: 4, amtMode: 'single', amtCol: 1,
+      debitCol: -1, creditCol: -1, catCol: -1,
+      signConvention: 'negative-expense',
+    };
+  }
+
+  const dateCol   = matchIdx(headers, DATE_PATTERNS);
+  const descCol   = matchIdx(headers, DESC_PATTERNS);
+  const amtCol    = matchIdx(headers, AMT_PATTERNS);
+  const debitCol  = matchIdx(headers, DEBIT_PATTERNS);
+  const creditCol = matchIdx(headers, CREDIT_PATTERNS);
+  const catCol    = matchIdx(headers, CAT_PATTERNS);
 
   const hasDebitCredit = debitCol !== -1 && creditCol !== -1;
-  const amtMode = hasDebitCredit && amtCol === -1 ? 'debitcredit' : 'single';
+  // Force debitcredit mode for banks that always use split columns (Citi, Capital One)
+  const forceDebitCredit = bankInfo?.amtMode === 'debitcredit';
+  const amtMode = (forceDebitCredit || (hasDebitCredit && amtCol === -1)) ? 'debitcredit' : 'single';
   const resolvedAmtCol = amtMode === 'single' ? (amtCol !== -1 ? amtCol : -1) : -1;
 
   return {
     dateCol,
     descCol,
     amtMode,
-    amtCol:  resolvedAmtCol,
+    amtCol:   resolvedAmtCol,
     debitCol: hasDebitCredit ? debitCol : -1,
     creditCol: hasDebitCredit ? creditCol : -1,
     catCol,
-    signConvention: 'negative-expense',
+    signConvention: bankInfo?.signConvention ?? 'negative-expense',
   };
 }
 
@@ -375,6 +386,47 @@ export const CHASE_CC_CATEGORY_MAP = {
   'payment':           'Income',
   'transfer':          'Transfer',
 };
+
+// ── Bank detection ───────────────────────────────────────────────────────────
+
+/**
+ * Detect which bank a CSV came from by inspecting its header row.
+ * Returns a bankInfo object or null for generic/unknown.
+ */
+export function detectBank(headers) {
+  const lc = headers.map((h) => h.toLowerCase().trim());
+  const s = new Set(lc);
+
+  // Chase checking: has 'details' + 'posting date' + 'balance'
+  if (s.has('details') && s.has('posting date') && s.has('balance') && s.has('amount'))
+    return { bank: 'chase', label: 'Chase Checking', signConvention: 'negative-expense', amtMode: 'single', catMap: null };
+
+  // Chase CC: has 'post date' + 'category' + 'type', no 'card no.'
+  if (s.has('transaction date') && s.has('post date') && s.has('category') && s.has('type') && s.has('amount') && !s.has('card no.'))
+    return { bank: 'chase-cc', label: 'Chase Credit', signConvention: 'negative-expense', amtMode: 'single', catMap: CHASE_CC_CATEGORY_MAP };
+
+  // Capital One: has 'card no.' + split debit/credit
+  if (s.has('card no.') && s.has('transaction date') && s.has('posted date'))
+    return { bank: 'capitalone', label: 'Capital One', signConvention: 'negative-expense', amtMode: 'debitcredit', catMap: null };
+
+  // Citi: date + description + debit + credit, small column count
+  if (s.has('date') && s.has('description') && s.has('debit') && s.has('credit') && lc.length <= 6)
+    return { bank: 'citi', label: 'Citi', signConvention: 'negative-expense', amtMode: 'debitcredit', catMap: null };
+
+  // Amex: has 'extended details' or 'appears on your statement as' — charges are positive
+  if (s.has('extended details') || s.has('appears on your statement as'))
+    return { bank: 'amex', label: 'American Express', signConvention: 'positive-expense', amtMode: 'single', catMap: null };
+
+  // Bank of America: has 'running bal.'
+  if (s.has('running bal.') || lc.some((h) => h.includes('running bal')))
+    return { bank: 'bankofamerica', label: 'Bank of America', signConvention: 'negative-expense', amtMode: 'single', catMap: null };
+
+  // Wells Fargo: 5 cols, col 2 and 3 are asterisks or empty — positional layout
+  if (lc.length === 5 && (lc[2] === '*' || lc[2] === '') && (lc[3] === '*' || lc[3] === ''))
+    return { bank: 'wellsfargo', label: 'Wells Fargo', signConvention: 'negative-expense', amtMode: 'single', catMap: null, positional: true };
+
+  return null;
+}
 
 // ── Merchant database ─────────────────────────────────────────────────────────
 //

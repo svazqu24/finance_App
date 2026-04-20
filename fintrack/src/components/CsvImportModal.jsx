@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../AppContext';
 import {
-  parseCSV, detectColumns, isAutoDetectComplete,
+  parseCSV, detectColumns, detectBank, isAutoDetectComplete,
   buildRows, computeAmount, parseAmount,
-  cleanDescription, CHASE_CC_CATEGORY_MAP,
+  cleanDescription,
 } from '../utils/csvParser';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -90,44 +90,32 @@ function SummaryRow({ icon, label, value, highlight }) {
 
 // ── Account detection ─────────────────────────────────────────────────────────
 
-/** Extract account label purely from filename, without needing the format. */
-function detectAccountFromFile(filename) {
-  if (!filename) return null;
-  const lower = filename.toLowerCase().replace(/\.(csv)$/i, '');
+/** Extract account label from filename + detected bank. */
+function detectAccountFromFile(filename, bankInfo) {
+  if (!filename) return bankInfo?.label ?? null;
+  const lower = filename.toLowerCase().replace(/\.csv$/i, '');
   const digits4 = lower.match(/\b(\d{4})\b/);
   const last4 = digits4 ? digits4[1] : null;
-  if (lower.includes('chase')) {
-    const isCredit = lower.includes('credit') || lower.includes(' cc') || lower.includes('card');
+  const bank = bankInfo?.bank;
+
+  if (bank === 'chase' || (!bank && lower.includes('chase'))) {
+    const isCredit = bank === 'chase-cc' || lower.includes('credit') || lower.includes(' cc') || lower.includes('card');
     if (isCredit) return last4 ? `Chase Credit ···${last4}` : 'Chase Credit';
     return last4 ? `Chase ···${last4}` : 'Chase Checking';
   }
+  if (bank === 'chase-cc') return last4 ? `Chase Credit ···${last4}` : 'Chase Credit';
+  if (bank === 'bankofamerica' || lower.includes('boa') || lower.includes('bank of america'))
+    return last4 ? `Bank of America ···${last4}` : 'Bank of America';
+  if (bank === 'wellsfargo' || lower.includes('wells'))
+    return last4 ? `Wells Fargo ···${last4}` : 'Wells Fargo';
+  if (bank === 'citi' || lower.includes('citi'))
+    return last4 ? `Citi ···${last4}` : 'Citi';
+  if (bank === 'capitalone' || lower.includes('capital one'))
+    return last4 ? `Capital One ···${last4}` : 'Capital One';
+  if (bank === 'amex' || lower.includes('amex') || lower.includes('american express'))
+    return last4 ? `Amex ···${last4}` : 'American Express';
+  if (bankInfo?.label) return last4 ? `${bankInfo.label} ···${last4}` : bankInfo.label;
   return null;
-}
-
-// ── Chase format detection ────────────────────────────────────────────────────
-
-function isChaseFormat(hdrs) {
-  const lc = new Set(hdrs.map((h) => h.toLowerCase().trim()));
-  return (
-    lc.has('details') &&
-    lc.has('posting date') &&
-    lc.has('description') &&
-    lc.has('amount') &&
-    lc.has('type') &&
-    lc.has('balance')
-  );
-}
-
-function isChaseCCFormat(hdrs) {
-  const lc = new Set(hdrs.map((h) => h.toLowerCase().trim()));
-  return (
-    lc.has('transaction date') &&
-    lc.has('post date') &&
-    lc.has('description') &&
-    lc.has('category') &&
-    lc.has('type') &&
-    lc.has('amount')
-  );
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -147,7 +135,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
   const [submitting, setSubmitting] = useState(false);
   const [importProgress, setImportProgress] = useState(null); // { current, total } | null
   const [importSummary, setImportSummary]   = useState(null); // { count, skipped, cleaned, subs }
-  const [detectedFormat,  setDetectedFormat]  = useState(null); // 'chase' | 'chase-cc' | null
+  const [detectedBank,    setDetectedBank]    = useState(null); // bankInfo object | null
   const [detectedAccount, setDetectedAccount] = useState(null); // e.g. 'Chase ···1230'
   const [accountInfo, setAccountInfo] = useState(null); // { type, name, lastFour }
 
@@ -168,7 +156,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
       setImportSummary(null);
       setSubmitting(false);
       setImportProgress(null);
-      setDetectedFormat(null);
+      setDetectedBank(null);
       setDetectedAccount(null);
     }
   }, [open]);
@@ -210,20 +198,17 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
     }
     const hdrs = allRows[0];
     const data = allRows.slice(1);
-    const detected = detectColumns(hdrs);
+    const bankInfo = detectBank(hdrs);
+    const detected = detectColumns(hdrs, bankInfo);
     setHeaders(hdrs);
     setDataRows(data);
     setMapping(detected);
     setFileName(name || '');
-    const fmt = isChaseFormat(hdrs) ? 'chase' : isChaseCCFormat(hdrs) ? 'chase-cc' : null;
-    setDetectedFormat(fmt);
-    // Account label: filename detection first, then format-based fallback
-    const acctFromFile = detectAccountFromFile(name || '');
-    const acct = acctFromFile ?? (fmt === 'chase-cc' ? 'Chase Credit' : fmt === 'chase' ? 'Chase Checking' : null);
+    setDetectedBank(bankInfo);
+    const acct = detectAccountFromFile(name || '', bankInfo);
     setDetectedAccount(acct);
     if (isAutoDetectComplete(detected)) {
-      const catMap = fmt === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
-      const built = buildRows(data, detected, catMap, name || fileName);
+      const built = buildRows(data, detected, bankInfo?.catMap ?? null, name || fileName);
       if (built.rows.length === 0) {
         setParseError('Columns were detected but no valid rows could be parsed. Check that dates and amounts are in expected formats.');
         return;
@@ -261,8 +246,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
   }
 
   function applyMapping() {
-    const catMap = detectedFormat === 'chase-cc' ? CHASE_CC_CATEGORY_MAP : null;
-    const built = buildRows(dataRows, mapping, catMap, fileName);
+    const built = buildRows(dataRows, mapping, detectedBank?.catMap ?? null, fileName);
     if (built.rows.length === 0) {
       setParseError('No valid rows found with these column settings. Check your column assignments.');
       return;
@@ -365,14 +349,14 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
           {/* Step breadcrumb */}
           {step !== 'success' && (
             <div className="flex items-center gap-1.5 mt-2.5">
-              {(detectedFormat
+              {(detectedBank
                 ? ['upload', 'preview']
                 : ['upload', 'mapping', 'preview']
               ).map((s, i, arr) => {
                 const idx = arr.indexOf(step);
                 const done = i < idx;
                 const active = s === step;
-                const labels = detectedFormat
+                const labels = detectedBank
                   ? ['Upload', 'Preview']
                   : ['Upload', 'Map columns', 'Preview'];
                 return (
@@ -574,12 +558,19 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
                     <p className="text-[11px] text-gray-400">
                       {activeRows.length} of {rows.length} rows selected
                     </p>
-                    {detectedFormat && (
+                    {detectedBank ? (
                       <span
                         className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                         style={{ background: '#C8EBB4', color: '#27500A' }}
                       >
-                        {detectedFormat === 'chase-cc' ? 'Chase credit card detected' : 'Chase format detected'}
+                        {detectedBank.label} detected
+                      </span>
+                    ) : (
+                      <span
+                        className="text-[10px] font-medium px-2 py-0.5 rounded-full"
+                        style={{ background: '#fef3c7', color: '#92400e' }}
+                      >
+                        Unknown format — review carefully
                       </span>
                     )}
                     {detectedAccount && (
@@ -590,7 +581,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
                       </span>
                     )}
                   </div>
-                  {!detectedFormat && (
+                  {!detectedBank && (
                     <button
                       onClick={() => setStep('mapping')}
                       className="text-[11px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 underline transition-colors flex-shrink-0"
@@ -608,9 +599,9 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
                      mapping.debitCol, mapping.creditCol, mapping.catCol]
                       .filter((i) => i >= 0)
                   );
-                  // Chase CC: only show the 4 primary columns (Date, Description, Amount, Category)
-                  // Chase checking: show all extra raw columns (Type, Balance, etc.)
-                  const extraCols = detectedFormat === 'chase-cc'
+                  // Chase CC / banks with catMap: hide extra columns in preview
+                  // Others: show all extra raw columns (Type, Balance, etc.)
+                  const extraCols = detectedBank?.catMap != null
                     ? []
                     : headers
                         .map((h, i) => ({ h, i }))
@@ -786,7 +777,7 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
 
           {step === 'preview' && (
             <>
-              <button onClick={() => setStep(detectedFormat ? 'upload' : 'mapping')}
+              <button onClick={() => setStep(detectedBank ? 'upload' : 'mapping')}
                 className="flex-1 border border-gray-200 dark:border-nero-border text-sm font-medium py-2.5 rounded-lg text-gray-700 dark:text-gray-300 transition-colors">
                 ← Back
               </button>
