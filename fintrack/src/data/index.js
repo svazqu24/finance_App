@@ -44,18 +44,19 @@ export const txns = [
 ];
 
 export const catSty = {
-  Dining:        { bg: '#2a1a10', fg: '#f97316' },
-  Groceries:     { bg: '#1a2a1a', fg: '#4ade80' },
-  Income:        { bg: '#1a2a1a', fg: '#27AE60' },
-  Shopping:      { bg: '#1a1a2a', fg: '#818cf8' },
-  Subscriptions: { bg: '#1a1a2a', fg: '#a78bfa' },
-  Transport:     { bg: '#2a2a1a', fg: '#facc15' },
-  Health:        { bg: '#2a1a1a', fg: '#f87171' },
+  Dining:        { bg: '#1a0a00', fg: '#f97316' },
+  Shopping:      { bg: '#1a001a', fg: '#c084fc' },
+  Groceries:     { bg: '#001a0a', fg: '#34d399' },
+  Income:        { bg: '#001a0a', fg: '#34d399' },
+  Transport:     { bg: '#001020', fg: '#60a5fa' },
+  Health:        { bg: '#1a001a', fg: '#f472b6' },
+  Subscriptions: { bg: '#0a001a', fg: '#818cf8' },
+  Utilities:     { bg: '#001a10', fg: '#2dd4bf' },
+  Transfer:      { bg: '#1a1a1a', fg: '#6b7280' },
+  Other:         { bg: '#0f0f0f', fg: '#9ca3af' },
   Housing:       { bg: '#1a1f2a', fg: '#60a5fa' },
-  Utilities:     { bg: '#1f1f1f', fg: '#94a3b8' },
   Travel:        { bg: '#1a2a2a', fg: '#2dd4bf' },
-  Transfer:      { bg: '#1f1f1f', fg: '#888888' },
-  Insurance:     { bg: '#1a1f2a', fg: '#93c5fd' }, // blue family like Housing
+  Insurance:     { bg: '#1a1f2a', fg: '#93c5fd' },
 };
 
 /** Chart color for each spending category */

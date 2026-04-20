@@ -284,11 +284,11 @@ export default function Overview() {
   return (
     <>
       {/* Net Worth Section */}
-      <div className="mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface p-4 transition-colors">
+      <div className="mb-6 rounded-xl p-4 transition-colors" style={{ background: '#111827', border: '1px solid #1f2937' }}>
         <div className="flex justify-between items-start mb-4">
           <div>
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Net Worth</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white tabular-nums">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Net Worth</p>
+            <p className="text-2xl font-bold text-gray-100 tabular-nums">
               ${currentNetWorth.toLocaleString()}
             </p>
             {monthOverMonthChange !== 0 && (

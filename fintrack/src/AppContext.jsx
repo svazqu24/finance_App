@@ -400,8 +400,11 @@ export function AppProvider({ children }) {
   }
 
   // ── Auth actions ─────────────────────────────────────────────────────────────
-  async function signIn(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  async function signIn(email, password, { persistSession = false } = {}) {
+    const { error } = await supabase.auth.signInWithPassword(
+      { email, password },
+      { options: { persistSession } }
+    );
     if (error) throw error;
   }
 

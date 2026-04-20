@@ -41,7 +41,13 @@ export default function Login() {
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [confirm,      setConfirm]      = useState('');
-  const [rememberMe,   setRememberMe]   = useState(true);
+  const [rememberMe,   setRememberMe]   = useState(() => {
+    try {
+      return localStorage.getItem('rememberMe') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [error,        setError]        = useState('');
   const [fieldError,   setFieldError]   = useState('');
@@ -70,7 +76,7 @@ export default function Login() {
     setBusy(true);
     try {
       if (mode === 'login') {
-        await signIn(email, password);
+        await signIn(email, password, { persistSession: rememberMe });
         navigate('/overview', { replace: true });
       } else {
         if (password.length < 6)    { setFieldError('Password must be at least 6 characters'); return; }
@@ -295,7 +301,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   className={`${inputCls} ${fieldError.includes('Password') ? 'border-red-500' : ''}`}
                   style={inputSty}
-                  placeholder="••••••••"
+                  placeholder={mode === 'login' ? 'Enter your password' : 'Create a password'}
                 />
                 <button
                   type="button"
@@ -319,7 +325,7 @@ export default function Login() {
                   onChange={(e) => setConfirm(e.target.value)}
                   className={`${inputCls} ${fieldError.includes('match') ? 'border-red-500' : ''}`}
                   style={inputSty}
-                  placeholder="Confirm password"
+                  placeholder="Confirm your password"
                 />
                 <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: '#6b7280' }}>
                   <div className="h-2 w-2 rounded-full" style={{ background: strength.color }} />
@@ -333,7 +339,11 @@ export default function Login() {
                 <input
                   type="checkbox"
                   checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRememberMe(checked);
+                    try { localStorage.setItem('rememberMe', String(checked)); } catch {}
+                  }}
                   className="h-4 w-4 rounded focus:ring-0"
                   style={{ accentColor: '#27AE60' }}
                 />

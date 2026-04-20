@@ -59,7 +59,7 @@ function Sidebar({ side }) {
   const { darkMode, toggleDark, signOut, user } = useApp();
   return (
     <aside
-      className="flex-shrink-0 flex flex-col bg-white dark:bg-nero-surface border-gray-200 dark:border-nero-border h-screen sticky top-0 overflow-y-auto"
+      className="flex-shrink-0 flex flex-col bg-[#0a0e1a] border-[#1f2937] h-screen sticky top-0 overflow-y-auto"
       style={{
         width: 220,
         borderRight: side === 'left'  ? '1px solid' : undefined,
@@ -82,15 +82,15 @@ function Sidebar({ side }) {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${
                 isActive
-                  ? 'text-white'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-nero-bg'
+                  ? 'text-[#27AE60]'
+                  : 'text-[#6b7280] hover:bg-[#1f2937]'
               }`
             }
-            style={({ isActive }) => isActive ? { background: '#27AE60' } : {}}
+            style={({ isActive }) => isActive ? { background: '#0d1f14' } : {}}
           >
             {({ isActive }) => (
               <>
-                <span className="flex-shrink-0" style={isActive ? { color: 'white' } : {}}>
+                <span className="flex-shrink-0" style={isActive ? { color: '#27AE60' } : {}}>
                   {item.icon}
                 </span>
                 {item.label}

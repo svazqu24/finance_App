@@ -108,7 +108,7 @@ function PlusIcon() {
 function Skeleton({ w = '100%', h = 16, rounded = 6 }) {
   return (
     <div
-      className="animate-pulse bg-gray-200 dark:bg-nero-border"
+      className="animate-pulse bg-gray-200 dark:bg-[#1f2937]"
       style={{ width: w, height: h, borderRadius: rounded }}
     />
   );
@@ -142,7 +142,7 @@ function IndexCard({ quote, loading }) {
   const validPrice = price != null && !isNaN(price);
 
   return (
-    <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
+    <div className="rounded-xl px-3.5 py-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
       <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1">{name}</p>
       {loading ? (
         <div className="flex flex-col gap-1.5 mt-1">
@@ -172,7 +172,7 @@ function WatchlistRow({ item, onRemove }) {
 
   return (
     <div
-      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors"
+      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-[#1f2937] transition-colors"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -233,7 +233,7 @@ function HoldingRow({ holding, onRemove }) {
 
   return (
     <div
-      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors"
+      className="flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-[#1f2937] transition-colors"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -328,7 +328,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4 mb-3">
+    <form onSubmit={handleSubmit} className="rounded-xl p-4 mb-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
       <p className="text-[13px] font-medium text-gray-900 dark:text-white mb-3">Add holding</p>
       <div className="relative mb-2.5">
         <input
@@ -336,17 +336,17 @@ function AddHoldingForm({ onAdd, onCancel }) {
           placeholder="Ticker symbol (e.g. AAPL)"
           value={query}
           onChange={handleSymbolChange}
-          className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-bg text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
+          className="w-full text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
           autoFocus
         />
         {results.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-nero-surface border border-gray-200 dark:border-nero-border rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-48 overflow-y-auto">
             {results.map((r) => (
               <button
                 key={r.symbol}
                 type="button"
                 onClick={() => pickResult(r)}
-                className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors flex items-center gap-2"
+                className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-[#0a0e1a] transition-colors flex items-center gap-2"
               >
                 <span className="text-xs font-semibold text-gray-900 dark:text-white w-14 flex-shrink-0">{r.symbol}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{r.name}</span>
@@ -362,7 +362,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
           value={shares}
           onChange={(e) => setShares(e.target.value)}
           min="0" step="any"
-          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-bg text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
+          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
         />
         <input
           type="number"
@@ -370,7 +370,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
           value={avgPrice}
           onChange={(e) => setAvgPrice(e.target.value)}
           min="0" step="any"
-          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-bg text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
+          className="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
         />
       </div>
       <div className="flex gap-2">
@@ -385,7 +385,7 @@ function AddHoldingForm({ onAdd, onCancel }) {
         <button
           type="button"
           onClick={onCancel}
-          className="text-sm font-medium px-4 py-2 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300 transition-colors"
+          className="text-sm font-medium px-4 py-2 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 transition-colors"
         >
           Cancel
         </button>
@@ -633,7 +633,7 @@ export default function Portfolio() {
   return (
     <>
       {/* ── Net Worth History ────────────────────────────────────────────── */}
-      <div className="mb-6 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface p-4 transition-colors">
+      <div className="mb-6 rounded-xl p-4" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
         <div className="flex justify-between items-start mb-4">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Net Worth History</p>
@@ -670,7 +670,7 @@ export default function Portfolio() {
             <span>Other Assets:</span>
             <span>${assetBreakdown.otherAssets.toLocaleString()}</span>
           </div>
-          <div className="flex justify-between border-t border-gray-200 dark:border-nero-border pt-1 mt-1">
+          <div className="flex justify-between border-t border-gray-200 dark:border-[#1f2937] pt-1 mt-1 text-gray-500 dark:text-gray-400">
             <span>Liabilities:</span>
             <span className="text-red-600">-${assetBreakdown.liabilities.toLocaleString()}</span>
           </div>
@@ -726,7 +726,7 @@ export default function Portfolio() {
           placeholder="Search stocks to add…"
           value={watchSearch}
           onChange={handleWatchSearch}
-          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
+          className="w-full pl-8 pr-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-[#1f2937] bg-white dark:bg-[#0a0e1a] text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-[#27AE60] transition-colors"
         />
         {watchSearch && (
           <button
@@ -740,12 +740,12 @@ export default function Portfolio() {
         )}
         {/* Search results dropdown */}
         {watchResults.length > 0 && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-nero-surface border border-gray-200 dark:border-nero-border rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
             {watchResults.map((r) => (
               <button
                 key={r.symbol}
                 onClick={() => addToWatchlist(r.symbol, r.name)}
-                className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-nero-bg transition-colors flex items-center gap-2.5"
+                className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-[#0a0e1a] transition-colors flex items-center gap-2.5"
               >
                 <span className="text-xs font-bold text-gray-900 dark:text-white w-14 flex-shrink-0">{r.symbol}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{r.name}</span>
@@ -756,7 +756,7 @@ export default function Portfolio() {
           </div>
         )}
         {watchSearching && (
-          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-nero-surface border border-gray-200 dark:border-nero-border rounded-xl px-3 py-2.5 shadow-xl">
+          <div className="absolute top-full left-0 right-0 z-30 mt-1 bg-white dark:bg-[#111827] border border-gray-200 dark:border-[#1f2937] rounded-xl px-3 py-2.5 shadow-xl">
             <p className="text-xs text-gray-400">Searching…</p>
           </div>
         )}
@@ -780,7 +780,7 @@ export default function Portfolio() {
 
       {/* ── Section 3: Exchange rates ─────────────────────────────────────── */}
       <SectionHead title="Exchange rates" />
-      <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl overflow-hidden mb-5 transition-colors">
+      <div className="rounded-xl overflow-hidden mb-5" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
         {marketError ? (
           <div className="px-4 py-3"><UnavailableNote rateLimited={marketError === 'rate_limited'} /></div>
         ) : marketLoading ? (
@@ -796,7 +796,7 @@ export default function Portfolio() {
             return (
               <div
                 key={symbol}
-                className={`flex items-center justify-between px-4 py-2.5 ${!isLast ? 'border-b border-gray-200 dark:border-nero-border' : ''}`}
+                className={`flex items-center justify-between px-4 py-2.5 ${!isLast ? 'border-b border-gray-200 dark:border-[#1f2937]' : ''}`}
               >
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                   {meta.base}<span className="text-gray-400 font-normal">/{meta.quote}</span>
@@ -826,15 +826,15 @@ export default function Portfolio() {
       {/* Portfolio summary */}
       {holdings.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
+          <div className="rounded-xl px-3.5 py-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
             <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1">Total value</p>
             <p className="text-base font-semibold tabular-nums text-gray-900 dark:text-white">${fmt(totalPortfolioValue)}</p>
           </div>
-          <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
+          <div className="rounded-xl px-3.5 py-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
             <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1">Cost basis</p>
             <p className="text-base font-semibold tabular-nums text-gray-900 dark:text-white">${fmt(totalCostBasis)}</p>
           </div>
-          <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-3.5 py-3 transition-colors">
+          <div className="rounded-xl px-3.5 py-3" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
             <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-1">Gain / loss</p>
             <p className="text-base font-semibold tabular-nums" style={{ color: clr(totalGainLoss) }}>
               {totalGainLoss >= 0 ? '+' : '-'}${fmt(Math.abs(totalGainLoss))}

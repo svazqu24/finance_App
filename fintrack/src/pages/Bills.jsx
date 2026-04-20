@@ -8,6 +8,23 @@ import { fmtDollars } from '../utils';
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const SHORT_DAYS  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const CAT_AVATAR = {
+  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽' },
+  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
+  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
+  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
+  Health:        { bg: '#1a0010', color: '#f472b6', emoji: '💊' },
+  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
+  Housing:       { bg: '#001020', color: '#60a5fa', emoji: '🏠' },
+  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
+  Insurance:     { bg: '#1a1000', color: '#fbbf24', emoji: '🛡' },
+  Travel:        { bg: '#001020', color: '#38bdf8', emoji: '✈' },
+  Entertainment: { bg: '#1a0a00', color: '#fb923c', emoji: '🎬' },
+  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
+  Transfer:      { bg: '#1a1a1a', color: '#6b7280', emoji: '🔄' },
+  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
+};
+
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a bill in a given view month */
 function billStatus(bill, viewYear, viewMonth) {
   const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
@@ -28,10 +45,10 @@ function billStatus(bill, viewYear, viewMonth) {
 }
 
 const STATUS_STYLES = {
-  paid:     { dot: '#22C55E', label: 'Paid',    bg: '#DCFCE7', fg: '#166534' },
-  soon:     { dot: '#F59E0B', label: 'Due soon', bg: '#FEF3C7', fg: '#92400E' },
-  overdue:  { dot: '#EF4444', label: 'Overdue',  bg: '#FEE2E2', fg: '#991B1B' },
-  upcoming: { dot: '#94A3B8', label: 'Upcoming', bg: '#F1F5F9', fg: '#475569' },
+  paid:     { dot: '#34d399', label: 'Paid',     bg: 'rgba(52,211,153,0.12)',  fg: '#34d399' },
+  soon:     { dot: '#fbbf24', label: 'Due soon', bg: 'rgba(251,191,36,0.12)',  fg: '#fbbf24' },
+  overdue:  { dot: '#f87171', label: 'Overdue',  bg: 'rgba(248,113,113,0.12)', fg: '#f87171' },
+  upcoming: { dot: '#6b7280', label: 'Upcoming', bg: 'rgba(107,114,128,0.10)', fg: '#9ca3af' },
 };
 
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a credit card in current month */
@@ -248,7 +265,8 @@ export default function Bills() {
               return (
                 <div
                   key={card.id}
-                  className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4 border border-transparent hover:border-gray-200 dark:hover:border-nero-border transition-colors cursor-pointer"
+                  className="rounded-xl p-4 cursor-pointer transition-all hover:border-[#374151]"
+                  style={{ background: '#111827', border: '0.5px solid #1f2937' }}
                   onClick={() => { setEditCreditCard(card); setCreditCardModalOpen(true); }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -294,7 +312,7 @@ export default function Bills() {
                     </p>
                     {card.credit_limit && (
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 dark:bg-nero-border rounded-full h-2">
+                        <div className="flex-1 rounded-full h-2" style={{ background: '#1f2937' }}>
                           <div
                             className="h-2 rounded-full transition-all"
                             style={{
@@ -316,7 +334,8 @@ export default function Bills() {
                         e.stopPropagation();
                         markCreditCardPaid(card.id, monthStr);
                       }}
-                      className="w-full text-xs font-medium py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors"
+                      className="w-full text-xs font-medium py-2 rounded-lg text-white transition-opacity hover:opacity-90"
+                      style={{ background: '#27AE60' }}
                     >
                       Mark as paid
                     </button>
@@ -353,9 +372,9 @@ export default function Bills() {
       ) : (
         <>
           {/* Calendar */}
-          <div className="rounded-xl border border-gray-100 dark:border-nero-border overflow-hidden mb-5">
+          <div className="rounded-xl border border-gray-100 dark:border-[#1f2937] overflow-hidden mb-5">
             {/* Day headers */}
-            <div className="grid grid-cols-7 border-b border-gray-100 dark:border-nero-border">
+            <div className="grid grid-cols-7 border-b border-gray-100 dark:border-[#1f2937]">
               {SHORT_DAYS.map((d) => (
                 <div key={d} className="py-2 text-center text-[10px] font-medium text-gray-400 uppercase tracking-wide">
                   {d}
@@ -363,9 +382,9 @@ export default function Bills() {
               ))}
             </div>
             {/* Cells */}
-            <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-nero-border">
+            <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-[#1f2937]">
               {cells.map((day, i) => (
-                <div key={i} className="bg-white dark:bg-nero-surface">
+                <div key={i} className="dark:bg-[#111827]">
                   <CalendarCell
                     day={day}
                     bills={day ? (byDay[day] || []) : []}
@@ -390,17 +409,16 @@ export default function Bills() {
                 return (
                   <div
                     key={bill.id}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#f5f5f3] dark:bg-nero-surface transition-colors border border-transparent dark:border-nero-border"
+                    className="flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors"
+                    style={{ background: '#111827', border: '0.5px solid #1f2937' }}
                   >
                     <div className="flex items-center gap-3">
                       {/* Category avatar */}
                       <div
-                        className="w-8 h-8 flex items-center justify-center flex-shrink-0"
-                        style={{ background: sty.bg, borderRadius: '10px 3px 10px 3px' }}
+                        className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-base"
+                        style={{ background: (CAT_AVATAR[bill.cat] ?? CAT_AVATAR.Other).bg, borderRadius: '10px 3px 10px 3px' }}
                       >
-                        <span className="text-[11px] font-medium" style={{ color: sty.fg }}>
-                          {bill.cat.slice(0, 2).toUpperCase()}
-                        </span>
+                        {(CAT_AVATAR[bill.cat] ?? CAT_AVATAR.Other).emoji}
                       </div>
                       <div>
                         <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">

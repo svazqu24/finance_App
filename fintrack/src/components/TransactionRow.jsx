@@ -7,6 +7,23 @@ const ALL_CATS = [
   'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance', 'Income', 'Transfer',
 ];
 
+const CAT_AVATAR = {
+  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽' },
+  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
+  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
+  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
+  Health:        { bg: '#1a0010', color: '#f472b6', emoji: '💊' },
+  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
+  Housing:       { bg: '#001020', color: '#60a5fa', emoji: '🏠' },
+  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
+  Insurance:     { bg: '#1a1000', color: '#fbbf24', emoji: '🛡' },
+  Travel:        { bg: '#001020', color: '#38bdf8', emoji: '✈' },
+  Entertainment: { bg: '#1a0a00', color: '#fb923c', emoji: '🎬' },
+  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
+  Transfer:      { bg: '#1a1a1a', color: '#6b7280', emoji: '🔄' },
+  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
+};
+
 function TrashIcon() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -37,6 +54,7 @@ export default function TransactionRow({ txn }) {
   const nameInputRef = useRef(null);
 
   const s   = getCategorySty(txn.cat);
+  const av  = CAT_AVATAR[txn.cat] ?? CAT_AVATAR.Other;
   const pos = txn.amt > 0;
 
   // Close dropdown on outside click (desktop only — mobile uses backdrop)
@@ -123,7 +141,7 @@ export default function TransactionRow({ txn }) {
   return (
     <>
       <div
-        className="relative flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-nero-border transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-nero-surface/50 rounded-sm"
+        className="relative flex items-center gap-2.5 py-2.5 border-b border-gray-200 dark:border-[#1f2937] transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-[#111827] rounded-sm"
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -144,14 +162,12 @@ export default function TransactionRow({ txn }) {
         {/* ── Category badge + dropdown wrapper ── */}
         <div ref={catDropRef} className="relative flex-shrink-0" data-no-modal="true">
           <button
-            className="w-9 h-9 flex items-center justify-center hover:opacity-80 transition-opacity"
-            style={{ background: s.bg, borderRadius: '10px 3px 10px 3px' }}
+            className="w-9 h-9 flex items-center justify-center hover:opacity-80 transition-opacity text-base"
+            style={{ background: av.bg, borderRadius: '10px 3px 10px 3px' }}
             onClick={handleBadgeClick}
             aria-label={`Change category (currently ${txn.cat})`}
           >
-            <span className="text-[11px] font-medium" style={{ color: s.fg }}>
-              {txn.cat.slice(0, 2).toUpperCase()}
-            </span>
+            {av.emoji}
           </button>
 
           {/* Desktop dropdown */}

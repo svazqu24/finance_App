@@ -34,8 +34,8 @@ export default function Goals() {
 
   return (
     <>
-      <div className="mb-5 rounded-3xl border border-gray-200/80 dark:border-nero-border bg-white/80 dark:bg-nero-surface p-4 text-sm text-gray-600 dark:text-gray-300">
-        <span className="font-semibold text-gray-900 dark:text-white">Total saved: {fmtDollars(totalSaved)}</span>
+      <div className="mb-5 rounded-2xl p-4 text-sm" style={{ background: '#111827', border: '0.5px solid #1f2937', color: '#9ca3af' }}>
+        <span className="font-semibold" style={{ color: '#f9fafb' }}>Total saved: {fmtDollars(totalSaved)}</span>
         <span className="mx-2">·</span>
         <span>{`across ${goalsData.length} goal${goalsData.length !== 1 ? 's' : ''}`}</span>
         <span className="mx-2">·</span>

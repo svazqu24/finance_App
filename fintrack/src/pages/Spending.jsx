@@ -44,14 +44,31 @@ function ChevRight() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-function MerchantAvatar({ name, cat }) {
-  const bg = catClr[cat] ?? CAT_CLR_DEF;
+const CAT_AVATAR = {
+  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽' },
+  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
+  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
+  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
+  Health:        { bg: '#1a0010', color: '#f472b6', emoji: '💊' },
+  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
+  Housing:       { bg: '#001020', color: '#60a5fa', emoji: '🏠' },
+  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
+  Insurance:     { bg: '#1a1000', color: '#fbbf24', emoji: '🛡' },
+  Travel:        { bg: '#001020', color: '#38bdf8', emoji: '✈' },
+  Entertainment: { bg: '#1a0a00', color: '#fb923c', emoji: '🎬' },
+  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
+  Transfer:      { bg: '#1a1a1a', color: '#6b7280', emoji: '🔄' },
+  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
+};
+
+function MerchantAvatar({ cat }) {
+  const av = CAT_AVATAR[cat] ?? CAT_AVATAR.Other;
   return (
     <div
-      className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-[11px] font-bold text-white"
-      style={{ background: bg, borderRadius: '10px 3px 10px 3px' }}
+      className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-base"
+      style={{ background: av.bg, borderRadius: '10px 3px 10px 3px' }}
     >
-      {(name || '?').slice(0, 2).toUpperCase()}
+      {av.emoji}
     </div>
   );
 }
@@ -72,18 +89,20 @@ function SortPill({ label, active, onClick }) {
 }
 
 function InsightCard({ text, type }) {
-  const cls =
-    type === 'good'    ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40' :
-    type === 'warn'    ? 'bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30' :
-                         'bg-[#f5f5f3] dark:bg-nero-surface border border-gray-100 dark:border-nero-border';
-  const dot =
-    type === 'good' ? '#22c55e' :
-    type === 'warn' ? '#f87171' :
-    '#27AE60';
+  const accent =
+    type === 'good'    ? '#27AE60' :
+    type === 'warn'    ? '#f87171' :
+                         '#60a5fa';
   return (
-    <div className={`rounded-xl px-4 py-3 flex gap-3 items-start transition-colors ${cls}`}>
-      <div className="mt-1 w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
-      <p className="text-sm leading-relaxed text-gray-900 dark:text-white">{text}</p>
+    <div
+      className="rounded-xl px-4 py-3 flex gap-3 items-start"
+      style={{
+        background: '#111827',
+        border: `0.5px solid #1f2937`,
+        borderLeft: `3px solid ${accent}`,
+      }}
+    >
+      <p className="text-[13px] leading-relaxed" style={{ color: '#9ca3af' }}>{text}</p>
     </div>
   );
 }
@@ -295,7 +314,7 @@ export default function Spending() {
             + Add transaction
           </button>
           <button onClick={openCsvModal}
-            className="text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-nero-border text-gray-600 dark:text-gray-300">
+            className="text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300">
             Import CSV
           </button>
         </div>
@@ -329,7 +348,7 @@ export default function Spending() {
       </div>
 
       {/* ── 2. Summary row ─────────────────────────────────────────────── */}
-      <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl p-4 mb-5 transition-colors">
+      <div className="rounded-xl p-4 mb-5" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
             <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-0.5">
@@ -405,7 +424,7 @@ export default function Spending() {
             categoryRows.map((r) => (
               <div
                 key={r.cat}
-                className="flex items-center gap-2 py-[5px] border-b border-gray-100 dark:border-nero-border transition-colors last:border-0"
+                className="flex items-center gap-2 py-[5px] border-b border-gray-100 dark:border-[#1f2937] transition-colors last:border-0"
               >
                 <span
                   className="w-2 h-2 rounded-[2px] flex-shrink-0"
@@ -459,9 +478,9 @@ export default function Spending() {
                     duration: 2000,
                   })
                 }
-                className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-nero-border last:border-0 transition-colors text-left"
+                className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-[#1f2937] last:border-0 transition-colors text-left"
               >
-                <MerchantAvatar name={m.name} cat={m.cat} />
+                <MerchantAvatar cat={m.cat} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
                     {m.name}
@@ -491,7 +510,7 @@ export default function Spending() {
               return (
                 <div
                   key={t.id ?? i}
-                  className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-nero-border last:border-0"
+                  className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-[#1f2937] last:border-0"
                 >
                   <div
                     className="w-1 h-8 rounded-full flex-shrink-0"

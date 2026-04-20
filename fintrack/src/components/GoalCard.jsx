@@ -55,7 +55,7 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
   })();
 
   return (
-    <div className="bg-[#f5f5f3] dark:bg-nero-surface rounded-xl px-4 py-3.5 mb-2.5 transition-colors">
+    <div className="rounded-xl px-4 py-3.5 mb-2.5" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
       <div className="flex justify-between items-start mb-2.5">
         <div className="flex gap-2.5 items-center">
           <div
@@ -87,7 +87,7 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
       </div>
 
       {milestone && (
-        <div className="rounded-full px-3 py-2 mb-3 text-sm font-medium text-emerald-800 bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-200">
+        <div className="rounded-full px-3 py-2 mb-3 text-sm font-medium" style={{ background: 'rgba(39,174,96,0.12)', color: '#34d399' }}>
           {milestone}
         </div>
       )}
@@ -97,7 +97,8 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
           <button
             type="button"
             onClick={onContribute}
-            className="text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors rounded-full px-3 py-2"
+            className="text-sm font-semibold text-white rounded-full px-3 py-2 transition-opacity hover:opacity-90"
+            style={{ background: '#27AE60' }}
           >
             + Contribute
           </button>
@@ -107,14 +108,14 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
         {contributions.length > 0 && (
           <div className="space-y-2">
             {visibleContributions.map((entry) => (
-              <div key={entry.id} className="group rounded-2xl border border-gray-200 dark:border-nero-border bg-white/80 dark:bg-nero-bg p-3 relative">
+              <div key={entry.id} className="group rounded-xl p-3 relative" style={{ background: '#0a0e1a', border: '0.5px solid #1f2937' }}>
                 <div className="flex justify-between gap-3 items-start">
                   <div>
                     <p className="text-xs text-gray-500">{new Date(entry.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                     {entry.note && <p className="mt-1 text-xs text-gray-400">{entry.note}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">+${entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    <span className="text-xs font-semibold" style={{ color: '#34d399' }}>+${entry.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     {onDeleteContribution && (
                       <button
                         type="button"
@@ -138,7 +139,8 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
               <button
                 type="button"
                 onClick={() => setShowAll((prev) => !prev)}
-                className="text-xs font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
+                className="text-xs font-medium transition-colors"
+                style={{ color: '#27AE60' }}
               >
                 {showAll ? 'Show less' : `View all ${contributions.length} contribution${contributions.length === 1 ? '' : 's'}`}
               </button>
@@ -146,7 +148,7 @@ export default function GoalCard({ g, contributions = [], onContribute, onDelete
           </div>
         )}
       </div>
-      <div className="h-[7px] bg-gray-200 dark:bg-nero-border rounded overflow-hidden mb-1.5 transition-colors">
+      <div className="h-[7px] rounded overflow-hidden mb-1.5" style={{ background: '#1f2937' }}>
         <div className="h-full rounded" style={{ width: `${pct}%`, background: g.clr }} />
       </div>
       <div className="flex flex-col gap-1">

@@ -137,7 +137,7 @@ export default function Transactions() {
             placeholder="Search by name, category, or amount…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors"
+            className="w-full pl-8 pr-8 py-2 text-sm rounded-lg border bg-[#111827] border-[#1f2937] text-gray-100 placeholder:text-gray-500 outline-none focus:border-[#27AE60] transition-colors"
           />
           {search && (
             <button
@@ -160,7 +160,7 @@ export default function Transactions() {
             setTxnDateRange(e.target.value);
             if (e.target.value !== 'custom') { setTxnCustomFrom(''); setTxnCustomTo(''); }
           }}
-          className="text-xs px-2.5 py-2 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-700 dark:text-gray-300 outline-none focus:border-gray-400 dark:focus:border-nero-green transition-colors flex-shrink-0"
+          className="text-xs px-2.5 py-2 rounded-lg border bg-[#111827] border-[#1f2937] text-gray-300 outline-none focus:border-[#27AE60] transition-colors flex-shrink-0"
         >
           {DATE_RANGE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -177,7 +177,7 @@ export default function Transactions() {
               type="date"
               value={txnCustomFrom}
               onChange={(e) => setTxnCustomFrom(e.target.value)}
-              className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-900 dark:text-white outline-none focus:border-gray-400 transition-colors"
+              className="w-full text-sm px-2.5 py-1.5 rounded-lg border bg-[#111827] border-[#1f2937] text-gray-100 outline-none focus:border-[#27AE60] transition-colors"
             />
           </div>
           <div className="flex-1">
@@ -186,7 +186,7 @@ export default function Transactions() {
               type="date"
               value={txnCustomTo}
               onChange={(e) => setTxnCustomTo(e.target.value)}
-              className="w-full text-sm px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-nero-border bg-white dark:bg-nero-surface text-gray-900 dark:text-white outline-none focus:border-gray-400 transition-colors"
+              className="w-full text-sm px-2.5 py-1.5 rounded-lg border bg-[#111827] border-[#1f2937] text-gray-100 outline-none focus:border-[#27AE60] transition-colors"
             />
           </div>
         </div>
@@ -202,8 +202,8 @@ export default function Transactions() {
               onClick={() => setActiveFilter(cat)}
               className="text-xs px-3 py-1 rounded-[20px] cursor-pointer whitespace-nowrap border transition-colors"
               style={isActive
-                ? { background: '#27AE60', color: '#fff', borderColor: '#27AE60' }
-                : { background: 'transparent', color: '#888', borderColor: '#D1D5DB' }
+                ? { background: '#111827', color: '#27AE60', borderColor: '#27AE60' }
+                : { background: '#111827', color: '#6b7280', borderColor: '#1f2937' }
               }
             >
               {cat === 'all' ? 'All' : cat}
@@ -219,8 +219,8 @@ export default function Transactions() {
             onClick={() => setActiveAccount('all')}
             className="text-xs px-3 py-1 rounded-[20px] cursor-pointer whitespace-nowrap border transition-colors"
             style={activeAccount === 'all'
-              ? { background: '#60a5fa', color: '#fff', borderColor: '#60a5fa' }
-              : { background: 'transparent', color: '#888', borderColor: '#D1D5DB' }
+              ? { background: '#111827', color: '#27AE60', borderColor: '#27AE60' }
+              : { background: '#111827', color: '#6b7280', borderColor: '#1f2937' }
             }
           >
             All accounts
@@ -231,8 +231,8 @@ export default function Transactions() {
               onClick={() => setActiveAccount(acct)}
               className="text-xs px-3 py-1 rounded-[20px] cursor-pointer whitespace-nowrap border transition-colors"
               style={activeAccount === acct
-                ? { background: '#60a5fa', color: '#fff', borderColor: '#60a5fa' }
-                : { background: 'transparent', color: '#888', borderColor: '#D1D5DB' }
+                ? { background: '#111827', color: '#27AE60', borderColor: '#27AE60' }
+                : { background: '#111827', color: '#6b7280', borderColor: '#1f2937' }
               }
             >
               {acct}
