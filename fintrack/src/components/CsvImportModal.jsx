@@ -600,10 +600,6 @@ export default function CsvImportModal({ open, onClose, onViewTransactions, onCr
                   )}
                 </div>
 
-                <div className="mt-4 px-4 py-3 rounded-2xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-900 dark:text-yellow-100">
-                  Your merchant-cleanup rules have been updated. Re-import your CSVs so the latest merchant names are applied consistently.
-                </div>
-
                 {/* Preview table */}
                 {(() => {
                   // Columns already represented by the parsed fields
