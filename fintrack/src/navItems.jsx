@@ -19,13 +19,14 @@ export const NAV_ITEMS = [
   { path: 'bills',        label: 'Bills',        icon: <span className="text-base leading-none">📅</span> },
   { path: 'goals',        label: 'Goals',        icon: <span className="text-base leading-none">🎯</span> },
   { path: 'spending',     label: 'Spending',     icon: <span className="text-base leading-none">📈</span> },
+  { path: 'reports',      label: 'Reports',      icon: <span className="text-base leading-none">📋</span> },
   { path: 'accounts',     label: 'Accounts',     icon: <span className="text-base leading-none">🏦</span> },
   { path: 'portfolio',    label: 'Portfolio',    icon: <span className="text-base leading-none">📉</span> },
   { path: 'settings',     label: 'Settings',     icon: <span className="text-base leading-none">⚙️</span> },
 ];
 
 export const NAV_PRIMARY   = NAV_ITEMS.filter(i => ['overview','transactions','budget','bills'].includes(i.path));
-export const NAV_SECONDARY = NAV_ITEMS.filter(i => ['goals','spending','accounts','portfolio'].includes(i.path));
+export const NAV_SECONDARY = NAV_ITEMS.filter(i => ['goals','spending','reports','accounts','portfolio'].includes(i.path));
 export const NAV_SETTINGS  = NAV_ITEMS.find(i => i.path === 'settings');
 
 /** Gear icon for the header button (smaller) */

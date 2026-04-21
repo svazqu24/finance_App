@@ -11,6 +11,7 @@ import Verify2FA from './pages/Verify2FA';
 import Overview from './pages/Overview';
 import Transactions from './pages/Transactions';
 import Spending from './pages/Spending';
+import Reports from './pages/Reports';
 import Budget from './pages/Budget';
 import Bills from './pages/Bills';
 import Goals from './pages/Goals';
@@ -65,6 +66,7 @@ function AppRoutes() {
           <Route path="overview"     element={<Overview />} />
           <Route path="transactions" element={<Transactions />} />
           <Route path="spending"     element={<Spending />} />
+          <Route path="reports"      element={<Reports />} />
           <Route path="budget"       element={<Budget />} />
           <Route path="bills"        element={<Bills />} />
           <Route path="goals"        element={<Goals />} />
