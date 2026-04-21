@@ -146,7 +146,7 @@ export default function SankeyChart({ nodes, links, width = 1000, height = 420, 
       label.setAttribute('y', (node.y0 + node.y1) / 2);
       label.setAttribute('text-anchor', isIncome || isAggregator ? 'end' : 'start');
       label.setAttribute('dominant-baseline', 'middle');
-      label.setAttribute('fill', '#f9fafb');
+      label.setAttribute('fill', '#e5e7eb');
       label.setAttribute('font-size', '12');
       label.setAttribute('font-weight', '500');
       label.textContent = node.name;
@@ -162,7 +162,7 @@ export default function SankeyChart({ nodes, links, width = 1000, height = 420, 
       amountLabel.setAttribute('y', (node.y0 + node.y1) / 2);
       amountLabel.setAttribute('text-anchor', 'start');
       amountLabel.setAttribute('dominant-baseline', 'middle');
-      amountLabel.setAttribute('fill', color);
+      amountLabel.setAttribute('fill', '#9ca3af');
       amountLabel.setAttribute('font-size', '11');
       amountLabel.textContent = `$${node.value.toLocaleString('en-US', { maximumFractionDigits: 0 })} (${pct}%)`;
 
