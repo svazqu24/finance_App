@@ -53,13 +53,13 @@ function ChevRight() {
 function StatCard({ label, value, sub, color }) {
   return (
     <div className="rounded-[10px] px-4 py-3.5" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
-      <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4b5563', marginBottom: 4 }}>
+      <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af', marginBottom: 4 }}>
         {label}
       </p>
       <p style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.5px', color: color ?? '#f9fafb', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
         {value}
       </p>
-      {sub && <p style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{sub}</p>}
+      {sub && <p style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>{sub}</p>}
     </div>
   );
 }
@@ -211,10 +211,10 @@ function SankeyChart({ income, categories, budgetMap }) {
               {depth <= 1 && (
                 <text x={node.x1 + 8} y={midY}
                       textAnchor="start" dominantBaseline="middle"
-                      style={{ fontSize: 12, fill: '#d1d5db', fontWeight: depth === 0 ? 500 : 400, pointerEvents: 'none' }}>
+                      style={{ fontSize: 12, fill: '#e5e7eb', fontWeight: depth === 0 ? 500 : 400, pointerEvents: 'none' }}>
                   {node.name}
                   {depth === 0 && (
-                    <tspan style={{ fill: '#6b7280', fontWeight: 400 }}>{' · '}{fmt(node.value ?? 0)}</tspan>
+                    <tspan style={{ fill: '#9ca3af', fontWeight: 400 }}>{' · '}{fmt(node.value ?? 0)}</tspan>
                   )}
                 </text>
               )}
@@ -224,12 +224,12 @@ function SankeyChart({ income, categories, budgetMap }) {
                 <>
                   <text x={node.x0 - 8} y={midY}
                         textAnchor="end" dominantBaseline="middle"
-                        style={{ fontSize: 12, fill: isHov ? '#f9fafb' : '#d1d5db', fontWeight: 500, pointerEvents: 'none', transition: 'fill 0.12s' }}>
+                        style={{ fontSize: 12, fill: isHov ? '#f9fafb' : '#e5e7eb', fontWeight: 500, pointerEvents: 'none', transition: 'fill 0.12s' }}>
                     {node.name}
                   </text>
                   <text x={node.x1 + 8} y={midY}
                         textAnchor="start" dominantBaseline="middle"
-                        style={{ fontSize: 11, fill: overBdgt ? '#f87171' : '#6b7280', pointerEvents: 'none' }}>
+                        style={{ fontSize: 11, fill: overBdgt ? '#f87171' : '#9ca3af', pointerEvents: 'none' }}>
                     {fmt(node.value ?? 0)}{pct !== null ? ` · ${pct}%` : ''}
                   </text>
                 </>
@@ -254,12 +254,12 @@ function SankeyChart({ income, categories, budgetMap }) {
           <p style={{ color: '#9ca3af' }}>{tooltip.body}</p>
           {tooltip.merchants?.length > 0 && (
             <div style={{ borderTop: '0.5px solid #374151', paddingTop: 6, marginTop: 6 }}>
-              <p style={{ color: '#4b5563', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+              <p style={{ color: '#9ca3af', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
                 Top merchants
               </p>
               {tooltip.merchants.map((m) => (
-                <p key={m.name} style={{ color: '#d1d5db', marginBottom: 2 }}>
-                  {m.name}<span style={{ color: '#6b7280' }}> · {fmt(m.total)}</span>
+                <p key={m.name} style={{ color: '#e5e7eb', marginBottom: 2 }}>
+                  {m.name}<span style={{ color: '#9ca3af' }}> · {fmt(m.total)}</span>
                 </p>
               ))}
             </div>
@@ -405,7 +405,7 @@ export default function Reports() {
             className="px-4 py-2.5 text-[13px] border-b-2 -mb-px transition-colors whitespace-nowrap"
             style={{
               borderBottomColor: activeTab === tab.key ? '#27AE60' : 'transparent',
-              color:             activeTab === tab.key ? '#27AE60' : '#6b7280',
+              color:             activeTab === tab.key ? '#27AE60' : '#9ca3af',
               fontWeight:        activeTab === tab.key ? 500 : 400,
             }}>
             {tab.label}
@@ -429,11 +429,11 @@ export default function Reports() {
                 <p style={{ fontSize: 12, fontWeight: 500, color: '#f9fafb' }}>
                   Cash flow · {FULL_MONTHS[viewMonth]} {viewYear}
                 </p>
-                <p style={{ fontSize: 11, color: '#4b5563' }}>hover to explore</p>
+                <p style={{ fontSize: 11, color: '#9ca3af' }}>hover to explore</p>
               </div>
               <div className="p-4" style={{ overflowX: 'auto' }}>
                 {totalIncome === 0 ? (
-                  <p className="text-center py-10" style={{ fontSize: 13, color: '#6b7280' }}>
+                  <p className="text-center py-10" style={{ fontSize: 13, color: '#9ca3af' }}>
                     No income transactions found — add income to see the full Sankey
                   </p>
                 ) : (
@@ -452,7 +452,7 @@ export default function Reports() {
                 </p>
               </div>
               {incomeSources.length === 0 ? (
-                <p className="px-4 py-5" style={{ fontSize: 13, color: '#6b7280' }}>No income this month.</p>
+                <p className="px-4 py-5" style={{ fontSize: 13, color: '#9ca3af' }}>No income this month.</p>
               ) : (
                 incomeSources.map((src) => (
                   <div key={src.name} className="flex items-center justify-between px-4 py-3 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
@@ -461,7 +461,7 @@ export default function Reports() {
                            style={{ background: 'rgba(52,211,153,0.12)' }}>💵</div>
                       <div>
                         <p style={{ fontSize: 13, color: '#f9fafb', fontWeight: 500 }}>{src.name}</p>
-                        <p style={{ fontSize: 11, color: '#6b7280' }}>{src.count} transaction{src.count !== 1 ? 's' : ''}</p>
+                        <p style={{ fontSize: 11, color: '#9ca3af' }}>{src.count} transaction{src.count !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: '#34d399', fontVariantNumeric: 'tabular-nums' }}>
@@ -482,7 +482,7 @@ export default function Reports() {
                 </p>
               </div>
               {categories.length === 0 ? (
-                <p className="px-4 py-5" style={{ fontSize: 13, color: '#6b7280' }}>No expenses this month.</p>
+                <p className="px-4 py-5" style={{ fontSize: 13, color: '#9ca3af' }}>No expenses this month.</p>
               ) : (
                 categories.map((c) => {
                   const pct   = totalExpenses > 0 ? Math.round((c.spent / totalExpenses) * 100) : 0;
@@ -495,7 +495,7 @@ export default function Reports() {
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: CAT_COLORS[c.cat] ?? '#9ca3af' }} />
                           <span style={{ fontSize: 13, color: '#f9fafb', fontWeight: 500 }}>{c.cat}</span>
-                          <span style={{ fontSize: 11, color: '#6b7280' }}>{pct}%</span>
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>{pct}%</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {over && <span style={{ fontSize: 10, color: '#f87171' }}>over budget</span>}
