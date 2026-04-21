@@ -260,7 +260,7 @@ export default function Login() {
             {mode === 'signup' && (
               <div>
                 <label className="text-[11px] uppercase tracking-[.16em] mb-2 block" style={{ color: '#6b7280' }}>
-                  Name (optional)
+                  First name
                 </label>
                 <input
                   type="text"
@@ -268,7 +268,7 @@ export default function Login() {
                   onChange={(e) => setName(e.target.value)}
                   className={inputCls}
                   style={inputSty}
-                  placeholder="Jane Doe"
+                  placeholder="What should we call you?"
                 />
               </div>
             )}

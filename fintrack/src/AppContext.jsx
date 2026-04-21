@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { goalClrMap, GOAL_COLORS, catSty } from './data';
 import { sendNotification } from './NotificationContext';
@@ -17,6 +17,7 @@ const PREF_DEFAULTS = {
   dismissedSubscriptions: [], // array of subscription names to hide
   twoFactorEnabled:     false,
   twoFactorSkipped:     false,
+  displayName:          '',
 };
 
 // DB column → JS key mapping
@@ -33,6 +34,7 @@ const DB_TO_JS = {
   dismissed_subscriptions: 'dismissedSubscriptions',
   two_factor_enabled:      'twoFactorEnabled',
   two_factor_skipped:      'twoFactorSkipped',
+  display_name:            'displayName',
 };
 
 function dbRowToPrefs(row) {
@@ -65,6 +67,7 @@ function dbRowToPrefs(row) {
   if (row.two_factor_skipped !== null && row.two_factor_skipped !== undefined) {
     p.twoFactorSkipped = Boolean(row.two_factor_skipped);
   }
+  if (row.display_name) p.displayName = row.display_name;
   return p;
 }
 
@@ -423,10 +426,16 @@ export function AppProvider({ children }) {
     if (error) throw error;
     // Set onboardingComplete to false for new sign-ups (they should see onboarding)
     if (data.user) {
+      const upsertData = { user_id: data.user.id, onboarding_complete: false };
+      if (name?.trim()) upsertData.display_name = name.trim();
       await supabase
         .from('user_preferences')
-        .upsert({ user_id: data.user.id, onboarding_complete: false }, { onConflict: 'user_id' })
+        .upsert(upsertData, { onConflict: 'user_id' })
         .catch(() => {}); // Ignore errors here, not critical
+      // Also save to auth metadata for Google sign-in parity
+      if (name?.trim()) {
+        await supabase.auth.updateUser({ data: { display_name: name.trim() } }).catch(() => {});
+      }
     }
     return data; // caller inspects data.session to detect "confirm email" flow
   }
@@ -970,6 +979,16 @@ export function AppProvider({ children }) {
     return catSty[categoryName] || { bg: '#DDDBD3', fg: '#444441' };
   }
 
+  const displayName = useMemo(() => {
+    const raw = preferences.displayName?.trim();
+    if (raw) return raw.charAt(0).toUpperCase() + raw.slice(1);
+    if (user?.email) {
+      const prefix = user.email.split('@')[0];
+      return prefix.charAt(0).toUpperCase() + prefix.slice(1);
+    }
+    return '';
+  }, [preferences.displayName, user?.email]);
+
   return (
     <AppContext.Provider
       value={{
@@ -1042,6 +1061,7 @@ export function AppProvider({ children }) {
         setCreditCardModalOpen,
         // preferences
         preferences,
+        displayName,
         updatePreference,
         dismissSubscription,
         undismissSubscription,

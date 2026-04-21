@@ -24,6 +24,10 @@ export const NAV_ITEMS = [
   { path: 'settings',     label: 'Settings',     icon: <span className="text-base leading-none">⚙️</span> },
 ];
 
+export const NAV_PRIMARY   = NAV_ITEMS.filter(i => ['overview','transactions','budget','bills'].includes(i.path));
+export const NAV_SECONDARY = NAV_ITEMS.filter(i => ['goals','spending','accounts','portfolio'].includes(i.path));
+export const NAV_SETTINGS  = NAV_ITEMS.find(i => i.path === 'settings');
+
 /** Gear icon for the header button (smaller) */
 export function GearIcon({ size = 15 }) {
   return (

@@ -8,7 +8,7 @@ import CsvImportModal from './components/CsvImportModal';
 import CreditCardModal from './components/CreditCardModal';
 import OnboardingModal from './components/OnboardingModal';
 import BottomNav from './components/BottomNav';
-import { NAV_ITEMS, GearIcon } from './navItems';
+import { NAV_PRIMARY, NAV_SECONDARY, NAV_SETTINGS, NAV_ITEMS, GearIcon } from './navItems';
 
 const TOP_TABS = [
   'overview','transactions','spending','budget','bills','goals','accounts','portfolio',
@@ -74,25 +74,40 @@ function Sidebar({ side }) {
       </div>
 
       {/* Nav links */}
-      <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5">
-        {NAV_ITEMS.map((item) => (
-          <NavLink
-            key={item.path}
-            to={`/${item.path}`}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${
-                isActive
-                  ? 'text-[#27AE60]'
-                  : 'text-[#6b7280] hover:bg-[#1f2937]'
-              }`
-            }
+      <nav className="flex-1 px-2 py-3 flex flex-col gap-0.5 overflow-y-auto">
+        {/* Primary section */}
+        <p className="px-3 pt-1 pb-1.5 select-none" style={{ fontSize: 9, letterSpacing: '0.12em', color: '#374151', textTransform: 'uppercase' }}>
+          Main
+        </p>
+        {NAV_PRIMARY.map((item) => (
+          <NavLink key={item.path} to={`/${item.path}`}
+            className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${isActive ? 'text-[#27AE60]' : 'text-[#6b7280] hover:bg-[#1f2937]'}`}
             style={({ isActive }) => isActive ? { background: '#0d1f14' } : {}}
           >
             {({ isActive }) => (
               <>
-                <span className="flex-shrink-0" style={isActive ? { color: '#27AE60' } : {}}>
-                  {item.icon}
-                </span>
+                <span className="flex-shrink-0" style={isActive ? { color: '#27AE60' } : {}}>{item.icon}</span>
+                {item.label}
+              </>
+            )}
+          </NavLink>
+        ))}
+
+        {/* Divider */}
+        <div className="mx-3 my-2 border-t" style={{ borderColor: '#1f2937' }} />
+
+        {/* Secondary section */}
+        <p className="px-3 pb-1.5 select-none" style={{ fontSize: 9, letterSpacing: '0.12em', color: '#374151', textTransform: 'uppercase' }}>
+          More
+        </p>
+        {NAV_SECONDARY.map((item) => (
+          <NavLink key={item.path} to={`/${item.path}`}
+            className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${isActive ? 'text-[#27AE60]' : 'text-[#6b7280] hover:bg-[#1f2937]'}`}
+            style={({ isActive }) => isActive ? { background: '#0d1f14' } : {}}
+          >
+            {({ isActive }) => (
+              <>
+                <span className="flex-shrink-0" style={isActive ? { color: '#27AE60' } : {}}>{item.icon}</span>
                 {item.label}
               </>
             )}
@@ -100,25 +115,31 @@ function Sidebar({ side }) {
         ))}
       </nav>
 
-      {/* Bottom: dark toggle + user */}
-      <div className="px-4 py-4 border-t border-gray-100 dark:border-[#1f2937]">
+      {/* Bottom: settings + dark toggle + user */}
+      <div className="px-2 pb-1">
+        <NavLink to={`/${NAV_SETTINGS.path}`}
+          className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${isActive ? 'text-[#27AE60]' : 'text-[#6b7280] hover:bg-[#1f2937]'}`}
+          style={({ isActive }) => isActive ? { background: '#0d1f14' } : {}}
+        >
+          {({ isActive }) => (
+            <>
+              <span className="flex-shrink-0" style={isActive ? { color: '#27AE60' } : {}}>{NAV_SETTINGS.icon}</span>
+              {NAV_SETTINGS.label}
+            </>
+          )}
+        </NavLink>
+      </div>
+      <div className="px-4 py-3 border-t" style={{ borderColor: '#1f2937' }}>
         <div className="flex items-center justify-between">
-          <button
-            onClick={toggleDark}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            aria-label="Toggle dark mode"
-          >
+          <button onClick={toggleDark} className="text-gray-400 hover:text-gray-200 transition-colors" aria-label="Toggle dark mode">
             {darkMode ? <SunIcon /> : <MoonIcon />}
           </button>
-          <button
-            onClick={signOut}
-            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-          >
+          <button onClick={signOut} className="text-xs text-gray-400 hover:text-gray-200 transition-colors">
             Sign out
           </button>
         </div>
         {user?.email && (
-          <p className="text-[10px] text-gray-400 mt-2 truncate">{user.email}</p>
+          <p className="text-[10px] mt-2 truncate" style={{ color: '#374151' }}>{user.email}</p>
         )}
       </div>
     </aside>
