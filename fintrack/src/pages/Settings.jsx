@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import { sendNotification } from '../NotificationContext';
 import { fmtDollars } from '../utils';
@@ -327,6 +327,10 @@ export default function Settings() {
   const [pwdNotice,  setPwdNotice]  = useState('');
   const [pwdError,   setPwdError]   = useState('');
 
+  // Display name state
+  const [displayName, setDisplayName] = useState(preferences.displayName || '');
+  const [displayNameBusy, setDisplayNameBusy] = useState(false);
+
   // Delete account state
   const [deleteStep,  setDeleteStep]  = useState(0); // 0=idle 1=confirm
   const [deleteBusy,  setDeleteBusy]  = useState(false);
@@ -336,6 +340,11 @@ export default function Settings() {
   const [resetAllModal, setResetAllModal] = useState(false);
   const [resetAllConfirm, setResetAllConfirm] = useState('');
   const [resetBusy, setResetBusy] = useState(false);
+
+  // Sync displayName with preferences
+  useEffect(() => {
+    setDisplayName(preferences.displayName || '');
+  }, [preferences.displayName]);
 
   function handleUpdateCategoryColor(cat, field, value) {
     const updated = { ...preferences.categoryColors };
@@ -348,6 +357,23 @@ export default function Settings() {
     const updated = { ...preferences.categoryColors };
     delete updated[cat];
     updatePreference('categoryColors', updated);
+  }
+
+  async function handleSaveDisplayName() {
+    if (!displayName.trim()) {
+      sendNotification('Display name cannot be empty');
+      return;
+    }
+    setDisplayNameBusy(true);
+    try {
+      await updatePreference('displayName', displayName.trim());
+      sendNotification('Display name saved');
+    } catch (err) {
+      console.error('Failed to save display name:', err);
+      sendNotification('Failed to save display name');
+    } finally {
+      setDisplayNameBusy(false);
+    }
   }
 
   async function handleSendResetEmail() {
@@ -541,6 +567,25 @@ export default function Settings() {
 
       {/* ── Account ── */}
       <Section title="Account">
+        <Row label="Display name" sub="Your name in the app">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Enter your name"
+              className="text-xs px-2.5 py-1.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+            />
+            <button
+              onClick={handleSaveDisplayName}
+              disabled={displayNameBusy || displayName.trim() === (preferences.displayName || '')}
+              className="text-xs font-medium px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-nero-border text-gray-700 dark:text-gray-300 disabled:opacity-50 transition-colors"
+            >
+              {displayNameBusy ? '…' : 'Save'}
+            </button>
+          </div>
+        </Row>
+
         <Row label="Currency" sub="Used for display formatting">
           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {preferences.currency}

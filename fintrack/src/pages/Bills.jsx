@@ -72,9 +72,9 @@ function CalendarCell({ day, bills, onBillClick }) {
 
   return (
     <div
-      className="flex flex-col p-1"
+      className="flex flex-col p-2"
       style={{
-        minHeight: 56,
+        minHeight: 120,
         background: hovered && day ? '#1f2937' : '#111827',
         borderRight: '0.5px solid #1f2937',
         borderBottom: '0.5px solid #1f2937',
@@ -85,7 +85,7 @@ function CalendarCell({ day, bills, onBillClick }) {
     >
       {day !== null && (
         <>
-          <div className="flex justify-center mb-1">
+          <div className="flex justify-center mb-2">
             {isToday ? (
               <span style={{
                 width: 22, height: 22, borderRadius: '50%',
@@ -101,15 +101,15 @@ function CalendarCell({ day, bills, onBillClick }) {
               </span>
             )}
           </div>
-          <div className="flex flex-col gap-0.5 overflow-hidden">
+          <div className="flex flex-col gap-1 overflow-hidden flex-1">
             {bills.map((b) => {
               const catStyle = getCategoryStyle(b.cat);
               return (
                 <button
                   key={b.id}
                   onClick={() => onBillClick(b)}
-                  className="text-left leading-tight px-1.5 py-0.5 rounded-full truncate w-full"
-                  style={{ background: catStyle.color + '33', color: '#fff', fontSize: 9, fontWeight: 500 }}
+                  className="text-left leading-tight px-1.5 py-1 rounded-full truncate w-full text-xs"
+                  style={{ background: catStyle.color + '33', color: '#fff', fontWeight: 500 }}
                   title={`${b.name} — ${fmtDollars(b.amount)}`}
                 >
                   {b.name}

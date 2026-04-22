@@ -213,6 +213,7 @@ export function AppProvider({ children }) {
       setPreferences(PREF_DEFAULTS);
       setPrefsLoaded(false);
       setTwoFactorVerified(false);
+      // Keep darkMode from localStorage so theme persists for logged-out users
       return;
     }
     setTwoFactorVerified(false);
@@ -897,13 +898,17 @@ export function AppProvider({ children }) {
       }
       setPreferences(prefs);
       setDarkMode(prefs.darkMode);
-      console.log('[onboarding] Loaded preferences:', { onboardingComplete: prefs.onboardingComplete });
+      // Ensure localStorage is in sync with DB
+      try { localStorage.setItem('fintrack-dark', String(prefs.darkMode)); } catch {}
+      console.log('[onboarding] Loaded preferences:', { onboardingComplete: prefs.onboardingComplete, darkMode: prefs.darkMode });
     } else {
       // First time this user is loading preferences — assume they're existing user
       // (unless they just signed up, in which case onboarding_complete would be set to false above)
       const newPrefs = { ...PREF_DEFAULTS, onboardingComplete: true };
       setPreferences(newPrefs);
       setDarkMode(newPrefs.darkMode);
+      // Ensure localStorage is in sync
+      try { localStorage.setItem('fintrack-dark', String(newPrefs.darkMode)); } catch {}
       console.log('[onboarding] No preferences record found, defaulting to onboardingComplete: true (existing user)');
       // Optionally save this for future loads
       await supabase
@@ -913,6 +918,13 @@ export function AppProvider({ children }) {
     }
     setPrefsLoaded(true);
   }
+
+  // Sync darkMode state with preferences.darkMode to ensure consistency
+  useEffect(() => {
+    if (user && preferences && preferences.darkMode !== darkMode) {
+      setDarkMode(preferences.darkMode);
+    }
+  }, [preferences.darkMode, user]);
 
   useEffect(() => {
     if (!user) {
