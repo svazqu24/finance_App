@@ -129,7 +129,7 @@ export default function Overview() {
   const dayLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const monthLabel = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const hasRealName  = Boolean(preferences.displayName?.trim());
-  const greetingName = hasRealName ? `, ${displayName}` : '';
+  const greetingName = hasRealName ? `, ${displayName}` : ', there';
 
   // ── Current month data ────────────────────────────────────────────────────
   const abbr       = currentMonthAbbr();
@@ -292,15 +292,15 @@ export default function Overview() {
         <div className="text-center py-12">
           <div className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
                style={{ background: '#27AE60', borderRadius: '10px 3px 10px 3px' }}>N</div>
-          <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">Start tracking your money</p>
-          <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[260px] mx-auto">
+          <p className="text-[15px] font-semibold text-[#f9fafb] mb-1.5">Start tracking your money</p>
+          <p className="text-sm leading-relaxed mb-6 max-w-[260px] mx-auto" style={{ color: '#9ca3af' }}>
             Add your first transaction or import a CSV from your bank.
           </p>
           <div className="flex gap-2.5 justify-center flex-wrap">
             <button onClick={openAddModal} className="text-sm font-medium px-4 py-2.5 rounded-[20px] text-white" style={{ background: '#27AE60' }}>
               + Add transaction
             </button>
-            <button onClick={openCsvModal} className="text-sm font-medium px-4 py-2.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-700 dark:text-gray-300">
+            <button onClick={openCsvModal} className="text-sm font-medium px-4 py-2.5 rounded-[20px] text-[#d1d5db]" style={{ border: '1px solid #1f2937' }}>
               Import CSV
             </button>
           </div>

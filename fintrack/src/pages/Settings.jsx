@@ -451,12 +451,6 @@ export default function Settings() {
     <>
       {/* ── Appearance ── */}
       <Section title="Appearance">
-        <Row label="Dark mode" sub="Use dark theme across the app">
-          <Toggle
-            checked={preferences.darkMode}
-            onChange={(val) => updatePreference('darkMode', val)}
-          />
-        </Row>
         <Row label="Compact view" sub="Reduce padding for a denser layout" last>
           <Toggle
             checked={preferences.compactView}

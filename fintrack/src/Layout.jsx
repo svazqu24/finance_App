@@ -56,7 +56,7 @@ function MoonIcon() {
 
 /** Sidebar used for left / right nav positions */
 function Sidebar({ side }) {
-  const { darkMode, toggleDark, signOut, user } = useApp();
+  const { signOut, user } = useApp();
   return (
     <aside
       className="flex-shrink-0 flex flex-col bg-[#0a0e1a] border-[#1f2937] h-screen sticky top-0 overflow-y-auto"
@@ -68,9 +68,9 @@ function Sidebar({ side }) {
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 py-5 border-b border-gray-100 dark:border-[#1f2937]">
+      <div className="flex items-center gap-2.5 px-4 py-5" style={{ borderBottom: '1px solid #1f2937' }}>
         <NeroMark size={28} />
-        <span className="text-[18px] font-semibold text-gray-900 dark:text-white tracking-tight">Nero</span>
+        <span className="text-[18px] font-semibold text-[#f9fafb] tracking-tight">Nero</span>
       </div>
 
       {/* Nav links */}
@@ -130,10 +130,7 @@ function Sidebar({ side }) {
         </NavLink>
       </div>
       <div className="px-4 py-3 border-t" style={{ borderColor: '#1f2937' }}>
-        <div className="flex items-center justify-between">
-          <button onClick={toggleDark} className="text-gray-400 hover:text-gray-200 transition-colors" aria-label="Toggle dark mode">
-            {darkMode ? <SunIcon /> : <MoonIcon />}
-          </button>
+        <div className="flex items-center justify-end">
           <button onClick={signOut} className="text-xs text-gray-400 hover:text-gray-200 transition-colors">
             Sign out
           </button>
@@ -149,7 +146,7 @@ function Sidebar({ side }) {
 /** Header row used inside the main content area */
 function Header({ compact }) {
   const {
-    darkMode, toggleDark, user, signOut,
+    user, signOut,
     setCsvModalOpen, setAddModalOpen,
   } = useApp();
   const navigate = useNavigate();
@@ -165,13 +162,6 @@ function Header({ compact }) {
 
       <div className="flex flex-col items-end gap-2 pt-1">
         <div className="flex items-center gap-2">
-          <button
-            onClick={toggleDark}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? <SunIcon /> : <MoonIcon />}
-          </button>
           <p className="text-xs text-gray-400 m-0">{monthLabel}</p>
           <button
             onClick={() => navigate('/settings')}

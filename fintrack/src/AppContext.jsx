@@ -166,15 +166,9 @@ export function AppProvider({ children }) {
   const [txnCustomFrom, setTxnCustomFrom] = useState('');
   const [txnCustomTo,   setTxnCustomTo]   = useState('');
 
-  // ── Dark mode — localStorage fallback for logged-out state ──────────────────
-  const [darkMode, setDarkMode] = useState(() => {
-    try { return localStorage.getItem('fintrack-dark') !== 'false'; } catch { return true; }
-  });
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    try { localStorage.setItem('fintrack-dark', String(darkMode)); } catch {}
-  }, [darkMode]);
+  // ── Dark mode — permanently dark, no toggle ──────────────────────────────────
+  const darkMode = true;
+  const setDarkMode = () => {};
 
   // ── Password-recovery gate ────────────────────────────────────────────────────
   // True when the user lands via a password-reset email link.
@@ -941,7 +935,6 @@ export function AppProvider({ children }) {
   async function updatePreference(key, value) {
     // Optimistic local update
     setPreferences((prev) => ({ ...prev, [key]: value }));
-    if (key === 'darkMode') setDarkMode(value);
     // localStorage fallback so onboarding state persists even if DB column doesn't exist yet
     if (key === 'onboardingComplete' && value === true) {
       try { localStorage.setItem('nero-onboarding-complete', 'true'); } catch {}
@@ -1152,7 +1145,7 @@ export function AppProvider({ children }) {
         txnCustomTo,   setTxnCustomTo,
         // ui
         darkMode,
-        toggleDark: () => updatePreference('darkMode', !preferences.darkMode),
+        toggleDark: () => {},
         getCategorySty,
       }}
     >
