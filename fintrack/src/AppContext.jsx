@@ -895,18 +895,24 @@ export function AppProvider({ children }) {
       try { localStorage.setItem('fintrack-dark', String(prefs.darkMode)); } catch {}
       console.log('[onboarding] Loaded preferences:', { onboardingComplete: prefs.onboardingComplete, darkMode: prefs.darkMode });
     } else {
-      // First time this user is loading preferences — assume they're existing user
-      // (unless they just signed up, in which case onboarding_complete would be set to false above)
-      const newPrefs = { ...PREF_DEFAULTS, onboardingComplete: true };
+      // No preferences row found. Distinguish new signups from existing users with missing rows:
+      // new users have created_at within the last 15 seconds and should see onboarding.
+      const ageMs = currentUser.created_at
+        ? Date.now() - new Date(currentUser.created_at).getTime()
+        : Infinity;
+      const isNewSignup = ageMs < 15000;
+      const newPrefs = { ...PREF_DEFAULTS, onboardingComplete: !isNewSignup };
       setPreferences(newPrefs);
       setDarkMode(newPrefs.darkMode);
-      // Ensure localStorage is in sync
       try { localStorage.setItem('fintrack-dark', String(newPrefs.darkMode)); } catch {}
-      console.log('[onboarding] No preferences record found, defaulting to onboardingComplete: true (existing user)');
-      // Optionally save this for future loads
-      try {
-        await supabase.from('user_preferences').upsert({ user_id: currentUser.id, onboarding_complete: true }, { onConflict: 'user_id' });
-      } catch (e) { console.error('[loadPreferences] prefs upsert failed:', e); }
+      console.log('[onboarding] No preferences record found, isNewSignup:', isNewSignup, 'onboardingComplete:', !isNewSignup);
+      // Only create the fallback row for existing users — new signups will have their row
+      // created by signUp() momentarily, avoid overwriting onboarding_complete: false with true.
+      if (!isNewSignup) {
+        try {
+          await supabase.from('user_preferences').upsert({ user_id: currentUser.id, onboarding_complete: true }, { onConflict: 'user_id' });
+        } catch (e) { console.error('[loadPreferences] prefs upsert failed:', e); }
+      }
     }
     setPrefsLoaded(true);
   }
