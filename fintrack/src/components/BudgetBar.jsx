@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../AppContext';
+import { CategoryAvatar } from '../utils/categoryStyle';
 
 function PencilIcon() {
   return (
@@ -12,7 +13,7 @@ function PencilIcon() {
 }
 
 export default function BudgetBar({ b }) {
-  const { saveBudgetLimit, getCategorySty } = useApp();
+  const { saveBudgetLimit } = useApp();
   const [editing, setEditing]       = useState(false);
   const [draftLimit, setDraftLimit] = useState('');
 
@@ -22,7 +23,6 @@ export default function BudgetBar({ b }) {
   const near      = hasBudget && pct >= 85 && pct <= 100;
   const barClr    = over ? '#f87171' : near ? '#F59E0B' : hasBudget ? '#27AE60' : '#888780';
   const diff      = hasBudget ? Math.abs(b.budget - b.spent) : b.spent;
-  const s         = getCategorySty(b.cat);
 
   function startEdit() {
     setDraftLimit(String(b.budget));
@@ -46,14 +46,7 @@ export default function BudgetBar({ b }) {
     <div className="mb-4">
       <div className="flex justify-between items-center mb-1.5">
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 flex items-center justify-center"
-            style={{ background: s.bg, borderRadius: '10px 3px 10px 3px' }}
-          >
-            <span className="text-[11px] font-medium" style={{ color: s.fg }}>
-              {b.cat.slice(0, 2).toUpperCase()}
-            </span>
-          </div>
+          <CategoryAvatar category={b.cat} size={28} />
           <span className="text-sm font-medium text-[#f9fafb]">{b.cat}</span>
         </div>
 

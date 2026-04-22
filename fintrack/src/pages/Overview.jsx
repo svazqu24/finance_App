@@ -16,17 +16,11 @@ import {
   Legend,
 } from 'chart.js';
 import NetWorthModal from '../components/NetWorthModal';
+import { CategoryAvatar, getCategoryStyle } from '../utils/categoryStyle';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const DEFAULT_BUDGET_MAP = Object.fromEntries(DEFAULT_BUDGETS.map((b) => [b.cat, b.budget]));
-
-const CAT_EMOJI = {
-  Dining: '🍽', Groceries: '🛒', Shopping: '🛍', Transport: '🚗',
-  Health: '💊', Subscriptions: '🎵', Housing: '🏠', Utilities: '⚡',
-  Insurance: '🛡', Travel: '✈', Entertainment: '🎬', Income: '💵',
-  Transfer: '🔄', Other: '📦',
-};
 
 const ALERT_STYLES = {
   warning:  { border: '#d97706', bg: 'rgba(217,119,6,0.08)',  dot: '#f59e0b', darkText: '#fcd34d' },
@@ -117,7 +111,7 @@ export default function Overview() {
     transactions, loading, openAddModal, openCsvModal,
     budgetOverrides, billsData, creditCardsData,
     netWorthEntries, getNetWorthHistory,
-    displayName,
+    displayName, preferences,
   } = useApp();
 
   const isEmpty = !loading && transactions.length === 0;
@@ -134,6 +128,8 @@ export default function Overview() {
   const today    = new Date();
   const dayLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
   const monthLabel = today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const hasRealName  = Boolean(preferences.displayName?.trim());
+  const greetingName = hasRealName ? `, ${displayName}` : '';
 
   // ── Current month data ────────────────────────────────────────────────────
   const abbr       = currentMonthAbbr();
@@ -178,8 +174,6 @@ export default function Overview() {
 
   const sparkColor = totalSpent > totalBudget && totalBudget > 0 ? '#f87171' : '#34d399';
 
-  // ── Top cat emojis for spending card ──────────────────────────────────────
-  const topCatEmojis = topCatRows.slice(0, 4).map((r) => CAT_EMOJI[r.cat] ?? '📦');
 
   // ── Alerts ────────────────────────────────────────────────────────────────
   const alerts = useMemo(() => {
@@ -287,8 +281,13 @@ export default function Overview() {
       <>
         {/* Greeting */}
         <div className="mb-5">
-          <p style={{ fontSize: 18, fontWeight: 500, color: '#f9fafb' }}>{greeting}, {displayName} {greetEmoji}</p>
-          <p style={{ fontSize: 13, color: '#6b7280', marginTop: 2 }}>{dayLabel} · {monthLabel}</p>
+          <p style={{ fontSize: 18, fontWeight: 500, color: '#f9fafb' }}>{greeting}{greetingName} {greetEmoji}</p>
+          <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>
+            {dayLabel} · {monthLabel}
+            {!hasRealName && (
+              <> · <Link to="/settings" style={{ color: '#27AE60' }}>Add your name →</Link></>
+            )}
+          </p>
         </div>
         <div className="text-center py-12">
           <div className="w-12 h-12 flex items-center justify-center text-white font-semibold text-xl mx-auto mb-4"
@@ -317,9 +316,14 @@ export default function Overview() {
       {/* ── Greeting ── */}
       <div className="mb-5">
         <p style={{ fontSize: 18, fontWeight: 500, color: '#f9fafb', lineHeight: 1.3 }}>
-          {greeting}, {displayName} {greetEmoji}
+          {greeting}{greetingName} {greetEmoji}
         </p>
-        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 3 }}>{dayLabel} · {monthLabel}</p>
+        <p style={{ fontSize: 13, color: '#9ca3af', marginTop: 3 }}>
+          {dayLabel} · {monthLabel}
+          {!hasRealName && (
+            <> · <Link to="/settings" style={{ color: '#27AE60' }}>Add your name →</Link></>
+          )}
+        </p>
       </div>
 
       {/* ── Two-column grid ── */}
@@ -343,7 +347,7 @@ export default function Overview() {
                     <div key={cat}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
-                          <span style={{ fontSize: 13 }}>{CAT_EMOJI[cat] ?? '📦'}</span>
+                          <CategoryAvatar category={cat} size={20} />
                           <span style={{ fontSize: 12, color: '#d1d5db', fontWeight: 500 }}>{cat}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -364,7 +368,7 @@ export default function Overview() {
               )}
               {topCatRows.length > 0 && totalBudget > 0 && (
                 <div className="flex items-center justify-between pt-1" style={{ borderTop: '0.5px solid #1f2937' }}>
-                  <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total</span>
+                  <span style={{ fontSize: 10, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total</span>
                   <span style={{ fontSize: 12, fontWeight: 600, color: totalSpent > totalBudget ? '#f87171' : '#27AE60', fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(totalSpent)} / {fmt(totalBudget)}
                   </span>
@@ -392,17 +396,15 @@ export default function Overview() {
                 </div>
                 <Sparkline points={sparkPoints} color={sparkColor} />
               </div>
-              {topCatEmojis.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {topCatEmojis.map((emoji, i) => (
-                    <span key={i} className="w-7 h-7 flex items-center justify-center rounded-lg text-sm"
-                          style={{ background: '#1f2937' }}>
-                      {emoji}
-                    </span>
+              {topCatRows.length > 0 && (
+                <div className="flex flex-col gap-1.5 mt-1">
+                  {topCatRows.slice(0, 4).map((r) => (
+                    <div key={r.cat} className="flex items-center gap-2">
+                      <CategoryAvatar category={r.cat} size={24} />
+                      <span style={{ fontSize: 12, color: '#d1d5db', flex: 1 }}>{r.cat}</span>
+                      <span style={{ fontSize: 12, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>{fmt(r.spent)}</span>
+                    </div>
                   ))}
-                  <span style={{ fontSize: 11, color: '#4b5563', marginLeft: 2 }}>
-                    top categories
-                  </span>
                 </div>
               )}
             </div>
@@ -439,11 +441,11 @@ export default function Overview() {
                   {upcomingBills.map((b) => (
                     <div key={b.id} className="flex items-center justify-between py-1.5">
                       <div className="flex items-center gap-2">
-                        <span style={{ fontSize: 14 }}>{CAT_EMOJI[b.cat] ?? '📅'}</span>
+                        <CategoryAvatar category={b.cat ?? 'Other'} size={24} />
                         <span style={{ fontSize: 12, color: '#d1d5db' }}>{b.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span style={{ fontSize: 11, color: '#6b7280' }}>Due {b.due_day}</span>
+                        <span style={{ fontSize: 11, color: '#9ca3af' }}>Due {b.due_day}</span>
                         <span style={{ fontSize: 12, fontWeight: 600, color: '#f9fafb', fontVariantNumeric: 'tabular-nums' }}>${b.amount}</span>
                       </div>
                     </div>
@@ -460,7 +462,7 @@ export default function Overview() {
         <Card className="mb-4">
           <div className="px-4 pt-3.5 pb-2 flex justify-between items-start">
             <div>
-              <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4b5563' }}>Net Worth</p>
+              <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af' }}>Net Worth</p>
               <p style={{ fontSize: 22, fontWeight: 600, color: '#f9fafb', letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
                 ${currentNetWorth.toLocaleString()}
               </p>
@@ -485,7 +487,7 @@ export default function Overview() {
         </Card>
       ) : (
         <div className="mb-4 flex items-center gap-3 px-3 py-2.5 rounded-[10px]" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
-          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#4b5563', fontWeight: 500 }}>Net Worth</span>
+          <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9ca3af', fontWeight: 500 }}>Net Worth</span>
           <span style={{ fontSize: 12, color: '#374151' }}>·</span>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#f9fafb', fontVariantNumeric: 'tabular-nums' }}>$0</span>
           <button onClick={() => setNetWorthModalOpen(true)} className="ml-auto text-xs font-medium px-3 py-1 rounded-full"

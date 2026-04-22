@@ -258,6 +258,8 @@ const MERCHANT_ALIASES = {
   "sezzle inc sezzle":        "Sezzle",
   "sezzle inc":               "Sezzle",
   "sezzle":                   "Sezzle",
+  "payment to chase card ending in": "Chase Payment",
+  "payment to chase":         "Chase Payment",
   "monthly subscription":     "Monthly Subscription",
   "monthly subscriptions":    "Monthly Subscription",
   "monthly service fee":      "Monthly Service Fee",

@@ -2,28 +2,11 @@ import { useState } from 'react';
 import { useApp } from '../AppContext';
 import BillModal from '../components/BillModal';
 import CreditCardModal from '../components/CreditCardModal';
-import { catSty } from '../data';
 import { fmtDollars } from '../utils';
+import { CategoryAvatar, getCategoryStyle } from '../utils/categoryStyle';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const SHORT_DAYS  = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-const CAT_AVATAR = {
-  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽' },
-  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
-  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
-  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
-  Health:        { bg: '#1a0010', color: '#f472b6', emoji: '💊' },
-  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
-  Housing:       { bg: '#001020', color: '#60a5fa', emoji: '🏠' },
-  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
-  Insurance:     { bg: '#1a1000', color: '#fbbf24', emoji: '🛡' },
-  Travel:        { bg: '#001020', color: '#38bdf8', emoji: '✈' },
-  Entertainment: { bg: '#1a0a00', color: '#fb923c', emoji: '🎬' },
-  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
-  Transfer:      { bg: '#1a1a1a', color: '#6b7280', emoji: '🔄' },
-  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
-};
 
 /** Returns 'paid' | 'overdue' | 'soon' | 'upcoming' for a bill in a given view month */
 function billStatus(bill, viewYear, viewMonth) {
@@ -83,34 +66,59 @@ function PlusIcon() {
 }
 
 function CalendarCell({ day, bills, onBillClick }) {
-  if (!day) return <div className="aspect-square" />;
+  const [hovered, setHovered] = useState(false);
   const today = new Date();
-  const isToday = today.getDate() === day;
+  const isToday = day !== null && today.getDate() === day;
 
   return (
-    <div className="aspect-square rounded-lg p-1 flex flex-col" style={{ minHeight: 48 }}>
-      <span
-        className="text-[11px] font-medium leading-none mb-1 w-5 h-5 flex items-center justify-center rounded-full"
-        style={isToday ? { background: '#27AE60', color: '#fff' } : {}}
-      >
-        {day}
-      </span>
-      <div className="flex flex-col gap-0.5 overflow-hidden">
-        {bills.map((b) => {
-          const st = STATUS_STYLES[b.status];
-          return (
-            <button
-              key={b.id}
-              onClick={() => onBillClick(b)}
-              className="text-left text-[9px] font-medium leading-tight px-1 py-0.5 rounded truncate w-full"
-              style={{ background: st.bg, color: st.fg }}
-              title={`${b.name} — ${fmtDollars(b.amount)}`}
-            >
-              {b.name}
-            </button>
-          );
-        })}
-      </div>
+    <div
+      className="flex flex-col p-1"
+      style={{
+        minHeight: 56,
+        background: hovered && day ? '#1f2937' : '#111827',
+        borderRight: '0.5px solid #1f2937',
+        borderBottom: '0.5px solid #1f2937',
+        transition: 'background 0.1s',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {day !== null && (
+        <>
+          <div className="flex justify-center mb-1">
+            {isToday ? (
+              <span style={{
+                width: 22, height: 22, borderRadius: '50%',
+                background: '#27AE60', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 600, flexShrink: 0,
+              }}>
+                {day}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500, lineHeight: '22px' }}>
+                {day}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col gap-0.5 overflow-hidden">
+            {bills.map((b) => {
+              const catStyle = getCategoryStyle(b.cat);
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => onBillClick(b)}
+                  className="text-left leading-tight px-1.5 py-0.5 rounded-full truncate w-full"
+                  style={{ background: catStyle.color + '33', color: '#fff', fontSize: 9, fontWeight: 500 }}
+                  title={`${b.name} — ${fmtDollars(b.amount)}`}
+                >
+                  {b.name}
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -372,25 +380,25 @@ export default function Bills() {
       ) : (
         <>
           {/* Calendar */}
-          <div className="rounded-xl border border-gray-100 dark:border-[#1f2937] overflow-hidden mb-5">
+          <div className="mb-5" style={{ border: '0.5px solid #1f2937', borderRadius: 12, overflow: 'hidden' }}>
             {/* Day headers */}
-            <div className="grid grid-cols-7 border-b border-gray-100 dark:border-[#1f2937]">
+            <div className="grid grid-cols-7" style={{ background: '#0d1117', borderBottom: '0.5px solid #1f2937' }}>
               {SHORT_DAYS.map((d) => (
-                <div key={d} className="py-2 text-center text-[10px] font-medium text-gray-400 uppercase tracking-wide">
+                <div key={d} className="py-2 text-center"
+                     style={{ color: '#6b7280', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                   {d}
                 </div>
               ))}
             </div>
             {/* Cells */}
-            <div className="grid grid-cols-7 gap-px bg-gray-100 dark:bg-[#1f2937]">
+            <div className="grid grid-cols-7">
               {cells.map((day, i) => (
-                <div key={i} className="dark:bg-[#111827]">
-                  <CalendarCell
-                    day={day}
-                    bills={day ? (byDay[day] || []) : []}
-                    onBillClick={handleBillClick}
-                  />
-                </div>
+                <CalendarCell
+                  key={i}
+                  day={day}
+                  bills={day ? (byDay[day] || []) : []}
+                  onBillClick={handleBillClick}
+                />
               ))}
             </div>
           </div>
@@ -405,7 +413,6 @@ export default function Bills() {
               .sort((a, b) => a.due_day - b.due_day)
               .map((bill) => {
                 const st = STATUS_STYLES[bill.status];
-                const sty = catSty[bill.cat] || catSty['Utilities'];
                 return (
                   <div
                     key={bill.id}
@@ -413,13 +420,7 @@ export default function Bills() {
                     style={{ background: '#111827', border: '0.5px solid #1f2937' }}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Category avatar */}
-                      <div
-                        className="w-8 h-8 flex items-center justify-center flex-shrink-0 text-base"
-                        style={{ background: (CAT_AVATAR[bill.cat] ?? CAT_AVATAR.Other).bg, borderRadius: '10px 3px 10px 3px' }}
-                      >
-                        {(CAT_AVATAR[bill.cat] ?? CAT_AVATAR.Other).emoji}
-                      </div>
+                      <CategoryAvatar category={bill.cat ?? 'Other'} size={32} />
                       <div>
                         <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
                           {bill.name}

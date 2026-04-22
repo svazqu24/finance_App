@@ -2,24 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../AppContext';
 import StatCard from '../components/StatCard';
 import BudgetBar from '../components/BudgetBar';
-
-// ── Category emoji map ────────────────────────────────────────────────────────
-const CAT_EMOJI = {
-  Dining:        '🍽',
-  Groceries:     '🛒',
-  Shopping:      '🛍',
-  Transport:     '🚗',
-  Health:        '💊',
-  Subscriptions: '🎵',
-  Housing:       '🏠',
-  Utilities:     '⚡',
-  Insurance:     '🛡',
-  Travel:        '✈',
-  Entertainment: '🎬',
-  Income:        '💵',
-  Transfer:      '🔄',
-  Other:         '📦',
-};
+import { getCategoryStyle } from '../utils/categoryStyle';
 
 // ── Circle/donut ring bubble ──────────────────────────────────────────────────
 function BudgetCircle({ b }) {
@@ -32,7 +15,7 @@ function BudgetCircle({ b }) {
   const filled = Math.min(pct, 1);
   const clr    = pct >= 1 ? '#f87171' : pct >= 0.7 ? '#fbbf24' : '#34d399';
   const isOver = pct >= 1;
-  const emoji  = CAT_EMOJI[b.cat] ?? '📦';
+  const emoji  = getCategoryStyle(b.cat).emoji;
 
   return (
     <div className="flex flex-col items-center gap-1 flex-shrink-0" style={{ minWidth: 80 }}>
@@ -146,13 +129,13 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
               <p className="text-[15px] font-semibold text-[#f9fafb]">
                 ✨ Auto-budget
               </p>
-              <p className="text-xs text-[#6b7280] mt-0.5">
+              <p className="text-xs text-[#9ca3af] mt-0.5">
                 Based on your average spending over the last 3 months + 10% buffer
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full text-[#6b7280] hover:text-[#f9fafb] transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full text-[#9ca3af] hover:text-[#f9fafb] transition-colors"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -164,7 +147,7 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
         {/* Scrollable rows */}
         <div className="overflow-y-auto flex-1 px-5">
           {suggestions.length === 0 ? (
-            <p className="text-sm text-[#6b7280] py-6 text-center">
+            <p className="text-sm text-[#9ca3af] py-6 text-center">
               No spending data yet — add transactions first.
             </p>
           ) : (
@@ -173,10 +156,10 @@ function AutoBudgetModal({ open, onClose, suggestions, values, onChange, onApply
                 <div key={s.cat} className="flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-[#f9fafb]">{s.cat}</p>
-                    <p className="text-[11px] text-[#6b7280]">Avg spent: {fmtDollars(s.avg)}/mo</p>
+                    <p className="text-[11px] text-[#9ca3af]">Avg spent: {fmtDollars(s.avg)}/mo</p>
                   </div>
                   <div className="relative w-28 flex-shrink-0">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#6b7280] pointer-events-none">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#9ca3af] pointer-events-none">$</span>
                     <input
                       type="number"
                       min="0"
@@ -236,6 +219,9 @@ export default function Budget() {
   const [autoBudgetOpen,     setAutoBudgetOpen]     = useState(false);
   const [autoBudgetValues,   setAutoBudgetValues]   = useState({});
   const [autoBudgetSaving,   setAutoBudgetSaving]   = useState(false);
+  const [savingsGoalPct,     setSavingsGoalPct]     = useState(20);
+  const [editingGoal,        setEditingGoal]        = useState(false);
+  const [goalDraft,          setGoalDraft]          = useState('20');
 
   function openEditSubscription(subscription, isAutoDetected = false) {
     setEditingSubscription(subscription);
@@ -297,6 +283,12 @@ export default function Budget() {
   const totalBudgeted = liveBudgets.reduce((s, b) => s + b.budget, 0);
   const totalSpent    = liveBudgets.reduce((s, b) => s + b.spent,  0);
   const remaining     = totalBudgeted - totalSpent;
+
+  const monthlySavings  = incomeThisMonth - totalSpent;
+  const savingsRate     = incomeThisMonth > 0 ? (monthlySavings / incomeThisMonth) * 100 : 0;
+  const savingsGoalAmt  = incomeThisMonth > 0 ? incomeThisMonth * (savingsGoalPct / 100) : 0;
+  const savingsBarPct   = savingsGoalAmt > 0 ? Math.min(Math.max((monthlySavings / savingsGoalAmt) * 100, 0), 100) : 0;
+  const savingsColor    = savingsRate >= 20 ? '#34d399' : savingsRate >= 10 ? '#fbbf24' : '#f87171';
 
   const overBudget = liveBudgets.filter((b) => b.spent > b.budget).length;
   const approaching = liveBudgets.filter((b) => {
@@ -395,6 +387,55 @@ export default function Budget() {
   return (
     <div className="min-h-screen pb-8 text-[#f9fafb]" style={{ background: '#0a0e1a' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5">
+        {/* ── Savings section ── */}
+        {incomeThisMonth > 0 && (
+          <div className="mb-5 rounded-xl px-4 py-4" style={{ background: '#111827', border: '0.5px solid #1f2937' }}>
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.1em] text-[#9ca3af] mb-1">Monthly Savings</p>
+                {editingGoal ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-[#9ca3af]">Goal:</span>
+                    <input
+                      type="number" min="0" max="100" step="1"
+                      value={goalDraft}
+                      onChange={(e) => setGoalDraft(e.target.value)}
+                      onBlur={() => {
+                        const v = parseInt(goalDraft, 10);
+                        if (!isNaN(v) && v >= 0 && v <= 100) setSavingsGoalPct(v);
+                        else setGoalDraft(String(savingsGoalPct));
+                        setEditingGoal(false);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                      autoFocus
+                      className="w-16 border border-[#374151] rounded-lg px-2 py-1 text-xs bg-[#0a0e1a] text-[#f9fafb] outline-none"
+                    />
+                    <span className="text-xs text-[#9ca3af]">%</span>
+                  </div>
+                ) : (
+                  <p style={{ fontSize: 22, fontWeight: 600, color: savingsColor, letterSpacing: '-0.5px', fontVariantNumeric: 'tabular-nums', lineHeight: 1.2 }}>
+                    {monthlySavings >= 0 ? fmtDollars(monthlySavings) : `-${fmtDollars(Math.abs(monthlySavings))}`}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={() => { setGoalDraft(String(savingsGoalPct)); setEditingGoal(true); }}
+                className="text-xs font-medium px-3 py-1.5 rounded-[20px] transition-colors flex-shrink-0"
+                style={{ background: '#1f2937', border: '1px solid #374151', color: '#9ca3af' }}
+              >
+                Set savings goal
+              </button>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden mb-2" style={{ background: '#1f2937' }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${savingsBarPct}%`, background: savingsColor }} />
+            </div>
+            <div className="flex items-center justify-between">
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>{Math.round(Math.max(savingsRate, 0))}% saved</span>
+              <span style={{ fontSize: 11, color: '#9ca3af' }}>Goal: {savingsGoalPct}% · {fmtDollars(savingsGoalAmt)}</span>
+            </div>
+          </div>
+        )}
+
         {/* Summary stat cards */}
         <div className="grid grid-cols-3 gap-2 mb-4">
         <StatCard label="budgeted"  value={fmtDollars(totalBudgeted)} sub="this month" />
@@ -439,7 +480,7 @@ export default function Budget() {
             N
           </div>
           <p className="text-sm font-semibold text-[#f9fafb] mb-1">Set your first budget limit</p>
-          <p className="text-xs text-[#6b7280] mb-4 leading-relaxed max-w-[240px] mx-auto">
+          <p className="text-xs text-[#9ca3af] mb-4 leading-relaxed max-w-[240px] mx-auto">
             Add transactions to see live spending vs. your budget limits.
           </p>
           <div className="flex gap-2 justify-center">
@@ -468,7 +509,7 @@ export default function Budget() {
 
       {/* ── Budget limits header + auto-budget button ── */}
       <div className="flex items-center justify-between mb-1">
-        <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0">Budget limits</p>
+        <p className="text-[10px] uppercase tracking-[0.1em] text-[#9ca3af] mb-0">Budget limits</p>
         <button
           onClick={openAutoBudget}
           className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
@@ -480,7 +521,7 @@ export default function Budget() {
 
       {/* Income context line */}
       {incomeThisMonth > 0 && (
-        <p className="text-[10px] text-[#6b7280] mb-3 uppercase tracking-[0.1em]">
+        <p className="text-[10px] text-[#9ca3af] mb-3 uppercase tracking-[0.1em]">
           Based on {fmtDollars(incomeThisMonth)} income this month
         </p>
       )}
@@ -495,7 +536,7 @@ export default function Budget() {
             <div key={b.cat}>
               <BudgetBar b={b} />
               {incomePct !== null && incomePct > 0 && (
-                <p className="text-[10px] text-[#6b7280] mb-2 -mt-1 pl-0.5">
+                <p className="text-[10px] text-[#9ca3af] mb-2 -mt-1 pl-0.5">
                   {fmtDollars(b.spent)} = {incomePct}% of income
                 </p>
               )}
@@ -508,7 +549,7 @@ export default function Budget() {
       {hasTransactions && (
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] uppercase tracking-[0.1em] text-[#4b5563] mb-0">Budget history</p>
+            <p className="text-[10px] uppercase tracking-[0.1em] text-[#9ca3af] mb-0">Budget history</p>
             <button
               onClick={() => setHistoryMonths(historyMonths === 3 ? 6 : 3)}
               className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
@@ -522,9 +563,9 @@ export default function Budget() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b" style={{ borderColor: '#1f2937' }}>
-                    <th className="text-left py-2 font-medium text-[#4b5563] uppercase tracking-[0.1em]">Category</th>
+                    <th className="text-left py-2 font-medium text-[#9ca3af] uppercase tracking-[0.1em]">Category</th>
                     {monthLabels.map((month) => (
-                      <th key={month.abbr} className="text-center py-2 font-medium text-[#4b5563] uppercase tracking-[0.1em] min-w-[60px]">
+                      <th key={month.abbr} className="text-center py-2 font-medium text-[#9ca3af] uppercase tracking-[0.1em] min-w-[60px]">
                         {month.label}
                       </th>
                     ))}
@@ -563,11 +604,11 @@ export default function Budget() {
       )}
 
       {/* ── Upcoming bills (real data) ── */}
-      <p className="text-[10px] uppercase tracking-[0.1em] mt-6 mb-2.5 text-[#4b5563]">
+      <p className="text-[10px] uppercase tracking-[0.1em] mt-6 mb-2.5 text-[#9ca3af]">
         Upcoming bills
       </p>
       {upcomingBills.length === 0 ? (
-        <p className="text-xs text-[#6b7280] leading-relaxed">
+        <p className="text-xs text-[#9ca3af] leading-relaxed">
           No bills added yet — add them in the Bills tab.
         </p>
       ) : (
@@ -587,7 +628,7 @@ export default function Budget() {
                 <p className="text-sm font-medium text-[#f9fafb] truncate leading-tight">
                   {b.name}
                 </p>
-                <p className="text-xs text-[#6b7280]">Due the {b.due_day}{ordinal(b.due_day)}</p>
+                <p className="text-xs text-[#9ca3af]">Due the {b.due_day}{ordinal(b.due_day)}</p>
               </div>
               <p className="text-sm font-semibold tabular-nums text-[#f9fafb] flex-shrink-0">
                 {fmtDollars(b.amount)}
@@ -604,7 +645,7 @@ export default function Budget() {
             Detected subscriptions
           </p>
           {hasAnySubs && (
-            <span className="text-[11px] text-[#6b7280]">
+            <span className="text-[11px] text-[#9ca3af]">
               ~{fmtDollars(totalMonthlySubCost)}/mo
             </span>
           )}
@@ -638,7 +679,7 @@ export default function Budget() {
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-[#6b7280] mt-0.5 capitalize">
+                <p className="text-[11px] text-[#9ca3af] mt-0.5 capitalize">
                   {s.frequency} · last {s.lastCharged}
                 </p>
               </div>
@@ -681,7 +722,7 @@ export default function Budget() {
                     manual
                   </span>
                 </div>
-                <p className="text-[11px] text-[#6b7280] mt-0.5 capitalize">
+                <p className="text-[11px] text-[#9ca3af] mt-0.5 capitalize">
                   {s.frequency ?? 'monthly'}
                   {s.next_due_date && ` · due ${new Date(s.next_due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
                 </p>
@@ -712,7 +753,7 @@ export default function Budget() {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-[#6b7280] leading-relaxed">
+        <p className="text-xs text-[#9ca3af] leading-relaxed">
           Recurring charges with 3+ consistent payments will appear here automatically.
         </p>
       )}

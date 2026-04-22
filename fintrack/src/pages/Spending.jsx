@@ -3,6 +3,7 @@ import { Doughnut, Bar } from 'react-chartjs-2';
 import { useApp } from '../AppContext';
 import { catClr } from '../data';
 import { filterMonth, groupExpensesByCategory } from '../utils';
+import { CategoryAvatar } from '../utils/categoryStyle';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ABBRS       = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -43,35 +44,6 @@ function ChevRight() {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-const CAT_AVATAR = {
-  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽' },
-  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
-  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍' },
-  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
-  Health:        { bg: '#1a001a', color: '#f472b6', emoji: '💊' },
-  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
-  Housing:       { bg: '#0a001a', color: '#818cf8', emoji: '🏠' },
-  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
-  Insurance:     { bg: '#001020', color: '#60a5fa', emoji: '🛡' },
-  Travel:        { bg: '#00101a', color: '#38bdf8', emoji: '✈' },
-  Entertainment: { bg: '#1a0010', color: '#e879f9', emoji: '🎬' },
-  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
-  Transfer:      { bg: '#111827', color: '#6b7280', emoji: '🔄' },
-  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
-};
-
-function MerchantAvatar({ cat }) {
-  const av = CAT_AVATAR[cat] ?? CAT_AVATAR.Other;
-  return (
-    <div
-      className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-base"
-      style={{ background: av.bg, borderRadius: '10px 3px 10px 3px' }}
-    >
-      {av.emoji}
-    </div>
-  );
-}
-
 function SortPill({ label, active, onClick }) {
   return (
     <button
@@ -421,18 +393,12 @@ export default function Spending() {
         <div className="flex flex-col justify-center overflow-hidden">
           {categoryRows.length > 0 ? (
             categoryRows.map((r) => {
-              const av = CAT_AVATAR[r.cat] ?? CAT_AVATAR.Other;
               return (
                 <div
                   key={r.cat}
                   className="flex items-center gap-1.5 py-[5px] border-b border-gray-100 dark:border-[#1f2937] last:border-0"
                 >
-                  <div
-                    className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-xs"
-                    style={{ background: av.bg, borderRadius: '6px 2px 6px 2px' }}
-                  >
-                    {av.emoji}
-                  </div>
+                  <CategoryAvatar category={r.cat} size={24} />
                   <span className="text-[11px] text-gray-700 dark:text-gray-300 flex-1 min-w-0 truncate">
                     {r.cat}
                   </span>
@@ -478,7 +444,7 @@ export default function Spending() {
                 key={m.name}
                 className="flex items-center gap-2.5 py-2.5 border-b border-gray-100 dark:border-[#1f2937] last:border-0"
               >
-                <MerchantAvatar cat={m.cat} />
+                <CategoryAvatar category={m.cat} size={36} />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
                     {m.name}

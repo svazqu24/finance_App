@@ -3,6 +3,7 @@ import { sankey as d3Sankey, sankeyLinkHorizontal } from 'd3-sankey';
 import { useApp } from '../AppContext';
 import { filterMonth } from '../utils';
 import { budgets as DEFAULT_BUDGETS } from '../data';
+import { CategoryAvatar } from '../utils/categoryStyle';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const ABBRS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -457,8 +458,7 @@ export default function Reports() {
                 incomeSources.map((src) => (
                   <div key={src.name} className="flex items-center justify-between px-4 py-3 border-b last:border-b-0" style={{ borderColor: '#1f2937' }}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                           style={{ background: 'rgba(52,211,153,0.12)' }}>💵</div>
+                      <CategoryAvatar category="Income" size={32} />
                       <div>
                         <p style={{ fontSize: 13, color: '#f9fafb', fontWeight: 500 }}>{src.name}</p>
                         <p style={{ fontSize: 11, color: '#9ca3af' }}>{src.count} transaction{src.count !== 1 ? 's' : ''}</p>

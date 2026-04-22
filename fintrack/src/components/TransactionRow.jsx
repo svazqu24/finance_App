@@ -1,28 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../AppContext';
 import { sendNotification } from '../NotificationContext';
+import { CategoryAvatar } from '../utils/categoryStyle';
 
 const ALL_CATS = [
   'Housing', 'Groceries', 'Dining', 'Subscriptions', 'Travel',
   'Transport', 'Health', 'Shopping', 'Utilities', 'Insurance', 'Income', 'Transfer',
 ];
-
-const CAT_AVATAR = {
-  Dining:        { bg: '#1a0a00', color: '#f97316', emoji: '🍽️' },
-  Groceries:     { bg: '#001a0a', color: '#34d399', emoji: '🛒' },
-  Shopping:      { bg: '#1a001a', color: '#c084fc', emoji: '🛍️' },
-  Transport:     { bg: '#001020', color: '#60a5fa', emoji: '🚗' },
-  Health:        { bg: '#1a001a', color: '#f472b6', emoji: '💊' },
-  Subscriptions: { bg: '#0a001a', color: '#818cf8', emoji: '🎵' },
-  Housing:       { bg: '#0a001a', color: '#818cf8', emoji: '🏠' },
-  Utilities:     { bg: '#001a10', color: '#2dd4bf', emoji: '⚡' },
-  Insurance:     { bg: '#001020', color: '#60a5fa', emoji: '🛡️' },
-  Travel:        { bg: '#00101a', color: '#38bdf8', emoji: '✈️' },
-  Entertainment: { bg: '#1a0010', color: '#e879f9', emoji: '🎬' },
-  Income:        { bg: '#001a0a', color: '#34d399', emoji: '💵' },
-  Transfer:      { bg: '#111827', color: '#6b7280', emoji: '🔄' },
-  Other:         { bg: '#0f0f0f', color: '#9ca3af', emoji: '📦' },
-};
 
 function TrashIcon() {
   return (
@@ -54,7 +38,6 @@ export default function TransactionRow({ txn }) {
   const nameInputRef = useRef(null);
 
   const s   = getCategorySty(txn.cat);
-  const av  = CAT_AVATAR[txn.cat] ?? CAT_AVATAR.Other;
   const pos = txn.amt > 0;
 
   // Close dropdown on outside click (desktop only — mobile uses backdrop)
@@ -166,20 +149,7 @@ export default function TransactionRow({ txn }) {
             onClick={handleBadgeClick}
             aria-label={`Change category (currently ${txn.cat})`}
           >
-            <div style={{
-              width: 38,
-              height: 38,
-              borderRadius: '10px 3px 10px 3px',
-              background: av.bg,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 18,
-              flexShrink: 0,
-              userSelect: 'none',
-            }}>
-              {av.emoji}
-            </div>
+            <CategoryAvatar category={txn.cat} size={38} />
           </button>
 
           {/* Desktop dropdown */}
