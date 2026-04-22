@@ -115,10 +115,10 @@ function Sidebar({ side }) {
         ))}
       </nav>
 
-      {/* Bottom: settings + dark toggle + user */}
-      <div className="px-2 pb-1">
+      {/* Footer: settings + sign out + email */}
+      <div className="px-2 py-2 flex-shrink-0" style={{ borderTop: '1px solid #1f2937' }}>
         <NavLink to={`/${NAV_SETTINGS.path}`}
-          className={({ isActive }) => `flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors no-underline ${isActive ? 'text-[#27AE60]' : 'text-[#6b7280] hover:bg-[#1f2937]'}`}
+          className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors no-underline ${isActive ? 'text-[#27AE60]' : 'text-[#6b7280] hover:bg-[#1f2937]'}`}
           style={({ isActive }) => isActive ? { background: '#0d1f14' } : {}}
         >
           {({ isActive }) => (
@@ -128,15 +128,20 @@ function Sidebar({ side }) {
             </>
           )}
         </NavLink>
-      </div>
-      <div className="px-4 py-3 border-t" style={{ borderColor: '#1f2937' }}>
-        <div className="flex items-center justify-end">
-          <button onClick={signOut} className="text-xs text-gray-400 hover:text-gray-200 transition-colors">
-            Sign out
-          </button>
-        </div>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium text-[#6b7280] hover:bg-[#1f2937] transition-colors"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign out
+        </button>
         {user?.email && (
-          <p className="text-[10px] mt-2 truncate" style={{ color: '#374151' }}>{user.email}</p>
+          <p className="px-3 pt-1 pb-2 text-[11px] truncate" style={{ color: '#4b5563' }}>{user.email}</p>
         )}
       </div>
     </aside>
