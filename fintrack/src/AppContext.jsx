@@ -487,10 +487,9 @@ export function AppProvider({ children }) {
     if (data.user) {
       const upsertData = { user_id: data.user.id, onboarding_complete: false };
       if (name?.trim()) upsertData.display_name = name.trim();
-      await supabase
-        .from('user_preferences')
-        .upsert(upsertData, { onConflict: 'user_id' })
-        .catch(() => {}); // Ignore errors here, not critical
+      try {
+        await supabase.from('user_preferences').upsert(upsertData, { onConflict: 'user_id' });
+      } catch (e) { console.error('[signUp] prefs upsert failed:', e); }
       // Also save to auth metadata for Google sign-in parity
       if (name?.trim()) {
         await supabase.auth.updateUser({ data: { display_name: name.trim() } }).catch(() => {});
@@ -905,10 +904,9 @@ export function AppProvider({ children }) {
       try { localStorage.setItem('fintrack-dark', String(newPrefs.darkMode)); } catch {}
       console.log('[onboarding] No preferences record found, defaulting to onboardingComplete: true (existing user)');
       // Optionally save this for future loads
-      await supabase
-        .from('user_preferences')
-        .upsert({ user_id: currentUser.id, onboarding_complete: true }, { onConflict: 'user_id' })
-        .catch(() => {}); // Ignore errors
+      try {
+        await supabase.from('user_preferences').upsert({ user_id: currentUser.id, onboarding_complete: true }, { onConflict: 'user_id' });
+      } catch (e) { console.error('[loadPreferences] prefs upsert failed:', e); }
     }
     setPrefsLoaded(true);
   }
