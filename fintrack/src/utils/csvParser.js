@@ -38,6 +38,10 @@ function parseLine(line) {
 // Most-specific patterns come first so exact + partial matching
 // always prefers the right column when a header like "Posting Date" exists
 // alongside a more generic column that also contains the word "date".
+const ACCOUNT_PATTERNS = [
+  'account name',   // Mint, Personal Capital, many exports
+  'account',        // generic
+];
 const DATE_PATTERNS  = [
   'posting date',      // Chase checking  (most specific — must beat generic "date")
   'transaction date',  // Chase credit, Mint, many others
@@ -92,12 +96,13 @@ export function detectColumns(headers, bankInfo = null) {
     };
   }
 
-  const dateCol   = matchIdx(headers, DATE_PATTERNS);
-  const descCol   = matchIdx(headers, DESC_PATTERNS);
-  const amtCol    = matchIdx(headers, AMT_PATTERNS);
-  const debitCol  = matchIdx(headers, DEBIT_PATTERNS);
-  const creditCol = matchIdx(headers, CREDIT_PATTERNS);
-  const catCol    = matchIdx(headers, CAT_PATTERNS);
+  const dateCol    = matchIdx(headers, DATE_PATTERNS);
+  const descCol    = matchIdx(headers, DESC_PATTERNS);
+  const amtCol     = matchIdx(headers, AMT_PATTERNS);
+  const debitCol   = matchIdx(headers, DEBIT_PATTERNS);
+  const creditCol  = matchIdx(headers, CREDIT_PATTERNS);
+  const catCol     = matchIdx(headers, CAT_PATTERNS);
+  const accountCol = matchIdx(headers, ACCOUNT_PATTERNS);
 
   const hasDebitCredit = debitCol !== -1 && creditCol !== -1;
   // Force debitcredit mode for banks that always use split columns (Citi, Capital One)
@@ -109,10 +114,11 @@ export function detectColumns(headers, bankInfo = null) {
     dateCol,
     descCol,
     amtMode,
-    amtCol:   resolvedAmtCol,
-    debitCol: hasDebitCredit ? debitCol : -1,
-    creditCol: hasDebitCredit ? creditCol : -1,
+    amtCol:      resolvedAmtCol,
+    debitCol:    hasDebitCredit ? debitCol : -1,
+    creditCol:   hasDebitCredit ? creditCol : -1,
     catCol,
+    accountCol,
     signConvention: bankInfo?.signConvention ?? 'negative-expense',
   };
 }
@@ -754,7 +760,8 @@ export function detectAccount(filename) {
  */
 export function buildRows(rows, mapping, categoryMap = null, filename = null) {
   const accountInfo = detectAccount(filename);
-  const account = accountInfo?.name || null;
+  // filename-derived account is the fallback; per-row account column takes precedence
+  const filenameAccount = accountInfo?.name || null;
   const result = [];
   for (let i = 0; i < rows.length; i++) {
     const cells = rows[i];
@@ -765,6 +772,11 @@ export function buildRows(rows, mapping, categoryMap = null, filename = null) {
     const amt     = computeAmount(cells, mapping);
     // Skip rows with no name or zero amount
     if (!name || amt === 0) continue;
+    // Per-row account name from an explicit "Account Name" / "Account" column.
+    const rowAccount = (mapping.accountCol >= 0 && cells[mapping.accountCol])
+      ? String(cells[mapping.accountCol]).trim()
+      : null;
+    const account = rowAccount || filenameAccount;
 
     const guessed = guessCategory(name);
     let cat;

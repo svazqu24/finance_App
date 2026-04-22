@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { useApp } from '../AppContext';
 
 const inputCls =
@@ -31,27 +31,16 @@ const ASSET_SECTIONS = [
     label: 'Checking & Savings',
     categories: ['checking', 'savings'],
     addCategory: 'checking',
-    defaults: [
-      { id: 'chase-checking', name: 'Chase Checking', balance: 0, type: 'asset', category: 'checking' },
-      { id: 'chase-savings', name: 'Chase Savings', balance: 0, type: 'asset', category: 'savings' },
-    ],
   },
   {
     label: 'Investments',
     categories: ['investments'],
     addCategory: 'investments',
-    defaults: [
-      { id: 'investments-401k', name: '401(k)', balance: 0, type: 'asset', category: 'investments' },
-      { id: 'investments-brokerage', name: 'Brokerage', balance: 0, type: 'asset', category: 'investments' },
-    ],
   },
   {
     label: 'Property & Other',
     categories: ['property', 'other_assets'],
     addCategory: 'other_assets',
-    defaults: [
-      { id: 'car', name: 'Car', balance: 0, type: 'asset', category: 'property' },
-    ],
   },
 ];
 
@@ -60,18 +49,50 @@ const LIABILITY_SECTIONS = [
     label: 'Credit Cards',
     categories: ['credit_card'],
     addCategory: 'credit_card',
-    defaults: [],
   },
   {
     label: 'Loans & Other',
     categories: ['student_loans', 'car_loans', 'other_debts'],
     addCategory: 'other_debts',
-    defaults: [
-      { id: 'student-loans', name: 'Student Loans', balance: 0, type: 'liability', category: 'student_loans' },
-      { id: 'car-loans', name: 'Car Loans', balance: 0, type: 'liability', category: 'car_loans' },
-    ],
   },
 ];
+
+// Defined at module level so React never sees a new component type on re-render.
+// memo prevents re-rendering rows whose props haven't changed.
+const AccountRow = memo(function AccountRow({ account, onUpdate, onRemove }) {
+  return (
+    <div className="flex items-center gap-2">
+      <LeafIcon />
+      <input
+        type="text"
+        value={account.name}
+        onChange={(e) => onUpdate(account.id, 'name', e.target.value)}
+        placeholder="Account name"
+        className={`${inputCls} flex-1 min-w-0`}
+      />
+      <div className="relative flex-shrink-0 w-28">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">$</span>
+        <input
+          type="number"
+          step="1"
+          min="0"
+          value={account.balance || ''}
+          onChange={(e) => onUpdate(account.id, 'balance', e.target.value)}
+          placeholder="0"
+          className={`${inputCls} pl-6`}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={() => onRemove(account.id)}
+        className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
+        aria-label="Remove"
+      >
+        <TrashIcon />
+      </button>
+    </div>
+  );
+});
 
 export default function NetWorthModal({ open, onClose }) {
   const { saveNetWorthEntry, netWorthEntries, transactions, creditCardsData } = useApp();
@@ -84,11 +105,31 @@ export default function NetWorthModal({ open, onClose }) {
 
     const existingEntry = netWorthEntries.find(e => e.month === currentMonth);
     if (existingEntry) {
-      setAccounts(existingEntry.accounts);
+      // When loading a saved entry, patch any truncated account names by cross-referencing
+      // the live transaction account names (which come from full CSV values).
+      const txnAccounts = new Map();
+      for (const t of transactions) {
+        if (t.account) txnAccounts.set(t.account.toLowerCase(), t.account);
+      }
+      const patched = existingEntry.accounts.map(acc => {
+        if (!acc.name) return acc;
+        // If the stored name is a prefix of a known transaction account, use the full name.
+        const full = txnAccounts.get(acc.name.toLowerCase());
+        if (full) return acc; // exact match — already correct
+        for (const [key, val] of txnAccounts) {
+          if (key.startsWith(acc.name.toLowerCase()) || acc.name.toLowerCase().startsWith(key)) {
+            return { ...acc, name: val };
+          }
+        }
+        return acc;
+      });
+      setAccounts(patched);
       return;
     }
 
-    const checkingAccounts = [...new Set(transactions.map(t => t.account).filter(Boolean))].map((account, i) => ({
+    // Build defaults from live transaction accounts (full names from CSV imports).
+    const txnAccountNames = [...new Set(transactions.map(t => t.account).filter(Boolean))];
+    const checkingAccounts = txnAccountNames.map((account, i) => ({
       id: `checking-${i}`,
       name: account,
       balance: 0,
@@ -107,11 +148,11 @@ export default function NetWorthModal({ open, onClose }) {
     const baseAssets = [
       ...(checkingAccounts.length > 0 ? checkingAccounts : [
         { id: 'chase-checking', name: 'Chase Checking', balance: 0, type: 'asset', category: 'checking' },
-        { id: 'chase-savings', name: 'Chase Savings', balance: 0, type: 'asset', category: 'savings' },
+        { id: 'chase-savings',  name: 'Chase Savings',  balance: 0, type: 'asset', category: 'savings' },
       ]),
-      { id: 'investments-401k', name: '401(k)', balance: 0, type: 'asset', category: 'investments' },
+      { id: 'investments-401k',      name: '401(k)',    balance: 0, type: 'asset', category: 'investments' },
       { id: 'investments-brokerage', name: 'Brokerage', balance: 0, type: 'asset', category: 'investments' },
-      { id: 'car', name: 'Car', balance: 0, type: 'asset', category: 'property' },
+      { id: 'car',                   name: 'Car',       balance: 0, type: 'asset', category: 'property' },
     ];
 
     const baseLiabilities = [
@@ -119,7 +160,7 @@ export default function NetWorthModal({ open, onClose }) {
         { id: 'cc-chase', name: 'Chase Credit ···8695', balance: 0, type: 'liability', category: 'credit_card' },
       ]),
       { id: 'student-loans', name: 'Student Loans', balance: 0, type: 'liability', category: 'student_loans' },
-      { id: 'car-loans', name: 'Car Loans', balance: 0, type: 'liability', category: 'car_loans' },
+      { id: 'car-loans',     name: 'Car Loans',     balance: 0, type: 'liability', category: 'car_loans' },
     ];
 
     setAccounts([...baseAssets, ...baseLiabilities]);
@@ -140,20 +181,21 @@ export default function NetWorthModal({ open, onClose }) {
     };
   }, [open, onClose]);
 
-  function updateAccount(id, field, value) {
+  // Stable callbacks — AccountRow memo can skip re-renders for unchanged rows.
+  const updateAccount = useCallback((id, field, value) => {
     setAccounts(prev => prev.map(acc => acc.id === id ? { ...acc, [field]: value } : acc));
-  }
+  }, []);
 
-  function addAccount(type, category) {
-    setAccounts(prev => [...prev, { id: `${type}-${Date.now()}`, name: '', balance: 0, type, category }]);
-  }
-
-  function removeAccount(id) {
+  const removeAccount = useCallback((id) => {
     setAccounts(prev => prev.filter(acc => acc.id !== id));
-  }
+  }, []);
+
+  const addAccount = useCallback((type, category) => {
+    setAccounts(prev => [...prev, { id: `${type}-${Date.now()}`, name: '', balance: 0, type, category }]);
+  }, []);
 
   async function handleSubmit(e) {
-    e.preventDefault();
+    e?.preventDefault();
     await saveNetWorthEntry(currentMonth, accounts);
     onClose();
   }
@@ -165,41 +207,6 @@ export default function NetWorthModal({ open, onClose }) {
   const netWorth = totalAssets - totalLiabilities;
 
   const fmt = (n) => '$' + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-
-  function AccountRow({ account }) {
-    return (
-      <div className="flex items-center gap-2">
-        <LeafIcon />
-        <input
-          type="text"
-          value={account.name}
-          onChange={(e) => updateAccount(account.id, 'name', e.target.value)}
-          placeholder="Account name"
-          className={`${inputCls} flex-1 min-w-0`}
-        />
-        <div className="relative flex-shrink-0 w-28">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">$</span>
-          <input
-            type="number"
-            step="1"
-            min="0"
-            value={account.balance || ''}
-            onChange={(e) => updateAccount(account.id, 'balance', e.target.value)}
-            placeholder="0"
-            className={`${inputCls} pl-6`}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => removeAccount(account.id)}
-          className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 transition-colors flex-shrink-0"
-          aria-label="Remove"
-        >
-          <TrashIcon />
-        </button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -258,7 +265,9 @@ export default function NetWorthModal({ open, onClose }) {
                   <div key={section.label} className="mb-4">
                     <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-2">{section.label}</p>
                     <div className="space-y-2">
-                      {rows.map(acc => <AccountRow key={acc.id} account={acc} />)}
+                      {rows.map(acc => (
+                        <AccountRow key={acc.id} account={acc} onUpdate={updateAccount} onRemove={removeAccount} />
+                      ))}
                     </div>
                     <button
                       type="button"
@@ -285,7 +294,9 @@ export default function NetWorthModal({ open, onClose }) {
                   <div key={section.label} className="mb-4">
                     <p className="text-[11px] uppercase tracking-[.08em] text-gray-400 mb-2">{section.label}</p>
                     <div className="space-y-2">
-                      {rows.map(acc => <AccountRow key={acc.id} account={acc} />)}
+                      {rows.map(acc => (
+                        <AccountRow key={acc.id} account={acc} onUpdate={updateAccount} onRemove={removeAccount} />
+                      ))}
                     </div>
                     <button
                       type="button"
@@ -328,8 +339,7 @@ export default function NetWorthModal({ open, onClose }) {
 
           <div className="flex gap-2.5">
             <button
-              type="submit"
-              form=""
+              type="button"
               onClick={handleSubmit}
               className="flex-1 text-white text-sm font-medium py-3 rounded-[20px] transition-colors"
               style={{ background: '#27AE60' }}
