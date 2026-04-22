@@ -123,7 +123,7 @@ export default function CreditCardModal({ open, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -150,6 +150,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Last 4 digits</label>
               <input
                 type="text"
+                inputMode="numeric"
                 placeholder="1234"
                 maxLength="4"
                 value={form.last_four}
@@ -161,6 +162,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Due day (1–31)</label>
               <input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 max="31"
                 placeholder="15"
@@ -177,6 +179,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Credit limit</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 placeholder="5000.00"
@@ -189,6 +192,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Current balance</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 placeholder="0.00"
@@ -204,6 +208,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Statement balance</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 placeholder="0.00"
@@ -216,6 +221,7 @@ export default function CreditCardModal({ open, onClose }) {
               <label className={labelCls}>Minimum payment</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 placeholder="0.00"

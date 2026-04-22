@@ -59,7 +59,7 @@ function Sidebar({ side }) {
   const { signOut, user } = useApp();
   return (
     <aside
-      className="flex-shrink-0 flex flex-col bg-[#0a0e1a] border-[#1f2937] h-screen sticky top-0 overflow-y-auto"
+      className="hidden sm:flex flex-shrink-0 flex-col bg-[#0a0e1a] border-[#1f2937] h-screen sticky top-0 overflow-y-auto"
       style={{
         width: 220,
         borderRight: side === 'left'  ? '1px solid' : undefined,
@@ -190,13 +190,13 @@ function Header({ compact }) {
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={() => setCsvModalOpen(true)}
-            className="flex-1 sm:flex-none text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+            className="flex-1 sm:flex-none text-xs font-medium px-3 min-h-[44px] rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
           >
             Import CSV
           </button>
           <button
             onClick={() => setAddModalOpen(true)}
-            className="flex-1 sm:flex-none text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+            className="flex-1 sm:flex-none text-xs font-medium px-3 min-h-[44px] rounded-[20px] text-white transition-colors whitespace-nowrap"
             style={{ background: '#27AE60' }}
           >
             + Add Transaction
@@ -361,33 +361,34 @@ export default function Layout() {
   // ── Sidebar layouts ──────────────────────────────────────────────────────────
   if (navPosition === 'left' || navPosition === 'right') {
     return (
-      <div className="flex min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200">
+      <div className="flex min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200 overflow-x-hidden">
         {navPosition === 'left' && <Sidebar side="left" />}
 
-        <div className="flex-1 min-w-0 py-6 px-5 overflow-y-auto">
+        <div className="flex-1 min-w-0 py-4 px-4 sm:py-6 sm:px-5 overflow-y-auto">
           {/* Action buttons row */}
           <div className="flex justify-end items-center gap-2 mb-4">
             <button
               onClick={() => setCsvModalOpen(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
+              className="text-xs font-medium px-3 min-h-[44px] rounded-[20px] border border-gray-300 dark:border-[#1f2937] text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 transition-colors whitespace-nowrap"
             >
               Import CSV
             </button>
             <button
               onClick={() => setAddModalOpen(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-[20px] text-white transition-colors whitespace-nowrap"
+              className="text-xs font-medium px-3 min-h-[44px] rounded-[20px] text-white transition-colors whitespace-nowrap"
               style={{ background: '#27AE60' }}
             >
               + Add Transaction
             </button>
           </div>
           {statsRow}
-          <div className={compact ? 'pb-4' : 'pb-8'}>
+          <div className={compact ? 'pb-20 sm:pb-4' : 'pb-24 sm:pb-8'}>
             <Outlet />
           </div>
         </div>
 
         {navPosition === 'right' && <Sidebar side="right" />}
+        <BottomNav />
         {modals}
       </div>
     );
@@ -395,7 +396,7 @@ export default function Layout() {
 
   // ── Top / Bottom layouts (centered, max-width) ───────────────────────────────
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200">
+    <div className="min-h-screen bg-white dark:bg-[#0a0e1a] transition-colors duration-200 overflow-x-hidden">
       <div className={`${compact ? 'py-3' : 'py-6'} px-4 font-sans max-w-[680px] mx-auto`}>
 
         <Header compact={compact} />

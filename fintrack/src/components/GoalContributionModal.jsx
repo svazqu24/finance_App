@@ -79,7 +79,7 @@ export default function GoalContributionModal({ open, goal, onClose, onSave }) {
             <button
               type="button"
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+              className="w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               aria-label="Close"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -95,6 +95,7 @@ export default function GoalContributionModal({ open, goal, onClose, onSave }) {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                 <input
                   type="number"
+                  inputMode="decimal"
                   min="0.01"
                   step="0.01"
                   value={amount}

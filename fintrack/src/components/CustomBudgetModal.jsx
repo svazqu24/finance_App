@@ -109,6 +109,7 @@ export default function CustomBudgetModal({ open, onClose, initial, onSave, savi
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none" style={{ color: '#9ca3af' }}>$</span>
               <input
                 type="number"
+                inputMode="decimal"
                 min="1"
                 step="1"
                 placeholder="200"

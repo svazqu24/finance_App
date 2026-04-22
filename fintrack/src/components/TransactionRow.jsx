@@ -124,7 +124,7 @@ export default function TransactionRow({ txn }) {
   return (
     <>
       <div
-        className="relative flex items-center gap-2.5 py-2.5 min-h-[44px] border-b border-gray-200 dark:border-[#1f2937] transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-[#111827] rounded-sm"
+        className="group relative flex items-center gap-2.5 py-2.5 min-h-[44px] border-b border-gray-200 dark:border-[#1f2937] transition-colors cursor-pointer active:bg-gray-50 dark:active:bg-[#111827] rounded-sm"
         onClick={handleRowClick}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -240,12 +240,12 @@ export default function TransactionRow({ txn }) {
           {pos ? '+' : '-'}${Math.abs(txn.amt).toFixed(2)}
         </span>
 
-        {/* ── Delete button ── */}
-        {isHovered && !editingName && (
+        {/* ── Delete button — hover on desktop; always visible on mobile ── */}
+        {!editingName && (
           <button
             data-no-modal="true"
             onClick={(e) => { e.stopPropagation(); deleteTransaction(txn.id); }}
-            className="ml-1 flex-shrink-0 w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-400 dark:text-gray-600 dark:hover:text-red-400 transition-colors"
+            className="ml-1 flex-shrink-0 w-10 h-10 flex items-center justify-center text-gray-200 dark:text-gray-700 hover:text-red-400 dark:hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100 transition-all"
             aria-label="Delete transaction"
           >
             <TrashIcon />

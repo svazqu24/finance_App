@@ -122,7 +122,7 @@ export default function GoalModal({ open, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 aria-label="Close"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -149,7 +149,7 @@ export default function GoalModal({ open, onClose }) {
               <div>
                 <label className={labelCls}>Target ($)</label>
                 <input
-                  type="number" min="1" step="any" placeholder="10000"
+                  type="number" inputMode="decimal" min="1" step="any" placeholder="10000"
                   value={form.target}
                   onChange={(e) => setField('target', e.target.value)}
                   className={inputCls} required
@@ -158,7 +158,7 @@ export default function GoalModal({ open, onClose }) {
               <div>
                 <label className={labelCls}>Saved ($)</label>
                 <input
-                  type="number" min="0" step="any" placeholder="0"
+                  type="number" inputMode="decimal" min="0" step="any" placeholder="0"
                   value={form.saved}
                   onChange={(e) => setField('saved', e.target.value)}
                   className={inputCls}
@@ -167,7 +167,7 @@ export default function GoalModal({ open, onClose }) {
               <div>
                 <label className={labelCls}>Monthly ($)</label>
                 <input
-                  type="number" min="0" step="any" placeholder="200"
+                  type="number" inputMode="decimal" min="0" step="any" placeholder="200"
                   value={form.monthly}
                   onChange={(e) => setField('monthly', e.target.value)}
                   className={inputCls}
@@ -183,7 +183,7 @@ export default function GoalModal({ open, onClose }) {
                     key={c.clr}
                     type="button"
                     onClick={() => setField('color', c.clr)}
-                    className="w-7 h-7 rounded-full transition-transform"
+                    className="w-9 h-9 rounded-full transition-transform flex items-center justify-center"
                     style={{
                       background: c.clr,
                       outline: form.color === c.clr ? `3px solid ${c.clr}` : 'none',

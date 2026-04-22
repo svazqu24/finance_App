@@ -279,6 +279,8 @@ export default function Login() {
               </label>
               <input
                 type="email"
+                inputMode="email"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={`${inputCls} ${email && !emailValid ? 'border-red-500' : ''}`}

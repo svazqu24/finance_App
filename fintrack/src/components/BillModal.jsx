@@ -125,7 +125,7 @@ export default function BillModal({ open, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
                 aria-label="Close"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -153,6 +153,7 @@ export default function BillModal({ open, onClose }) {
                 <label className={labelCls}>Amount</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
                   min="0.01"
                   placeholder="0.00"
@@ -166,6 +167,7 @@ export default function BillModal({ open, onClose }) {
                 <label className={labelCls}>Due day (1–31)</label>
                 <input
                   type="number"
+                  inputMode="numeric"
                   min="1"
                   max="31"
                   placeholder="e.g. 15"

@@ -74,6 +74,7 @@ const AccountRow = memo(function AccountRow({ account, onUpdate, onRemove }) {
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">$</span>
         <input
           type="number"
+          inputMode="decimal"
           step="1"
           min="0"
           value={account.balance || ''}
