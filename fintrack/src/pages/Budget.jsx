@@ -83,6 +83,7 @@ function BudgetCirclesRow({ liveBudgets }) {
 }
 import SubscriptionModal from '../components/SubscriptionModal';
 import SubscriptionEditModal from '../components/SubscriptionEditModal';
+import CustomBudgetModal from '../components/CustomBudgetModal';
 import { budgets } from '../data';
 import {
   currentMonthAbbr, filterMonth, groupExpensesByCategory, fmtDollars, detectSubscriptions,
@@ -206,6 +207,7 @@ export default function Budget() {
   const {
     transactions, loading,
     budgetOverrides, saveBudgetLimit,
+    customBudgets, saveCustomBudget, deleteCustomBudget,
     openAddModal, openCsvModal,
     billsData, preferences,
   } = useApp();
@@ -219,9 +221,12 @@ export default function Budget() {
   const [autoBudgetOpen,     setAutoBudgetOpen]     = useState(false);
   const [autoBudgetValues,   setAutoBudgetValues]   = useState({});
   const [autoBudgetSaving,   setAutoBudgetSaving]   = useState(false);
-  const [savingsGoalPct,     setSavingsGoalPct]     = useState(20);
-  const [editingGoal,        setEditingGoal]        = useState(false);
-  const [goalDraft,          setGoalDraft]          = useState('20');
+  const [savingsGoalPct,       setSavingsGoalPct]       = useState(20);
+  const [editingGoal,          setEditingGoal]          = useState(false);
+  const [goalDraft,            setGoalDraft]            = useState('20');
+  const [customBudgetOpen,     setCustomBudgetOpen]     = useState(false);
+  const [editingCustomBudget,  setEditingCustomBudget]  = useState(null);
+  const [customBudgetSaving,   setCustomBudgetSaving]   = useState(false);
 
   function openEditSubscription(subscription, isAutoDetected = false) {
     setEditingSubscription(subscription);
@@ -329,6 +334,33 @@ export default function Budget() {
     }
     setAutoBudgetSaving(false);
     setAutoBudgetOpen(false);
+  }
+
+  // ── Custom budget spending ────────────────────────────────────────────────
+  const customBudgetsWithSpent = useMemo(() => {
+    const monthTxns = filterMonth(transactions, currMonthAbbr).filter((t) => t.amt < 0);
+    return customBudgets.map((cb) => {
+      let spent = 0;
+      if (cb.match_type === 'category') {
+        spent = monthTxns
+          .filter((t) => t.cat === cb.match_value)
+          .reduce((s, t) => s + Math.abs(t.amt), 0);
+      } else {
+        const keywords = (cb.match_value || '').split(',').map((m) => m.trim().toLowerCase()).filter(Boolean);
+        spent = monthTxns
+          .filter((t) => keywords.some((kw) => t.name.toLowerCase().includes(kw)))
+          .reduce((s, t) => s + Math.abs(t.amt), 0);
+      }
+      return { ...cb, spent: Math.round(spent * 100) / 100 };
+    });
+  }, [customBudgets, transactions, currMonthAbbr]);
+
+  async function handleSaveCustomBudget(data) {
+    setCustomBudgetSaving(true);
+    await saveCustomBudget(data, editingCustomBudget?.id ?? null);
+    setCustomBudgetSaving(false);
+    setCustomBudgetOpen(false);
+    setEditingCustomBudget(null);
   }
 
   // ── Upcoming bills (real data) ────────────────────────────────────────────
@@ -507,16 +539,25 @@ export default function Budget() {
         </div>
       )}
 
-      {/* ── Budget limits header + auto-budget button ── */}
+      {/* ── Budget limits header + action buttons ── */}
       <div className="flex items-center justify-between mb-1">
         <p className="text-[10px] uppercase tracking-[0.1em] text-[#9ca3af] mb-0">Budget limits</p>
-        <button
-          onClick={openAutoBudget}
-          className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
-          style={{ background: '#1f2937', border: '1px solid #374151' }}
-        >
-          ✨ Auto-budget
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setEditingCustomBudget(null); setCustomBudgetOpen(true); }}
+            className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
+            style={{ background: '#27AE60' }}
+          >
+            + Custom
+          </button>
+          <button
+            onClick={openAutoBudget}
+            className="text-xs font-semibold px-2.5 py-1 rounded-[20px] text-white transition-colors"
+            style={{ background: '#1f2937', border: '1px solid #374151' }}
+          >
+            ✨ Auto
+          </button>
+        </div>
       </div>
 
       {/* Income context line */}
@@ -543,6 +584,64 @@ export default function Budget() {
             </div>
           );
         })
+      )}
+
+      {/* ── Custom budgets section ── */}
+      {customBudgetsWithSpent.length > 0 && (
+        <div className="mt-6">
+          <p className="text-[10px] uppercase tracking-[0.1em] text-[#9ca3af] mb-3">Custom budgets</p>
+          <div className="flex flex-col gap-2">
+            {customBudgetsWithSpent.map((cb) => {
+              const pct   = cb.budget > 0 ? cb.spent / cb.budget : 0;
+              const clr   = pct >= 1 ? '#f87171' : pct >= 0.7 ? '#fbbf24' : '#34d399';
+              const barW  = Math.min(pct * 100, 100);
+              return (
+                <div
+                  key={cb.id}
+                  className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors"
+                  style={{ background: '#111827', border: '0.5px solid #1f2937' }}
+                >
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{ width: 32, height: 32, borderRadius: '8px 2px 8px 2px', background: '#0d1117', fontSize: 18 }}
+                  >
+                    {cb.custom_emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-[13px] font-medium text-[#f9fafb] truncate">{cb.custom_name}</p>
+                      <p className="text-[11px] tabular-nums flex-shrink-0 ml-2" style={{ color: '#9ca3af' }}>
+                        ${Math.round(cb.spent)} / ${cb.budget}
+                      </p>
+                    </div>
+                    <div className="h-1.5 rounded-full overflow-hidden" style={{ background: '#1f2937' }}>
+                      <div className="h-full rounded-full transition-all" style={{ width: `${barW}%`, background: clr }} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                    <button
+                      onClick={() => { setEditingCustomBudget(cb); setCustomBudgetOpen(true); }}
+                      className="text-[#9ca3af] hover:text-[#f9fafb] transition-colors"
+                      title="Edit"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => deleteCustomBudget(cb.id)}
+                      className="text-[#9ca3af] hover:text-[#f87171] transition-colors"
+                      title="Delete"
+                    >
+                      <TrashIcon />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Budget history */}
@@ -758,6 +857,13 @@ export default function Budget() {
         </p>
       )}
 
+      <CustomBudgetModal
+        open={customBudgetOpen}
+        onClose={() => { setCustomBudgetOpen(false); setEditingCustomBudget(null); }}
+        initial={editingCustomBudget}
+        onSave={handleSaveCustomBudget}
+        saving={customBudgetSaving}
+      />
       <SubscriptionModal open={subModalOpen} onClose={() => setSubModalOpen(false)} />
       <SubscriptionEditModal
         open={editSubModalOpen}

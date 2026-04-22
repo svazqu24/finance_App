@@ -137,6 +137,7 @@ export function AppProvider({ children }) {
 
   // ── Budget overrides: { cat: customLimit } ────────────────────────────────
   const [budgetOverrides, setBudgetOverrides] = useState({});
+  const [customBudgets, setCustomBudgets] = useState([]);
 
   // ── Goals ─────────────────────────────────────────────────────────────────
   const [goalsData, setGoalsData] = useState([]);
@@ -204,6 +205,7 @@ export function AppProvider({ children }) {
     if (!user) {
       setTransactions([]);
       setBudgetOverrides({});
+      setCustomBudgets([]);
       setGoalsData([]);
       setGoalContributions([]);
       setBillsData([]);
@@ -243,12 +245,74 @@ export function AppProvider({ children }) {
   async function loadBudgetOverrides(currentUser) {
     const { data, error } = await supabase
       .from('budgets')
-      .select('cat, budget')
+      .select('id, cat, budget, is_custom, custom_name, custom_emoji, match_type, match_value')
       .eq('user_id', currentUser.id);
     if (error) { console.error('[fintrack] Budget fetch failed:', error); return; }
     const map = {};
-    for (const row of data) map[row.cat] = Number(row.budget);
+    const customs = [];
+    for (const row of data) {
+      if (row.is_custom) {
+        customs.push({
+          id: row.id,
+          cat: row.cat,
+          custom_name: row.custom_name,
+          custom_emoji: row.custom_emoji,
+          budget: Number(row.budget),
+          match_type: row.match_type || 'category',
+          match_value: row.match_value,
+        });
+      } else {
+        map[row.cat] = Number(row.budget);
+      }
+    }
     setBudgetOverrides(map);
+    setCustomBudgets(customs);
+  }
+
+  async function saveCustomBudget(data, existingId = null) {
+    if (!user) return;
+    const cat = existingId
+      ? (customBudgets.find((b) => b.id === existingId)?.cat ?? `custom_${Date.now()}`)
+      : `custom_${Date.now()}`;
+    const payload = {
+      user_id: user.id,
+      cat,
+      budget: data.budget,
+      is_custom: true,
+      custom_name: data.custom_name,
+      custom_emoji: data.custom_emoji,
+      match_type: data.match_type,
+      match_value: data.match_value,
+    };
+    if (existingId) {
+      const { data: row, error } = await supabase
+        .from('budgets').update(payload)
+        .eq('id', existingId).eq('user_id', user.id)
+        .select().single();
+      if (error) { console.error('[fintrack] Custom budget update failed:', error); return; }
+      setCustomBudgets((prev) => prev.map((b) => b.id === existingId ? {
+        id: row.id, cat: row.cat, custom_name: row.custom_name,
+        custom_emoji: row.custom_emoji, budget: Number(row.budget),
+        match_type: row.match_type, match_value: row.match_value,
+      } : b));
+    } else {
+      const { data: row, error } = await supabase
+        .from('budgets').insert(payload).select().single();
+      if (error) { console.error('[fintrack] Custom budget insert failed:', error); return; }
+      setCustomBudgets((prev) => [...prev, {
+        id: row.id, cat: row.cat, custom_name: row.custom_name,
+        custom_emoji: row.custom_emoji, budget: Number(row.budget),
+        match_type: row.match_type, match_value: row.match_value,
+      }]);
+    }
+  }
+
+  async function deleteCustomBudget(id) {
+    if (!user) return;
+    const { error } = await supabase
+      .from('budgets').delete().eq('id', id).eq('user_id', user.id);
+    if (error) { console.error('[fintrack] Custom budget delete failed:', error); return; }
+    setCustomBudgets((prev) => prev.filter((b) => b.id !== id));
   }
 
   async function loadGoals(currentUser) {
@@ -1025,6 +1089,9 @@ export function AppProvider({ children }) {
         // budget overrides
         budgetOverrides,
         saveBudgetLimit,
+        customBudgets,
+        saveCustomBudget,
+        deleteCustomBudget,
         // goals
         goalsData,
         goalContributions,

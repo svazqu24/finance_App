@@ -202,15 +202,15 @@ export default function Bills() {
   const isCurrentView = viewYear === today.getFullYear() && viewMonth === today.getMonth();
 
   return (
-    <>
+    <div style={{ paddingTop: 4, paddingBottom: 32 }}>
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-[15px] font-semibold text-gray-900 dark:text-white">
+          <p className="text-[15px] font-semibold text-[#f9fafb]">
             {MONTH_NAMES[viewMonth]} {viewYear}
           </p>
           {upcomingTotal > 0 && isCurrentView && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: '#9ca3af' }}>
               {fmtDollars(upcomingTotal)} due in the next 30 days
             </p>
           )}
@@ -246,7 +246,7 @@ export default function Bills() {
         <div className="mb-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[13px] font-medium text-gray-900 dark:text-white">Credit cards</p>
+              <p className="text-[13px] font-medium text-[#f9fafb]">Credit cards</p>
               <p className="text-xs text-gray-400 mt-0.5">
                 Total minimum payments: {fmtDollars(creditCardsData.reduce((sum, c) => {
                   const monthStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
@@ -279,7 +279,7 @@ export default function Bills() {
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <p className="text-sm font-semibold text-[#f9fafb]">
                         {card.name} {card.last_four && `•••• ${card.last_four}`}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -302,13 +302,13 @@ export default function Bills() {
                   <div className="grid grid-cols-2 gap-4 mb-3">
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Current balance</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <p className="text-sm font-semibold text-[#f9fafb]">
                         {fmtDollars(card.current_balance)}
                       </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Statement balance</p>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <p className="text-sm font-semibold text-[#f9fafb]">
                         {fmtDollars(card.statement_balance)}
                       </p>
                     </div>
@@ -363,7 +363,7 @@ export default function Bills() {
           >
             B
           </div>
-          <p className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">Track your bills</p>
+          <p className="text-[15px] font-semibold text-[#f9fafb] mb-1.5">Track your bills</p>
           <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-[260px] mx-auto">
             Add recurring bills like rent, utilities, and subscriptions to stay on top of due dates.
           </p>
@@ -380,7 +380,7 @@ export default function Bills() {
       ) : (
         <>
           {/* Calendar */}
-          <div className="mb-5" style={{ border: '0.5px solid #1f2937', borderRadius: 12, overflow: 'hidden' }}>
+          <div className="mb-5" style={{ border: '0.5px solid #1f2937', borderRadius: 12, overflow: 'hidden', width: '100%' }}>
             {/* Day headers */}
             <div className="grid grid-cols-7" style={{ background: '#0d1117', borderBottom: '0.5px solid #1f2937' }}>
               {SHORT_DAYS.map((d) => (
@@ -404,7 +404,7 @@ export default function Bills() {
           </div>
 
           {/* Bill list */}
-          <p className="text-[13px] font-medium mb-2.5 text-gray-900 dark:text-white">
+          <p className="text-[13px] font-medium mb-2.5" style={{ color: '#f9fafb' }}>
             {MONTH_NAMES[viewMonth]} bills
           </p>
           <div className="flex flex-col gap-2">
@@ -422,7 +422,7 @@ export default function Bills() {
                     <div className="flex items-center gap-3">
                       <CategoryAvatar category={bill.cat ?? 'Other'} size={32} />
                       <div>
-                        <p className="text-[13px] font-medium text-gray-900 dark:text-white leading-tight">
+                        <p className="text-[13px] font-medium text-[#f9fafb] leading-tight">
                           {bill.name}
                         </p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
@@ -433,7 +433,7 @@ export default function Bills() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold tabular-nums text-gray-900 dark:text-white">
+                      <span className="text-[13px] font-semibold tabular-nums text-[#f9fafb]">
                         {fmtDollars(bill.amount)}
                       </span>
                       {/* Paid toggle */}
@@ -478,6 +478,6 @@ export default function Bills() {
         open={creditCardModalOpen}
         onClose={() => { setCreditCardModalOpen(false); setEditCreditCard(null); }}
       />
-    </>
+    </div>
   );
 }
